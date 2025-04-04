@@ -80,4 +80,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Flutter team for the amazing framework
 - Firebase for the backend services
-- All contributors and users of the app 
+- All contributors and users of the app
