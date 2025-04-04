@@ -5,29 +5,50 @@ class EmptyTasksPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.task_alt,
-            size: 64,
-            color: Colors.grey[400],
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.task_alt,
+              size: 64,
+              color: theme.colorScheme.primary,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Text(
             'No Tasks Yet',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: Colors.grey[600],
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Add your first task by tapping the + button',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[500],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'Start by adding your first task. Tap the + button below to get started!',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
             ),
-            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Show add task dialog
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add Your First Task'),
           ),
         ],
       ),
