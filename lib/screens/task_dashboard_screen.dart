@@ -10,8 +10,53 @@ import 'stats_screen.dart';
 import 'achievements_screen.dart';
 import 'profile_screen.dart';
 
-class TaskDashboardScreen extends StatelessWidget {
+class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
+
+  @override
+  State<TaskDashboardScreen> createState() => _TaskDashboardScreenState();
+}
+
+class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTop = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.offset >= 400) {
+      if (!_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = true;
+        });
+      }
+    } else {
+      if (_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,104 +162,133 @@ class TaskDashboardScreen extends StatelessWidget {
           ],
         ),
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.filter_list),
-                onPressed: () {
-                  // Show filter options
-                },
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.primaryContainer,
-                    ],
+      body: Stack(
+        children: [
+          CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200,
+                pinned: false,
+                floating: true,
+                stretch: true,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.filter_list),
+                    onPressed: () {
+                      // Show filter options
+                    },
                   ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome back,',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: theme.colorScheme.onPrimary,
-                          ),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  stretchModes: const [
+                    StretchMode.zoomBackground,
+                    StretchMode.blurBackground,
+                    StretchMode.fadeTitle,
+                  ],
+                  title: Text(
+                    userProvider.user?.displayName ?? 'User',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: theme.colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.primaryContainer,
+                        ],
+                      ),
+                    ),
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Welcome back,',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: theme.colorScheme.onPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              userProvider.user?.displayName ?? 'User',
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          userProvider.user?.displayName ?? 'User',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: LevelProgressCard(
-                level: userProvider.level,
-                currentXp: userProvider.currentXp,
-                nextLevelXp: userProvider.nextLevelXp,
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            sliver: SliverToBoxAdapter(
-              child: Text(
-                'Your Tasks',
-                style: theme.textTheme.titleLarge,
-              ),
-            ),
-          ),
-          if (taskProvider.tasks.isEmpty)
-            const SliverFillRemaining(
-              child: EmptyTasksPlaceholder(),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.all(16.0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final task = taskProvider.tasks[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: TaskTile(
-                        task: task,
-                        onComplete: () => taskProvider.completeTask(task.id),
-                      ),
-                    );
-                  },
-                  childCount: taskProvider.tasks.length,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: LevelProgressCard(
+                    level: userProvider.level,
+                    currentXp: userProvider.currentXp,
+                    nextLevelXp: userProvider.nextLevelXp,
+                  ),
                 ),
               ),
-            ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 80),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                sliver: SliverToBoxAdapter(
+                  child: Text(
+                    'Your Tasks',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                ),
+              ),
+              if (taskProvider.tasks.isEmpty)
+                const SliverFillRemaining(
+                  child: EmptyTasksPlaceholder(),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.all(16.0),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final task = taskProvider.tasks[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: TaskTile(
+                            task: task,
+                            onComplete: () => taskProvider.completeTask(task.id),
+                          ),
+                        );
+                      },
+                      childCount: taskProvider.tasks.length,
+                    ),
+                  ),
+                ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 80),
+              ),
+            ],
           ),
+          if (_showScrollToTop)
+            Positioned(
+              right: 16,
+              bottom: 100,
+              child: FloatingActionButton(
+                onPressed: _scrollToTop,
+                backgroundColor: theme.colorScheme.primary,
+                child: const Icon(Icons.arrow_upward),
+              ),
+            ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
