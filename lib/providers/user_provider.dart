@@ -4,6 +4,9 @@ import '../models/user.dart';
 class UserProvider with ChangeNotifier {
   User? _user;
   bool _isLoading = false;
+  int _level = 1;
+  int _currentXp = 0;
+  int _nextLevelXp = 100; // Base XP required for level 2
 
   UserProvider() {
     // Initialize with mock user data
@@ -21,6 +24,9 @@ class UserProvider with ChangeNotifier {
 
   User? get user => _user;
   bool get isLoading => _isLoading;
+  int get level => _level;
+  int get currentXp => _currentXp;
+  int get nextLevelXp => _nextLevelXp;
 
   int getNextLevelThreshold() {
     if (_user == null) return 100;
@@ -33,9 +39,9 @@ class UserProvider with ChangeNotifier {
 
     try {
       // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(milliseconds: 1000));
       
-      // Mock user is already set in constructor
+      // Mock sign in - in a real app, this would validate credentials
     } catch (e) {
       rethrow;
     } finally {
@@ -50,7 +56,7 @@ class UserProvider with ChangeNotifier {
 
     try {
       // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(milliseconds: 1000));
       
       _user = User(
         id: 'mock-user-id',
@@ -77,21 +83,19 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<void> addXp(int amount) async {
-    if (_user == null) return;
-
-    int newXp = _user!.currentXp + amount;
-    int newLevel = _user!.level;
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 500));
     
-    while (newXp >= getNextLevelThreshold()) {
-      newXp -= getNextLevelThreshold();
-      newLevel++;
+    _currentXp += amount;
+    
+    // Check for level up
+    while (_currentXp >= _nextLevelXp) {
+      _currentXp -= _nextLevelXp;
+      _level++;
+      // Increase XP required for next level (using a simple scaling formula)
+      _nextLevelXp = (100 * (1.5 * (_level - 1))).round();
     }
-
-    _user = _user!.copyWith(
-      currentXp: newXp,
-      level: newLevel,
-    );
-
+    
     notifyListeners();
   }
 

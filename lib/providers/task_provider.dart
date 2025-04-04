@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import '../models/task.dart';
+import 'user_provider.dart';
 
 class TaskProvider with ChangeNotifier {
+  final UserProvider _userProvider;
   List<Task> _tasks = [];
   bool _isLoading = false;
 
-  TaskProvider() {
+  TaskProvider(this._userProvider) {
     // Initialize with mock tasks
     _tasks = [
       Task(
@@ -13,25 +15,25 @@ class TaskProvider with ChangeNotifier {
         title: 'Complete Project Setup',
         description: 'Set up the initial project structure and dependencies',
         category: 'Work',
-        xpReward: 20,
+        xpReward: 100,
         createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        isCompleted: true,
+        isCompleted: false,
       ),
       Task(
         id: '2',
         title: 'Design UI Components',
-        description: 'Create reusable UI components for the app',
-        category: 'Work',
-        xpReward: 15,
+        description: 'Create wireframes and mockups for the main UI components',
+        category: 'Design',
+        xpReward: 150,
         createdAt: DateTime.now().subtract(const Duration(hours: 12)),
         isCompleted: false,
       ),
       Task(
         id: '3',
         title: 'Exercise',
-        description: '30 minutes of cardio',
+        description: '30 minutes of cardio and strength training',
         category: 'Health',
-        xpReward: 10,
+        xpReward: 50,
         createdAt: DateTime.now().subtract(const Duration(hours: 6)),
         isCompleted: false,
       ),
@@ -48,7 +50,7 @@ class TaskProvider with ChangeNotifier {
     try {
       // Simulate network delay
       await Future.delayed(const Duration(milliseconds: 500));
-      _tasks = [..._tasks, task];
+      _tasks.add(task);
     } catch (e) {
       rethrow;
     } finally {
@@ -68,13 +70,11 @@ class TaskProvider with ChangeNotifier {
       final taskIndex = _tasks.indexWhere((task) => task.id == taskId);
       if (taskIndex != -1) {
         final task = _tasks[taskIndex];
-        final updatedTask = task.copyWith(isCompleted: true);
-        
-        _tasks = [
-          ..._tasks.sublist(0, taskIndex),
-          updatedTask,
-          ..._tasks.sublist(taskIndex + 1),
-        ];
+        if (!task.isCompleted) {
+          _tasks[taskIndex] = task.copyWith(isCompleted: true);
+          // Add XP to user when task is completed
+          await _userProvider.addXp(task.xpReward);
+        }
       }
     } catch (e) {
       rethrow;
@@ -91,7 +91,7 @@ class TaskProvider with ChangeNotifier {
     try {
       // Simulate network delay
       await Future.delayed(const Duration(milliseconds: 500));
-      _tasks = _tasks.where((task) => task.id != taskId).toList();
+      _tasks.removeWhere((task) => task.id == taskId);
     } catch (e) {
       rethrow;
     } finally {
