@@ -5,6 +5,8 @@ class Task {
   final String category;
   final int xpReward;
   final bool isCompleted;
+  final DateTime? completedAt;
+  final DateTime? dueDate;
   final DateTime createdAt;
 
   Task({
@@ -14,8 +16,10 @@ class Task {
     required this.category,
     required this.xpReward,
     this.isCompleted = false,
-    required this.createdAt,
-  });
+    this.completedAt,
+    this.dueDate,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 
   Task copyWith({
     String? id,
@@ -24,6 +28,8 @@ class Task {
     String? category,
     int? xpReward,
     bool? isCompleted,
+    DateTime? completedAt,
+    DateTime? dueDate,
     DateTime? createdAt,
   }) {
     return Task(
@@ -33,31 +39,42 @@ class Task {
       category: category ?? this.category,
       xpReward: xpReward ?? this.xpReward,
       isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? this.completedAt,
+      dueDate: dueDate ?? this.dueDate,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'title': title,
       'description': description,
       'category': category,
       'xpReward': xpReward,
       'isCompleted': isCompleted,
+      'completedAt': completedAt?.toIso8601String(),
+      'dueDate': dueDate?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
     };
   }
 
-  factory Task.fromJson(Map<String, dynamic> json) {
+  factory Task.fromMap(Map<String, dynamic> map, String id) {
     return Task(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      category: json['category'] as String,
-      xpReward: json['xpReward'] as int,
-      isCompleted: json['isCompleted'] as bool,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      id: id,
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      category: map['category'] ?? 'Other',
+      xpReward: map['xpReward']?.toInt() ?? 0,
+      isCompleted: map['isCompleted'] ?? false,
+      completedAt: map['completedAt'] != null
+          ? DateTime.parse(map['completedAt'])
+          : null,
+      dueDate: map['dueDate'] != null
+          ? DateTime.parse(map['dueDate'])
+          : null,
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'])
+          : DateTime.now(),
     );
   }
 } 
