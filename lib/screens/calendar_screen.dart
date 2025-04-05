@@ -153,9 +153,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: TaskTile(
                           task: task,
-                          onComplete: () {
-                            Provider.of<TaskProvider>(context, listen: false)
-                                .completeTask(task.id);
+                          onComplete: () async {
+                            final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                            await taskProvider.completeTask(context, task);
                             _loadEvents(); // Reload events after completing a task
                           },
                         ),

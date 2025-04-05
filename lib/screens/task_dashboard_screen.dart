@@ -10,6 +10,7 @@ import 'stats_screen.dart';
 import 'achievements_screen.dart';
 import 'profile_screen.dart';
 import 'calendar_screen.dart';
+import '../widgets/level_indicator.dart';
 
 class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
@@ -252,10 +253,12 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: LevelProgressCard(
-                level: userProvider.level,
-                currentXp: userProvider.currentXp,
-                nextLevelXp: userProvider.nextLevelXp,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const LevelIndicator(),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
           ),
@@ -291,7 +294,10 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: TaskTile(
                                 task: task,
-                                onComplete: () => taskProvider.completeTask(task.id),
+                                onComplete: () async {
+                                  final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                                  await taskProvider.completeTask(context, task);
+                                },
                               ),
                             )).toList(),
                             const SizedBox(height: 16),
@@ -318,7 +324,10 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: TaskTile(
                                 task: task,
-                                onComplete: () => taskProvider.completeTask(task.id),
+                                onComplete: () async {
+                                  final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                                  await taskProvider.completeTask(context, task);
+                                },
                               ),
                             )).toList(),
                             const SizedBox(height: 16),
@@ -345,7 +354,10 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: TaskTile(
                                 task: task,
-                                onComplete: () => taskProvider.completeTask(task.id),
+                                onComplete: () async {
+                                  final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                                  await taskProvider.completeTask(context, task);
+                                },
                               ),
                             )).toList(),
                           ],
