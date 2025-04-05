@@ -4,7 +4,7 @@ import '../models/task.dart';
 class TaskTile extends StatelessWidget {
   final Task task;
   final VoidCallback onComplete;
-  
+
   const TaskTile({
     Key? key,
     required this.task,
@@ -16,7 +16,8 @@ class TaskTile extends StatelessWidget {
     final theme = Theme.of(context);
     
     return Dismissible(
-      key: Key(task.id),
+      key: ValueKey(task.id),
+      direction: DismissDirection.startToEnd,
       background: Container(
         decoration: BoxDecoration(
           color: theme.colorScheme.primary,
@@ -26,20 +27,31 @@ class TaskTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: const Icon(Icons.check, color: Colors.white),
       ),
-      secondaryBackground: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.error,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
+      confirmDismiss: (direction) async {
+        // Show a confirmation dialog
+        return await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Complete Task'),
+              content: const Text('Are you sure you want to mark this task as complete?'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Complete'),
+                ),
+              ],
+            );
+          },
+        );
+      },
       onDismissed: (direction) {
-        if (direction == DismissDirection.startToEnd) {
+        if (!task.isCompleted) {
           onComplete();
-        } else {
-          // Delete task
         }
       },
       child: Card(
@@ -57,7 +69,11 @@ class TaskTile extends StatelessWidget {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: onComplete,
+                  onTap: () {
+                    if (!task.isCompleted) {
+                      onComplete();
+                    }
+                  },
                   child: Container(
                     width: 28,
                     height: 28,
@@ -91,7 +107,7 @@ class TaskTile extends StatelessWidget {
                         task.title,
                         style: theme.textTheme.titleMedium?.copyWith(
                           decoration: task.isCompleted
-                              ? TextDecoration.lineThrough
+                              ? TextDecoration.lineThrough 
                               : null,
                           color: task.isCompleted
                               ? theme.colorScheme.onSurface.withOpacity(0.6)
@@ -110,7 +126,9 @@ class TaskTile extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -128,7 +146,6 @@ class TaskTile extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -145,6 +162,34 @@ class TaskTile extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (task.recurrencePattern != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.tertiaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.repeat,
+                                    size: 14,
+                                    color: theme.colorScheme.onTertiaryContainer,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    task.recurrencePattern!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onTertiaryContainer,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                     ],
