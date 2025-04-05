@@ -8,6 +8,9 @@ class Task {
   final DateTime? completedAt;
   final DateTime? dueDate;
   final DateTime createdAt;
+  final String? recurrencePattern; // 'daily', 'weekly', 'monthly', or null for no recurrence
+  final DateTime? nextOccurrence;
+  final String? parentTaskId; // ID of the original recurring task
 
   Task({
     required this.id,
@@ -18,6 +21,9 @@ class Task {
     this.isCompleted = false,
     this.completedAt,
     this.dueDate,
+    this.recurrencePattern,
+    this.nextOccurrence,
+    this.parentTaskId,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -30,6 +36,9 @@ class Task {
     bool? isCompleted,
     DateTime? completedAt,
     DateTime? dueDate,
+    String? recurrencePattern,
+    DateTime? nextOccurrence,
+    String? parentTaskId,
     DateTime? createdAt,
   }) {
     return Task(
@@ -41,6 +50,9 @@ class Task {
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: completedAt ?? this.completedAt,
       dueDate: dueDate ?? this.dueDate,
+      recurrencePattern: recurrencePattern ?? this.recurrencePattern,
+      nextOccurrence: nextOccurrence ?? this.nextOccurrence,
+      parentTaskId: parentTaskId ?? this.parentTaskId,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -55,6 +67,9 @@ class Task {
       'completedAt': completedAt?.toIso8601String(),
       'dueDate': dueDate?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
+      'recurrencePattern': recurrencePattern,
+      'nextOccurrence': nextOccurrence?.toIso8601String(),
+      'parentTaskId': parentTaskId,
     };
   }
 
@@ -75,6 +90,11 @@ class Task {
       createdAt: map['createdAt'] != null
           ? DateTime.parse(map['createdAt'])
           : DateTime.now(),
+      recurrencePattern: map['recurrencePattern'],
+      nextOccurrence: map['nextOccurrence'] != null
+          ? DateTime.parse(map['nextOccurrence'])
+          : null,
+      parentTaskId: map['parentTaskId'],
     );
   }
 } 
