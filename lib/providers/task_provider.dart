@@ -1,11 +1,22 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/task.dart';
 import 'user_provider.dart';
+import '../widgets/level_up_overlay.dart';
 
 class TaskProvider with ChangeNotifier {
   final UserProvider _userProvider;
   List<Task> _tasks = [];
   bool _isLoading = false;
+
+  int _totalXP = 0;
+  int _currentLevel = 1;
+  static const int _xpPerLevel = 100;
+
+  int get totalXP => _totalXP;
+  int get currentLevel => (_totalXP ~/ _xpPerLevel) + 1;
+  int get xpForNextLevel => currentLevel * _xpPerLevel;
+  int get xpInCurrentLevel => _totalXP % _xpPerLevel;
 
   TaskProvider(this._userProvider) {
     // Initialize with mock tasks
@@ -90,6 +101,26 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateTask(Task updatedTask) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Simulate network delay
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      final taskIndex = _tasks.indexWhere((task) => task.id == updatedTask.id);
+      if (taskIndex != -1) {
+        _tasks[taskIndex] = updatedTask;
+      }
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   DateTime _calculateNextOccurrence(Task task) {
     if (task.recurrencePattern == null || task.dueDate == null) {
       return task.dueDate!;
@@ -100,100 +131,87 @@ class TaskProvider with ChangeNotifier {
 
     switch (task.recurrencePattern) {
       case 'daily':
-        // Set to same time tomorrow
-        nextDate = DateTime(
-          now.year,
-          now.month,
-          now.day + 1,
-          task.dueDate!.hour,
-          task.dueDate!.minute,
-        );
+        nextDate = task.dueDate!.add(const Duration(days: 1));
         break;
       case 'weekly':
-        // Calculate days until next occurrence of the same weekday
-        int daysUntilNext = (task.dueDate!.weekday - now.weekday + 7) % 7;
-        if (daysUntilNext == 0) daysUntilNext = 7; // If same day, move to next week
+        nextDate = task.dueDate!.add(const Duration(days: 7));
+        break;
+      case 'monthly':
         nextDate = DateTime(
-          now.year,
-          now.month,
-          now.day + daysUntilNext,
+          task.dueDate!.year + (task.dueDate!.month == 12 ? 1 : 0),
+          task.dueDate!.month == 12 ? 1 : task.dueDate!.month + 1,
+          task.dueDate!.day,
           task.dueDate!.hour,
           task.dueDate!.minute,
         );
-        break;
-      case 'monthly':
-        // Set to same day next month
-        if (now.month == 12) {
-          nextDate = DateTime(
-            now.year + 1,
-            1,
-            task.dueDate!.day,
-            task.dueDate!.hour,
-            task.dueDate!.minute,
-          );
-        } else {
-          nextDate = DateTime(
-            now.year,
-            now.month + 1,
-            task.dueDate!.day,
-            task.dueDate!.hour,
-            task.dueDate!.minute,
-          );
-        }
         break;
       default:
         nextDate = task.dueDate!;
     }
 
+    while (nextDate.isBefore(now)) {
+      switch (task.recurrencePattern) {
+        case 'daily':
+          nextDate = nextDate.add(const Duration(days: 1));
+          break;
+        case 'weekly':
+          nextDate = nextDate.add(const Duration(days: 7));
+          break;
+        case 'monthly':
+          nextDate = DateTime(
+            nextDate.year + (nextDate.month == 12 ? 1 : 0),
+            nextDate.month == 12 ? 1 : nextDate.month + 1,
+            nextDate.day,
+            nextDate.hour,
+            nextDate.minute,
+          );
+          break;
+      }
+    }
+
     return nextDate;
   }
 
-  Future<void> completeTask(String taskId) async {
-    _isLoading = true;
-    notifyListeners();
+  void _checkLevelUp(BuildContext context) {
+    final previousLevel = _currentLevel;
+    _currentLevel = currentLevel;
+    if (_currentLevel > previousLevel) {
+      _showLevelUpOverlay(context);
+    }
+  }
 
-    try {
-      final taskIndex = _tasks.indexWhere((task) => task.id == taskId);
-      if (taskIndex != -1) {
-        final task = _tasks[taskIndex];
-        
-        // Only proceed if the task exists and is not already completed
-        if (!task.isCompleted) {
-          // Remove the task from the list first
-          _tasks.removeAt(taskIndex);
-          
-          // Create next occurrence for recurring tasks
-          if (task.recurrencePattern != null) {
-            final nextOccurrence = _calculateNextOccurrence(task);
-            final newTask = Task(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              title: task.title,
-              description: task.description,
-              category: task.category,
-              xpReward: task.xpReward,
-              dueDate: nextOccurrence,
-              recurrencePattern: task.recurrencePattern,
-              nextOccurrence: nextOccurrence,
-              parentTaskId: task.parentTaskId ?? task.id,
-            );
-            _tasks.add(newTask);
-          }
-          
-          // Add the completed task back to the list
-          _tasks.add(task.copyWith(
-            isCompleted: true,
-            completedAt: DateTime.now(),
-          ));
-          
-          // Add XP to user when task is completed
-          await _userProvider.addXp(task.xpReward);
-        }
-      }
-    } catch (e) {
-      rethrow;
-    } finally {
-      _isLoading = false;
+  void _showLevelUpOverlay(BuildContext context) {
+    OverlayEntry? overlay;
+    overlay = OverlayEntry(
+      builder: (context) => LevelUpOverlay(
+        newLevel: _currentLevel,
+        totalXP: _totalXP,
+        onAnimationComplete: () {
+          overlay?.remove();
+        },
+      ),
+    );
+
+    Overlay.of(context).insert(overlay);
+  }
+
+  Future<void> completeTask(BuildContext context, Task task) async {
+    final taskIndex = _tasks.indexWhere((t) => t.id == task.id);
+    if (taskIndex != -1) {
+      _tasks[taskIndex] = task.copyWith(
+        isCompleted: true,
+        completedAt: DateTime.now(),
+      );
+      _totalXP += task.xpReward;
+      
+      // Check for level up before notifying listeners
+      _checkLevelUp(context);
       notifyListeners();
+      
+      // Handle recurring tasks
+      if (task.recurrencePattern != null) {
+        _createNextRecurrence(task);
+      }
     }
   }
 
@@ -225,6 +243,25 @@ class TaskProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void _createNextRecurrence(Task task) {
+    if (task.recurrencePattern != null && task.dueDate != null) {
+      final nextDate = _calculateNextOccurrence(task);
+      final newTask = Task(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: task.title,
+        description: task.description,
+        category: task.category,
+        xpReward: task.xpReward,
+        dueDate: nextDate,
+        recurrencePattern: task.recurrencePattern,
+        createdAt: DateTime.now(),
+        isCompleted: false,
+      );
+      _tasks.add(newTask);
       notifyListeners();
     }
   }
