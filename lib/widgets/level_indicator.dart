@@ -5,8 +5,6 @@ import '../providers/task_provider.dart';
 class LevelIndicator extends StatelessWidget {
   const LevelIndicator({Key? key}) : super(key: key);
 
-  static const int _xpPerLevel = 100;
-
   @override
   Widget build(BuildContext context) {
     return Consumer<TaskProvider>(
@@ -14,7 +12,7 @@ class LevelIndicator extends StatelessWidget {
         final currentXP = taskProvider.xpInCurrentLevel;
         final currentLevel = taskProvider.currentLevel;
         final xpForNextLevel = taskProvider.xpForNextLevel;
-        final progress = currentXP / _xpPerLevel;
+        final progress = (currentXP / xpForNextLevel).clamp(0.0, 1.0);
 
         return Card(
           elevation: 2,
@@ -79,7 +77,7 @@ class LevelIndicator extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '$currentXP / ${_xpPerLevel} XP',
+                            '$currentXP / $xpForNextLevel XP',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                             ),

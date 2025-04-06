@@ -33,6 +33,32 @@ class UserProvider with ChangeNotifier {
     return _user!.level * 100;
   }
 
+  Future<void> addXP(int amount) async {
+    _currentXp += amount;
+    
+    // Calculate new level based on total XP
+    // Each level requires 100 XP more than the previous level
+    int newLevel = _level;
+    int xpNeededForNextLevel = _level * 100;
+    
+    while (_currentXp >= xpNeededForNextLevel) {
+      newLevel++;
+      xpNeededForNextLevel = newLevel * 100;
+    }
+
+    _level = newLevel;
+    _nextLevelXp = xpNeededForNextLevel;
+    
+    if (_user != null) {
+      _user = _user!.copyWith(
+        level: _level,
+        currentXp: _currentXp,
+      );
+    }
+    
+    notifyListeners();
+  }
+
   Future<void> signIn(String email, String password) async {
     _isLoading = true;
     notifyListeners();
@@ -42,12 +68,28 @@ class UserProvider with ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 1000));
       
       // Mock sign in - in a real app, this would validate credentials
+      _user = User(
+        id: 'mock-user-id',
+        email: email,
+        displayName: 'Demo User',
+        createdAt: DateTime.now(),
+        lastLoginAt: DateTime.now(),
+        level: _level,
+        currentXp: _currentXp,
+        achievements: [],
+      );
     } catch (e) {
       rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> signOut() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    _user = null;
+    notifyListeners();
   }
 
   Future<void> signUp(String email, String password, String displayName) async {
@@ -74,29 +116,6 @@ class UserProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  Future<void> signOut() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    _user = null;
-    notifyListeners();
-  }
-
-  Future<void> addXp(int amount) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    _currentXp += amount;
-    
-    // Check for level up
-    while (_currentXp >= _nextLevelXp) {
-      _currentXp -= _nextLevelXp;
-      _level++;
-      // Increase XP required for next level (using a simple scaling formula)
-      _nextLevelXp = (100 * (1.5 * (_level - 1))).round();
-    }
-    
-    notifyListeners();
   }
 
   Future<void> unlockAchievement(String achievementId) async {

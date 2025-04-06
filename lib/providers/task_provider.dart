@@ -11,12 +11,19 @@ class TaskProvider with ChangeNotifier {
 
   int _totalXP = 0;
   int _currentLevel = 1;
-  static const int _xpPerLevel = 100;
+  static const int _baseXPPerLevel = 100;
 
   int get totalXP => _totalXP;
-  int get currentLevel => (_totalXP ~/ _xpPerLevel) + 1;
-  int get xpForNextLevel => currentLevel * _xpPerLevel;
-  int get xpInCurrentLevel => _totalXP % _xpPerLevel;
+  int get currentLevel => _currentLevel;
+  
+  // XP needed for the next level
+  int get xpForNextLevel => _baseXPPerLevel * _currentLevel;
+  
+  // XP in the current level (progress towards next level)
+  int get xpInCurrentLevel {
+    final previousLevelTotalXP = _baseXPPerLevel * (_currentLevel - 1);
+    return _totalXP - previousLevelTotalXP;
+  }
 
   TaskProvider(this._userProvider) {
     // Initialize with mock tasks
@@ -172,19 +179,24 @@ class TaskProvider with ChangeNotifier {
     return nextDate;
   }
 
-  void _checkLevelUp(BuildContext context) {
+  void _checkLevelUp(BuildContext context, int xpReward) {
     final previousLevel = _currentLevel;
-    _currentLevel = currentLevel;
+    
+    // Calculate new level based on total XP
+    while (_totalXP >= _baseXPPerLevel * _currentLevel) {
+      _currentLevel++;
+    }
+    
     if (_currentLevel > previousLevel) {
-      _showLevelUpOverlay(context);
+      _showLevelUpOverlay(context, _currentLevel);
     }
   }
 
-  void _showLevelUpOverlay(BuildContext context) {
+  void _showLevelUpOverlay(BuildContext context, int newLevel) {
     OverlayEntry? overlay;
     overlay = OverlayEntry(
       builder: (context) => LevelUpOverlay(
-        newLevel: _currentLevel,
+        newLevel: newLevel,
         totalXP: _totalXP,
         onAnimationComplete: () {
           overlay?.remove();
@@ -198,14 +210,14 @@ class TaskProvider with ChangeNotifier {
   Future<void> completeTask(BuildContext context, Task task) async {
     final taskIndex = _tasks.indexWhere((t) => t.id == task.id);
     if (taskIndex != -1) {
+      // Add XP through UserProvider
+      await _userProvider.addXP(task.xpReward);
+      
       _tasks[taskIndex] = task.copyWith(
         isCompleted: true,
         completedAt: DateTime.now(),
       );
-      _totalXP += task.xpReward;
       
-      // Check for level up before notifying listeners
-      _checkLevelUp(context);
       notifyListeners();
       
       // Handle recurring tasks
