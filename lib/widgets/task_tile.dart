@@ -23,10 +23,12 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
   late Animation<double> _scaleAnimation;
   late Animation<Color?> _colorAnimation;
   bool _isCompleting = false;
+  bool _isCompleted = false;
 
   @override
   void initState() {
     super.initState();
+    _isCompleted = widget.task.isCompleted;
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -55,8 +57,11 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
   }
 
   Future<void> _handleComplete() async {
-    if (!widget.task.isCompleted && !_isCompleting) {
-      setState(() => _isCompleting = true);
+    if (!_isCompleted && !_isCompleting) {
+      setState(() {
+        _isCompleting = true;
+        _isCompleted = true;
+      });
       
       // Start the animation
       await _animationController.forward();
@@ -68,7 +73,8 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
       if (mounted) {
         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
         await taskProvider.completeTask(context, widget.task);
-        widget.onComplete();
+        // Don't call onComplete here as it would cause the task to be completed twice
+        // widget.onComplete();
       }
       
       // Reset the animation
@@ -96,8 +102,11 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
         child: const Icon(Icons.check, color: Colors.white),
       ),
       confirmDismiss: (direction) async {
-        await _handleComplete();
-        return true;
+        if (!_isCompleted && !_isCompleting) {
+          await _handleComplete();
+          return true;
+        }
+        return false;
       },
       onDismissed: (direction) {
         // Completion is handled in confirmDismiss

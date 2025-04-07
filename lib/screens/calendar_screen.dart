@@ -25,77 +25,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _loadEvents();
   }
 
-  DateTime _calculateNextOccurrence(Task task, DateTime startDate) {
-    if (task.recurrencePattern == null || task.dueDate == null) {
-      return task.dueDate!;
-    }
-
-    DateTime nextDate = task.dueDate!;
-    while (nextDate.isBefore(startDate)) {
-      switch (task.recurrencePattern) {
-        case 'daily':
-          nextDate = nextDate.add(const Duration(days: 1));
-          break;
-        case 'weekly':
-          nextDate = nextDate.add(const Duration(days: 7));
-          break;
-        case 'monthly':
-          nextDate = DateTime(
-            nextDate.year + (nextDate.month == 12 ? 1 : 0),
-            nextDate.month == 12 ? 1 : nextDate.month + 1,
-            nextDate.day,
-            nextDate.hour,
-            nextDate.minute,
-          );
-          break;
-      }
-    }
-    return nextDate;
-  }
-
   void _loadEvents() {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final tasks = taskProvider.tasks;
     
     _events = {};
-    final now = DateTime.now();
-    final endDate = now.add(const Duration(days: 365)); // Show events for the next year
 
     for (var task in tasks) {
       // Skip completed tasks
       if (task.isCompleted) continue;
       
       if (task.dueDate != null) {
-        DateTime currentDate = task.dueDate!;
+        final date = DateTime(
+          task.dueDate!.year,
+          task.dueDate!.month,
+          task.dueDate!.day,
+        );
         
-        // Only add the initial occurrence if it's not in the past
-        if (!currentDate.isBefore(now)) {
-          final date = DateTime(
-            currentDate.year,
-            currentDate.month,
-            currentDate.day,
-          );
-          if (_events[date] == null) _events[date] = [];
-          _events[date]!.add(task);
-        }
-
-        // If it's a recurring task, add future occurrences
-        if (task.recurrencePattern != null) {
-          while (currentDate.isBefore(endDate)) {
-            currentDate = _calculateNextOccurrence(task, currentDate.add(const Duration(days: 1)));
-            if (currentDate.isBefore(endDate)) {
-              final futureDate = DateTime(
-                currentDate.year,
-                currentDate.month,
-                currentDate.day,
-              );
-              if (_events[futureDate] == null) _events[futureDate] = [];
-              _events[futureDate]!.add(task);
-            }
-          }
-        }
+        if (_events[date] == null) _events[date] = [];
+        _events[date]!.add(task);
       }
     }
+    
+    setState(() {});
   }
 
   List<Task> _getEventsForDay(DateTime day) {
@@ -154,8 +106,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         child: TaskTile(
                           task: task,
                           onComplete: () async {
-                            final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                            await taskProvider.completeTask(context, task);
+                            // Don't call completeTask here as it's already called in the TaskTile
+                            // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                            // await taskProvider.completeTask(context, task);
                             _loadEvents(); // Reload events after completing a task
                           },
                         ),
