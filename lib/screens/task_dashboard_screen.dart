@@ -256,7 +256,15 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const LevelIndicator(),
+                  Consumer<UserProvider>(
+                    builder: (context, userProvider, child) {
+                      return LevelProgressCard(
+                        level: userProvider.level,
+                        currentXp: userProvider.currentXp,
+                        nextLevelXp: userProvider.nextLevelXp,
+                      );
+                    },
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -295,8 +303,9 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                               child: TaskTile(
                                 task: task,
                                 onComplete: () async {
-                                  final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                                  await taskProvider.completeTask(context, task);
+                                  // Don't call completeTask here as it's already called in the TaskTile
+                                  // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                                  // await taskProvider.completeTask(context, task);
                                 },
                               ),
                             )).toList(),
@@ -325,8 +334,9 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                               child: TaskTile(
                                 task: task,
                                 onComplete: () async {
-                                  final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                                  await taskProvider.completeTask(context, task);
+                                  // Don't call completeTask here as it's already called in the TaskTile
+                                  // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                                  // await taskProvider.completeTask(context, task);
                                 },
                               ),
                             )).toList(),
@@ -342,12 +352,67 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (futureTasks.isNotEmpty) ...[
-                            Text(
-                              'Upcoming Tasks',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Future Tasks',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                TextButton.icon(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Tasks for Upcoming Week'),
+                                        content: SizedBox(
+                                          width: double.maxFinite,
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              ...taskProvider.tasksForUpcomingWeek.map((task) => Padding(
+                                                padding: const EdgeInsets.only(bottom: 8.0),
+                                                child: TaskTile(
+                                                  task: task,
+                                                  onComplete: () async {
+                                                    // Don't call completeTask here as it's already called in the TaskTile
+                                                    // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                                                    // await taskProvider.completeTask(context, task);
+                                                  },
+                                                ),
+                                              )).toList(),
+                                              if (taskProvider.tasksForUpcomingWeek.isEmpty)
+                                                const Padding(
+                                                  padding: EdgeInsets.all(16.0),
+                                                  child: Text('No tasks scheduled for the upcoming week'),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context),
+                                            child: const Text('Close'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.calendar_today, size: 18),
+                                  label: const Text('View This Week'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: const Color(0xFFFF8A43),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: const BorderSide(color: Color(0xFFFF8A43), width: 1),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 8),
                             ...futureTasks.map((task) => Padding(
@@ -355,8 +420,9 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                               child: TaskTile(
                                 task: task,
                                 onComplete: () async {
-                                  final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                                  await taskProvider.completeTask(context, task);
+                                  // Don't call completeTask here as it's already called in the TaskTile
+                                  // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                                  // await taskProvider.completeTask(context, task);
                                 },
                               ),
                             )).toList(),
@@ -380,11 +446,13 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: FloatingActionButton.small(
+                heroTag: 'scrollToTop',
                 onPressed: _scrollToTop,
                 child: const Icon(Icons.arrow_upward),
               ),
             ),
           FloatingActionButton(
+            heroTag: 'addTask',
             onPressed: () {
               _showAddTaskDialog(context, taskProvider);
             },

@@ -86,6 +86,7 @@ class UserProvider with ChangeNotifier {
     // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
     
+    // Add the XP amount
     _currentXp += amount;
     
     // Check for level up
@@ -96,6 +97,15 @@ class UserProvider with ChangeNotifier {
       _nextLevelXp = (100 * (1.5 * (_level - 1))).round();
     }
     
+    // Update the user model if it exists
+    if (_user != null) {
+      _user = _user!.copyWith(
+        level: _level,
+        currentXp: _currentXp,
+      );
+    }
+    
+    // Notify listeners to update the UI
     notifyListeners();
   }
 

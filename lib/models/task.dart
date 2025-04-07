@@ -97,4 +97,34 @@ class Task {
       parentTaskId: map['parentTaskId'],
     );
   }
+
+  DateTime calculateNextOccurrence([DateTime? startDate]) {
+    if (recurrencePattern == null || dueDate == null) {
+      return dueDate!;
+    }
+
+    DateTime nextDate = dueDate!;
+    final baseDate = startDate ?? DateTime.now();
+    
+    while (nextDate.isBefore(baseDate)) {
+      switch (recurrencePattern) {
+        case 'daily':
+          nextDate = nextDate.add(const Duration(days: 1));
+          break;
+        case 'weekly':
+          nextDate = nextDate.add(const Duration(days: 7));
+          break;
+        case 'monthly':
+          nextDate = DateTime(
+            nextDate.year + (nextDate.month == 12 ? 1 : 0),
+            nextDate.month == 12 ? 1 : nextDate.month + 1,
+            nextDate.day,
+            nextDate.hour,
+            nextDate.minute,
+          );
+          break;
+      }
+    }
+    return nextDate;
+  }
 } 

@@ -44,7 +44,6 @@ class TaskTile extends StatelessWidget {
           onChanged: (bool? value) {
             if (value == true) {
               context.read<TaskProvider>().completeTask(task.id);
-              context.read<UserProvider>().addXP(task.xpReward);
             }
           },
         ),
