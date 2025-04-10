@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/task_provider.dart';
+import '../providers/skill_provider.dart';
 import '../widgets/level_progress_card.dart';
 import '../widgets/task_tile.dart';
 import '../widgets/empty_tasks_placeholder.dart';
 import '../models/task.dart';
+import '../models/skill.dart';
 import 'stats_screen.dart';
 import 'achievements_screen.dart';
 import 'profile_screen.dart';
 import 'calendar_screen.dart';
+import 'skills_screen.dart';
+import 'skill_details_screen.dart';
 import '../widgets/level_indicator.dart';
 
 class TaskDashboardScreen extends StatefulWidget {
@@ -235,17 +239,18 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
         controller: _scrollController,
         slivers: [
           SliverAppBar(
+            title: Text(
+              'Daily XP',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             floating: true,
-            snap: true,
-            title: const Text('Daily XP'),
             actions: [
               IconButton(
-                icon: const Icon(Icons.person),
+                icon: const Icon(Icons.notifications_outlined),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                  );
+                  // TODO: Implement notifications
                 },
               ),
             ],
@@ -256,12 +261,150 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Level Progress Card
                   Consumer<UserProvider>(
                     builder: (context, userProvider, child) {
                       return LevelProgressCard(
                         level: userProvider.level,
                         currentXp: userProvider.currentXp,
                         nextLevelXp: userProvider.nextLevelXp,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Skills Progress Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Skills Progress',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SkillsScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Skill'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Consumer<SkillProvider>(
+                    builder: (context, skillProvider, child) {
+                      final skills = skillProvider.getSkillsList();
+                      return Column(
+                        children: skills.map((skill) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Card(
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: theme.colorScheme.outline.withOpacity(0.2),
+                              ),
+                            ),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SkillDetailsScreen(skill: skill),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: skill.color.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            _getIconData(skill.icon),
+                                            color: skill.color,
+                                            size: 24,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                skill.name,
+                                                style: theme.textTheme.titleMedium?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Level ${skill.level}',
+                                                style: theme.textTheme.bodyMedium?.copyWith(
+                                                  color: theme.colorScheme.onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: skill.color.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '${skill.currentXp}/${skill.xpToNextLevel} XP',
+                                            style: TextStyle(
+                                              color: skill.color,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: LinearProgressIndicator(
+                                        value: skill.progressPercentage / 100,
+                                        backgroundColor: skill.color.withOpacity(0.1),
+                                        valueColor: AlwaysStoppedAnimation<Color>(skill.color),
+                                        minHeight: 6,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      skill.description,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        )).toList(),
                       );
                     },
                   ),
@@ -471,12 +614,16 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
     DateTime? selectedDate;
     TimeOfDay? selectedTime;
     String? selectedRecurrence;
+    String? selectedSkillId;
     
     showDialog(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final skillProvider = Provider.of<SkillProvider>(context, listen: false);
+            final skills = skillProvider.getSkillsList();
+
             return AlertDialog(
               title: const Text('Add New Task'),
               shape: RoundedRectangleBorder(
@@ -646,12 +793,20 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),
+                            trackHeight: 4.0,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 8.0,
+                              elevation: 2.0,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 16.0,
+                            ),
                           ),
                           child: Slider(
                             value: xpReward.toDouble(),
                             min: 10,
                             max: 200,
-                            divisions: 19,
+                            divisions: 190,
                             label: '$xpReward XP',
                             onChanged: (value) {
                               setDialogState(() {
@@ -665,19 +820,141 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('10 XP',
+                              Text(
+                                '10 XP',
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 12,
                                 ),
                               ),
-                              Text('200 XP',
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF8A43).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '$xpReward XP',
+                                  style: const TextStyle(
+                                    color: Color(0xFFFF8A43),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '200 XP',
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 12,
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Skill Selection
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Related Skill',
+                          style: TextStyle(
+                            color: Colors.grey[800],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedSkillId,
+                              isExpanded: true,
+                              hint: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  'Select a skill (optional)',
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              iconSize: 24,
+                              style: TextStyle(
+                                color: Colors.grey[800],
+                                fontSize: 14,
+                              ),
+                              items: [
+                                DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    child: Text(
+                                      'None',
+                                      style: TextStyle(
+                                        color: selectedSkillId == null 
+                                            ? const Color(0xFFFF8A43)
+                                            : Colors.grey[800],
+                                        fontWeight: selectedSkillId == null 
+                                            ? FontWeight.w600 
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                ...skills.map((skill) => DropdownMenuItem<String>(
+                                  value: skill.id,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: skill.color.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Icon(
+                                            _getIconData(skill.icon),
+                                            color: skill.color,
+                                            size: 18,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            skill.name,
+                                            style: TextStyle(
+                                              color: selectedSkillId == skill.id
+                                                  ? const Color(0xFFFF8A43)
+                                                  : Colors.grey[800],
+                                              fontWeight: selectedSkillId == skill.id
+                                                  ? FontWeight.w600
+                                                  : FontWeight.normal,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )),
+                              ],
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedSkillId = value;
+                                });
+                              },
+                            ),
                           ),
                         ),
                       ],
@@ -894,28 +1171,28 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (titleController.text.isNotEmpty) {
-                      DateTime? dueDate;
-                      if (selectedDate != null && selectedTime != null) {
-                        dueDate = DateTime(
-                          selectedDate!.year,
-                          selectedDate!.month,
-                          selectedDate!.day,
-                          selectedTime!.hour,
-                          selectedTime!.minute,
-                        );
-                      }
-                      final newTask = Task(
+                    final title = titleController.text.trim();
+                    if (title.isNotEmpty) {
+                      final task = Task(
                         id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        title: titleController.text,
-                        description: descriptionController.text,
+                        title: title,
+                        description: descriptionController.text.trim(),
                         category: selectedCategory,
                         xpReward: xpReward,
-                        dueDate: dueDate,
+                        dueDate: selectedDate != null && selectedTime != null
+                            ? DateTime(
+                                selectedDate!.year,
+                                selectedDate!.month,
+                                selectedDate!.day,
+                                selectedTime!.hour,
+                                selectedTime!.minute,
+                              )
+                            : null,
                         recurrencePattern: selectedRecurrence,
-                        nextOccurrence: dueDate,
+                        skillId: selectedSkillId,
                       );
-                      taskProvider.addTask(newTask);
+
+                      taskProvider.addTask(task);
                       Navigator.pop(context);
                     }
                   },
@@ -941,5 +1218,22 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
         );
       },
     );
+  }
+
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'work':
+        return Icons.work;
+      case 'school':
+        return Icons.school;
+      case 'fitness_center':
+        return Icons.fitness_center;
+      case 'code':
+        return Icons.code;
+      case 'music_note':
+        return Icons.music_note;
+      default:
+        return Icons.star;
+    }
   }
 } 
