@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class Task {
   final String id;
   final String title;
@@ -61,46 +63,41 @@ class Task {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'title': title,
       'description': description,
       'category': category,
       'xpReward': xpReward,
-      'isCompleted': isCompleted,
-      'completedAt': completedAt?.toIso8601String(),
-      'dueDate': dueDate?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
+      'isCompleted': isCompleted,
+      'dueDate': dueDate?.toIso8601String(),
       'recurrencePattern': recurrencePattern,
-      'nextOccurrence': nextOccurrence?.toIso8601String(),
       'parentTaskId': parentTaskId,
       'skillId': skillId,
     };
   }
 
-  factory Task.fromMap(Map<String, dynamic> map, String id) {
+  factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
-      id: id,
-      title: map['title'] ?? '',
-      description: map['description'] ?? '',
-      category: map['category'] ?? 'Other',
-      xpReward: map['xpReward']?.toInt() ?? 0,
-      isCompleted: map['isCompleted'] ?? false,
-      completedAt: map['completedAt'] != null
-          ? DateTime.parse(map['completedAt'])
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      category: json['category'] as String,
+      xpReward: json['xpReward'] as int,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      completedAt: json['completedAt'] != null 
+          ? DateTime.parse(json['completedAt'] as String)
           : null,
-      dueDate: map['dueDate'] != null
-          ? DateTime.parse(map['dueDate'])
+      isCompleted: json['isCompleted'] as bool? ?? false,
+      dueDate: json['dueDate'] != null 
+          ? DateTime.parse(json['dueDate'] as String)
           : null,
-      createdAt: map['createdAt'] != null
-          ? DateTime.parse(map['createdAt'])
-          : DateTime.now(),
-      recurrencePattern: map['recurrencePattern'],
-      nextOccurrence: map['nextOccurrence'] != null
-          ? DateTime.parse(map['nextOccurrence'])
-          : null,
-      parentTaskId: map['parentTaskId'],
-      skillId: map['skillId'],
+      recurrencePattern: json['recurrencePattern'] as String?,
+      parentTaskId: json['parentTaskId'] as String?,
+      skillId: json['skillId'] as String?,
     );
   }
 

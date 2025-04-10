@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'skill.dart';
+import 'user_rank.dart';
 
 class User {
   final String id;
@@ -11,6 +12,7 @@ class User {
   final DateTime lastLoginAt;
   final int level;
   final int currentXp;
+  final String rank;
 
   User({
     required this.id,
@@ -22,7 +24,8 @@ class User {
     required this.lastLoginAt,
     this.level = 1,
     this.currentXp = 0,
-  });
+    String? rank,
+  }) : rank = rank ?? UserRank.getRankForLevel(level).name;
 
   User copyWith({
     String? id,
@@ -34,6 +37,7 @@ class User {
     DateTime? lastLoginAt,
     int? level,
     int? currentXp,
+    String? rank,
   }) {
     return User(
       id: id ?? this.id,
@@ -45,6 +49,7 @@ class User {
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       level: level ?? this.level,
       currentXp: currentXp ?? this.currentXp,
+      rank: rank ?? UserRank.getRankForLevel(level ?? this.level).name,
     );
   }
 
@@ -59,6 +64,7 @@ class User {
       'lastLoginAt': lastLoginAt.toIso8601String(),
       'level': level,
       'currentXp': currentXp,
+      'rank': rank,
     };
   }
 
@@ -75,6 +81,7 @@ class User {
       lastLoginAt: DateTime.parse(json['lastLoginAt'] as String),
       level: json['level'] as int,
       currentXp: json['currentXp'] as int,
+      rank: json['rank'] as String?,
     );
   }
 } 

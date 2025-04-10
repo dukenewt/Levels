@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/user.dart';
+import '../models/user_rank.dart';
 
 class UserProvider with ChangeNotifier {
   User? _user;
@@ -16,10 +17,18 @@ class UserProvider with ChangeNotifier {
       displayName: 'Demo User',
       createdAt: DateTime.now(),
       lastLoginAt: DateTime.now(),
-      level: 1,
-      currentXp: 0,
+      level: _level,
+      currentXp: _currentXp,
       achievements: [],
     );
+    _initializeRank();
+  }
+
+  void _initializeRank() {
+    if (_user != null) {
+      final rank = UserRank.getRankForLevel(_level);
+      _user = _user!.copyWith(rank: rank.name);
+    }
   }
 
   User? get user => _user;
@@ -27,6 +36,14 @@ class UserProvider with ChangeNotifier {
   int get level => _level;
   int get currentXp => _currentXp;
   int get nextLevelXp => _nextLevelXp;
+  
+  UserRank get currentRank => UserRank.getRankForLevel(_level);
+  UserRank? get nextRank => UserRank.getNextRank(_level);
+  int get xpToNextRank {
+    final nextRank = UserRank.getNextRank(_level);
+    if (nextRank == null) return 0;
+    return nextRank.requiredLevel - _level;
+  }
 
   int getNextLevelThreshold() {
     if (_user == null) return 100;
@@ -64,10 +81,11 @@ class UserProvider with ChangeNotifier {
         displayName: displayName,
         createdAt: DateTime.now(),
         lastLoginAt: DateTime.now(),
-        level: 1,
-        currentXp: 0,
+        level: _level,
+        currentXp: _currentXp,
         achievements: [],
       );
+      _initializeRank();
     } catch (e) {
       rethrow;
     } finally {
@@ -83,11 +101,12 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<void> addXp(int amount) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    debugPrint('UserProvider.addXp called with amount: $amount');
+    debugPrint('Current XP before update: $_currentXp');
     
     // Add the XP amount
     _currentXp += amount;
+    debugPrint('New XP after adding: $_currentXp');
     
     // Check for level up
     while (_currentXp >= _nextLevelXp) {
@@ -95,16 +114,20 @@ class UserProvider with ChangeNotifier {
       _level++;
       // Increase XP required for next level (using a simple scaling formula)
       _nextLevelXp = (100 * (1.5 * (_level - 1))).round();
+      debugPrint('Leveled up! New level: $_level, XP reset to: $_currentXp, Next level at: $_nextLevelXp');
     }
     
     // Update the user model if it exists
     if (_user != null) {
+      final newRank = UserRank.getRankForLevel(_level);
       _user = _user!.copyWith(
         level: _level,
         currentXp: _currentXp,
+        rank: newRank.name,
       );
     }
     
+    debugPrint('Notifying listeners of XP update');
     // Notify listeners to update the UI
     notifyListeners();
   }

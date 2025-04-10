@@ -4,7 +4,7 @@ import '../models/skill.dart';
 import '../providers/task_provider.dart';
 import '../widgets/task_tile.dart';
 
-class SkillDetailsScreen extends StatelessWidget {
+class SkillDetailsScreen extends StatefulWidget {
   final Skill skill;
 
   const SkillDetailsScreen({
@@ -13,12 +13,17 @@ class SkillDetailsScreen extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<SkillDetailsScreen> createState() => _SkillDetailsScreenState();
+}
+
+class _SkillDetailsScreenState extends State<SkillDetailsScreen> {
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final taskProvider = Provider.of<TaskProvider>(context);
 
     // Get tasks related to this skill
-    final relatedTasks = taskProvider.tasks.where((task) => task.skillId == skill.id).toList();
+    final relatedTasks = taskProvider.tasks.where((task) => task.skillId == widget.skill.id).toList();
     final activeTasks = relatedTasks.where((task) => !task.isCompleted).toList();
     final completedTasks = relatedTasks.where((task) => task.isCompleted).toList();
     final upcomingTasks = relatedTasks
@@ -33,17 +38,17 @@ class SkillDetailsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: skill.color.withOpacity(0.1),
+                color: widget.skill.color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                _getIconData(skill.icon),
-                color: skill.color,
+                _getIconData(widget.skill.icon),
+                color: widget.skill.color,
                 size: 24,
               ),
             ),
             const SizedBox(width: 12),
-            Text(skill.name),
+            Text(widget.skill.name),
           ],
         ),
       ),
@@ -71,13 +76,13 @@ class SkillDetailsScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Level ${skill.level}',
+                                'Level ${widget.skill.level}',
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
-                                skill.description,
+                                widget.skill.description,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: Colors.grey[600],
                                 ),
@@ -94,13 +99,13 @@ class SkillDetailsScreen extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: skill.color.withOpacity(0.1),
+                            color: widget.skill.color.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '${skill.currentXp}/${skill.xpToNextLevel} XP',
+                            '${widget.skill.currentXp}/${widget.skill.xpToNextLevel} XP',
                             style: TextStyle(
-                              color: skill.color,
+                              color: widget.skill.color,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -111,9 +116,9 @@ class SkillDetailsScreen extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: skill.progressPercentage / 100,
-                        backgroundColor: skill.color.withOpacity(0.1),
-                        valueColor: AlwaysStoppedAnimation<Color>(skill.color),
+                        value: widget.skill.progressPercentage / 100,
+                        backgroundColor: widget.skill.color.withOpacity(0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(widget.skill.color),
                         minHeight: 8,
                       ),
                     ),
@@ -135,8 +140,11 @@ class SkillDetailsScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TaskTile(
                   task: task,
-                  onComplete: () async {
-                    await taskProvider.completeTask(context, task);
+                  onDismissed: (direction) async {
+                    await taskProvider.completeTask(task.id);
+                    if (mounted) {
+                      setState(() {});
+                    }
                   },
                 ),
               )),
@@ -155,8 +163,11 @@ class SkillDetailsScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TaskTile(
                   task: task,
-                  onComplete: () async {
-                    await taskProvider.completeTask(context, task);
+                  onDismissed: (direction) async {
+                    await taskProvider.completeTask(task.id);
+                    if (mounted) {
+                      setState(() {});
+                    }
                   },
                 ),
               )),
@@ -175,8 +186,11 @@ class SkillDetailsScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TaskTile(
                   task: task,
-                  onComplete: () async {
-                    await taskProvider.completeTask(context, task);
+                  onDismissed: (direction) async {
+                    await taskProvider.completeTask(task.id);
+                    if (mounted) {
+                      setState(() {});
+                    }
                   },
                 ),
               )),

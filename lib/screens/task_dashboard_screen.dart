@@ -15,6 +15,8 @@ import 'calendar_screen.dart';
 import 'skills_screen.dart';
 import 'skill_details_screen.dart';
 import '../widgets/level_indicator.dart';
+import 'settings_screen.dart';
+import '../providers/settings_provider.dart';
 
 class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
@@ -253,6 +255,17 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                   // TODO: Implement notifications
                 },
               ),
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
           SliverToBoxAdapter(
@@ -418,167 +431,56 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
               child: EmptyTasksPlaceholder(),
             )
           else
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final activeTasks = taskProvider.activeTasks;
-                    final completedTasks = taskProvider.completedTasksToday;
-                    final futureTasks = taskProvider.futureTasks;
-
-                    // Active Tasks Section
-                    if (index == 0) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (activeTasks.isNotEmpty) ...[
-                            Text(
-                              'Active Tasks',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ...activeTasks.map((task) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: TaskTile(
-                                task: task,
-                                onComplete: () async {
-                                  // Don't call completeTask here as it's already called in the TaskTile
-                                  // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                                  // await taskProvider.completeTask(context, task);
-                                },
-                              ),
-                            )).toList(),
-                            const SizedBox(height: 16),
-                          ],
-                        ],
-                      );
-                    }
-
-                    // Completed Tasks Section
-                    if (index == 1) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (completedTasks.isNotEmpty) ...[
-                            Text(
-                              'Completed Today',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ...completedTasks.map((task) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: TaskTile(
-                                task: task,
-                                onComplete: () async {
-                                  // Don't call completeTask here as it's already called in the TaskTile
-                                  // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                                  // await taskProvider.completeTask(context, task);
-                                },
-                              ),
-                            )).toList(),
-                            const SizedBox(height: 16),
-                          ],
-                        ],
-                      );
-                    }
-
-                    // Future Tasks Section
-                    if (index == 2) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (futureTasks.isNotEmpty) ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Future Tasks',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                TextButton.icon(
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Tasks for Upcoming Week'),
-                                        content: SizedBox(
-                                          width: double.maxFinite,
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              ...taskProvider.tasksForUpcomingWeek.map((task) => Padding(
-                                                padding: const EdgeInsets.only(bottom: 8.0),
-                                                child: TaskTile(
-                                                  task: task,
-                                                  onComplete: () async {
-                                                    // Don't call completeTask here as it's already called in the TaskTile
-                                                    // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                                                    // await taskProvider.completeTask(context, task);
-                                                  },
-                                                ),
-                                              )).toList(),
-                                              if (taskProvider.tasksForUpcomingWeek.isEmpty)
-                                                const Padding(
-                                                  padding: EdgeInsets.all(16.0),
-                                                  child: Text('No tasks scheduled for the upcoming week'),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: const Text('Close'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.calendar_today, size: 18),
-                                  label: const Text('View This Week'),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: const Color(0xFFFF8A43),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: const BorderSide(color: Color(0xFFFF8A43), width: 1),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            ...futureTasks.map((task) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: TaskTile(
-                                task: task,
-                                onComplete: () async {
-                                  // Don't call completeTask here as it's already called in the TaskTile
-                                  // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                                  // await taskProvider.completeTask(context, task);
-                                },
-                              ),
-                            )).toList(),
-                          ],
-                        ],
-                      );
-                    }
-
-                    return const SizedBox.shrink();
-                  },
-                  childCount: 3,
-                ),
-              ),
+            SliverList(
+              delegate: SliverChildListDelegate([
+                // Active Tasks Section
+                if (taskProvider.getFilteredActiveTasks(context).isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                    child: Text(
+                      'Active Tasks',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  ...taskProvider.getFilteredActiveTasks(context).map((task) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                    child: TaskTile(
+                      key: ValueKey("active-${task.id}"),
+                      task: task,
+                      onDismissed: (direction) async {
+                        await taskProvider.completeTask(task.id);
+                        setState(() {}); // Refresh the UI after task completion
+                      },
+                    ),
+                  )).toList(),
+                ],
+                
+                // Completed Tasks Section
+                if (taskProvider.completedTasksToday.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                    child: Text(
+                      'Completed Today',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  ...taskProvider.completedTasksToday.map((task) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                    child: TaskTile(
+                      key: ValueKey("completed-${task.id}"),
+                      task: task,
+                      onDismissed: null, // Completed tasks can't be dismissed
+                    ),
+                  )).toList(),
+                ],
+                
+                // Add some padding at the bottom
+                const SizedBox(height: 24),
+              ]),
             ),
         ],
       ),

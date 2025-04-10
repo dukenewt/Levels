@@ -1,25 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../widgets/rank_progress_card.dart';
+import '../widgets/level_progress_card.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  UserProvider get _userProvider => Provider.of<UserProvider>(context, listen: false);
-
-  @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
-
-    if (user == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (user == null) return const SizedBox.shrink();
 
     return Scaffold(
       appBar: AppBar(
@@ -28,7 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              // Show settings
+              // TODO: Implement settings navigation
             },
           ),
         ],
@@ -55,6 +47,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 32),
 
+            // Rank Progress Card
+            const RankProgressCard(),
+            const SizedBox(height: 24),
+
+            // Level Progress Card
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                return LevelProgressCard(
+                  level: userProvider.level,
+                  currentXp: userProvider.currentXp,
+                  nextLevelXp: userProvider.nextLevelXp,
+                );
+              },
+            ),
+            const SizedBox(height: 32),
+
             // Stats section
             const Text(
               'Your Stats',
@@ -67,12 +75,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _buildStatCard(
-                    context,
-                    'Level',
-                    user.level.toString(),
-                    Icons.trending_up,
-                    Colors.blue,
+                  child: Consumer<UserProvider>(
+                    builder: (context, userProvider, child) {
+                      final currentRank = userProvider.currentRank;
+                      return _buildStatCard(
+                        context,
+                        'Level',
+                        user.level.toString(),
+                        Icons.trending_up,
+                        currentRank.color,
+                        subtitle: currentRank.name,
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -98,43 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildSettingsCard(
-              context,
-              [
-                _buildSettingsTile(
-                  context,
-                  'Notifications',
-                  Icons.notifications_outlined,
-                  onTap: () {
-                    // Show notification settings
-                  },
-                ),
-                _buildSettingsTile(
-                  context,
-                  'Theme',
-                  Icons.palette_outlined,
-                  onTap: () {
-                    // Show theme settings
-                  },
-                ),
-                _buildSettingsTile(
-                  context,
-                  'Language',
-                  Icons.language,
-                  onTap: () {
-                    // Show language settings
-                  },
-                ),
-                _buildSettingsTile(
-                  context,
-                  'Sign Out',
-                  Icons.logout,
-                  onTap: () async {
-                    await userProvider.signOut();
-                  },
-                ),
-              ],
-            ),
+            _buildSettingsList(context),
           ],
         ),
       ),
@@ -142,60 +120,102 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+    BuildContext context, 
+    String title, 
+    String value, 
+    IconData icon, 
+    Color color, {
+    String? subtitle,
+  }) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(icon, size: 32, color: color),
+            Icon(
+              icon,
+              color: color,
+              size: 32,
+            ),
             const SizedBox(height: 8),
             Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
               value,
-              style: const TextStyle(
-                fontSize: 24,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
+                color: color,
               ),
             ),
-            Text(
-              title,
-              style: const TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSettingsCard(BuildContext context, List<Widget> children) {
+  Widget _buildSettingsList(BuildContext context) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        children: children,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
-  }
-
-  Widget _buildSettingsTile(
-    BuildContext context,
-    String title,
-    IconData icon, {
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('Edit Profile'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: Implement edit profile
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.notifications),
+            title: const Text('Notifications'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: Implement notifications settings
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.security),
+            title: const Text('Privacy'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: Implement privacy settings
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.help),
+            title: const Text('Help & Support'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: Implement help & support
+            },
+          ),
+        ],
+      ),
     );
   }
 } 

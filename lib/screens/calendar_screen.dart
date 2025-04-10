@@ -230,8 +230,14 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: TaskTile(
                                 task: task,
-                                onComplete: () {
-                                  _loadEvents();
+                                onDismissed: (direction) async {
+                                  final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                                  await taskProvider.completeTask(task.id);
+                                  if (mounted) {
+                                    setState(() {
+                                      _loadEvents();
+                                    });
+                                  }
                                 },
                               ),
                             );
