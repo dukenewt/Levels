@@ -11,6 +11,7 @@ class Task {
   final String? recurrencePattern; // 'daily', 'weekly', 'monthly', or null for no recurrence
   final DateTime? nextOccurrence;
   final String? parentTaskId; // ID of the original recurring task
+  final String? skillId;
 
   Task({
     required this.id,
@@ -24,6 +25,7 @@ class Task {
     this.recurrencePattern,
     this.nextOccurrence,
     this.parentTaskId,
+    this.skillId,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -39,6 +41,7 @@ class Task {
     String? recurrencePattern,
     DateTime? nextOccurrence,
     String? parentTaskId,
+    String? skillId,
     DateTime? createdAt,
   }) {
     return Task(
@@ -53,6 +56,7 @@ class Task {
       recurrencePattern: recurrencePattern ?? this.recurrencePattern,
       nextOccurrence: nextOccurrence ?? this.nextOccurrence,
       parentTaskId: parentTaskId ?? this.parentTaskId,
+      skillId: skillId ?? this.skillId,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -70,6 +74,7 @@ class Task {
       'recurrencePattern': recurrencePattern,
       'nextOccurrence': nextOccurrence?.toIso8601String(),
       'parentTaskId': parentTaskId,
+      'skillId': skillId,
     };
   }
 
@@ -95,6 +100,7 @@ class Task {
           ? DateTime.parse(map['nextOccurrence'])
           : null,
       parentTaskId: map['parentTaskId'],
+      skillId: map['skillId'],
     );
   }
 
