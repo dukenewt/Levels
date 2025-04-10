@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
 class LevelProgressCard extends StatefulWidget {
   final int level;
@@ -73,106 +75,101 @@ class _LevelProgressCardState extends State<LevelProgressCard> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final userProvider = Provider.of<UserProvider>(context);
+    final currentRank = userProvider.currentRank;
     
     return Card(
-      margin: const EdgeInsets.all(16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.colorScheme.primaryContainer,
-              theme.colorScheme.primary.withOpacity(0.8),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Avatar with level
-                  Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: theme.colorScheme.primary,
-                        child: Icon(
-                          Icons.person,
-                          size: 30,
-                          color: theme.colorScheme.onPrimary,
-                        ),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Avatar with level
+                Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: currentRank.color,
+                      child: Icon(
+                        Icons.person,
+                        size: 30,
+                        color: theme.colorScheme.onPrimary,
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          _displayedLevel.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: currentRank.color,
+                        shape: BoxShape.circle,
                       ),
-                    ],
-                  ),
-                  
-                  // XP Info
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Level $_displayedLevel',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer,
+                      child: Text(
+                        _displayedLevel.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: Text(
-                          '$_displayedXp / ${widget.nextLevelXp} XP',
-                          key: ValueKey<int>(_displayedXp),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                
+                // Level and XP Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        currentRank.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: currentRank.color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Level $_displayedLevel',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$_displayedXp / ${widget.nextLevelXp} XP',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // XP Progress bar
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: AnimatedBuilder(
-                  animation: _progressAnimation,
-                  builder: (context, child) {
-                    return LinearProgressIndicator(
-                      value: _progressAnimation.value,
-                      minHeight: 12,
-                      backgroundColor: theme.colorScheme.surface.withOpacity(0.3),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        theme.colorScheme.secondary,
-                      ),
-                    );
-                  },
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Progress Bar
+            AnimatedBuilder(
+              animation: _progressAnimation,
+              builder: (context, child) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: _progressAnimation.value,
+                    backgroundColor: theme.colorScheme.surfaceVariant,
+                    valueColor: AlwaysStoppedAnimation<Color>(currentRank.color),
+                    minHeight: 8,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
