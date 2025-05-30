@@ -17,6 +17,8 @@ import 'skill_details_screen.dart';
 import '../widgets/level_indicator.dart';
 import 'settings_screen.dart';
 import '../providers/settings_provider.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart';
 
 class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
@@ -31,10 +33,15 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
   final List<String> _defaultCategories = ['Work', 'Personal', 'Health', 'Learning', 'Other'];
   List<String> _customCategories = [];
 
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
+    _selectedDay = DateTime.now();
+    _focusedDay = DateTime.now();
   }
 
   @override
@@ -126,8 +133,51 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final taskProvider = Provider.of<TaskProvider>(context);
+    final skillProvider = Provider.of<SkillProvider>(context);
     final theme = Theme.of(context);
     
+    // Ensure skills are loaded
+    if (skillProvider.skills.isEmpty) {
+      skillProvider.loadSkills();
+    }
+
+    // Filter tasks for selected day
+    List<Task> filteredTasks = _selectedDay == null
+      ? taskProvider.getFilteredActiveTasks(context)
+      : taskProvider.getFilteredActiveTasks(context).where((task) {
+          if (task.dueDate == null) return false;
+          return task.dueDate!.year == _selectedDay!.year &&
+                 task.dueDate!.month == _selectedDay!.month &&
+                 task.dueDate!.day == _selectedDay!.day;
+        }).toList();
+
+    // All Day tasks: tasks with a date but no time (00:00)
+    List<Task> allDayTasks = filteredTasks.where((task) {
+      if (task.dueDate == null) return false;
+      return task.dueDate!.hour == 0 && task.dueDate!.minute == 0;
+    }).toList();
+
+    // Timed tasks: tasks with a date and a time
+    List<Task> timedTasks = filteredTasks.where((task) {
+      if (task.dueDate == null) return false;
+      return !(task.dueDate!.hour == 0 && task.dueDate!.minute == 0);
+    }).toList();
+
+    // No Date tasks: tasks with no dueDate at all
+    List<Task> noDateTasks = taskProvider.getFilteredActiveTasks(context).where((task) => task.dueDate == null).toList();
+
+    // Get tasks for the next 7 days (week view)
+    List<Map<String, dynamic>> weekTasks = List.generate(7, (i) {
+      final day = _focusedDay.add(Duration(days: i - _focusedDay.weekday + 1));
+      final tasksForDay = taskProvider.getFilteredActiveTasks(context).where((task) {
+        if (task.dueDate == null) return false;
+        return task.dueDate!.year == day.year &&
+               task.dueDate!.month == day.month &&
+               task.dueDate!.day == day.day;
+      }).toList();
+      return {'date': day, 'tasks': tasksForDay};
+    });
+
     return Scaffold(
       drawer: Drawer(
         child: ListView(
@@ -285,178 +335,108 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  
-                  // Skills Progress Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Skills Progress',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const SkillsScreen()),
-                          );
-                        },
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Skill'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Consumer<SkillProvider>(
-                    builder: (context, skillProvider, child) {
-                      final skills = skillProvider.getSkillsList();
-                      return Column(
-                        children: skills.map((skill) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Card(
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: theme.colorScheme.outline.withOpacity(0.2),
-                              ),
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => SkillDetailsScreen(skill: skill),
-                                  ),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: skill.color.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Icon(
-                                            _getIconData(skill.icon),
-                                            color: skill.color,
-                                            size: 24,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                skill.name,
-                                                style: theme.textTheme.titleMedium?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                              Text(
-                                                'Level ${skill.level}',
-                                                style: theme.textTheme.bodyMedium?.copyWith(
-                                                  color: theme.colorScheme.onSurfaceVariant,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: skill.color.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            '${skill.currentXp}/${skill.xpToNextLevel} XP',
-                                            style: TextStyle(
-                                              color: skill.color,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: LinearProgressIndicator(
-                                        value: skill.progressPercentage / 100,
-                                        backgroundColor: skill.color.withOpacity(0.1),
-                                        valueColor: AlwaysStoppedAnimation<Color>(skill.color),
-                                        minHeight: 6,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      skill.description,
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        color: Colors.grey[600],
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        )).toList(),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
           ),
-          if (taskProvider.tasks.isEmpty)
+          // Calendar Widget
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Daily View Header ONLY (no calendar)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: () {
+                            setState(() {
+                              _selectedDay = _selectedDay?.subtract(const Duration(days: 1));
+                              _focusedDay = _focusedDay.subtract(const Duration(days: 1));
+                            });
+                          },
+                        ),
+                        Text(
+                          DateFormat('EEEE, MMMM d, yyyy').format(_selectedDay ?? DateTime.now()),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: () {
+                            setState(() {
+                              _selectedDay = _selectedDay?.add(const Duration(days: 1));
+                              _focusedDay = _focusedDay.add(const Duration(days: 1));
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (filteredTasks.isEmpty && noDateTasks.isEmpty)
             const SliverFillRemaining(
               child: EmptyTasksPlaceholder(),
             )
-          else
+          else ...[
             SliverList(
               delegate: SliverChildListDelegate([
                 // Active Tasks Section
-                if (taskProvider.getFilteredActiveTasks(context).isNotEmpty) ...[
+                if (timedTasks.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
                     child: Text(
-                      'Active Tasks',
+                      'Tasks for ${DateFormat('MMM d, yyyy').format(_selectedDay!)}',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  ...taskProvider.getFilteredActiveTasks(context).map((task) => Padding(
+                  ...timedTasks.map((task) => Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
                     child: TaskTile(
                       key: ValueKey("active-${task.id}"),
                       task: task,
                       onDismissed: (direction) async {
                         await taskProvider.completeTask(task.id);
+                        if (!mounted) return;
                         setState(() {}); // Refresh the UI after task completion
                       },
                     ),
                   )).toList(),
                 ],
-                
+                if (allDayTasks.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                    child: Text(
+                      'All Day',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  ...allDayTasks.map((task) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                    child: TaskTile(
+                      key: ValueKey("allday-${task.id}"),
+                      task: task,
+                      onDismissed: (direction) async {
+                        await taskProvider.completeTask(task.id);
+                        if (!mounted) return;
+                        setState(() {});
+                      },
+                    ),
+                  )).toList(),
+                ],
                 // Completed Tasks Section
                 if (taskProvider.completedTasksToday.isNotEmpty) ...[
                   Padding(
@@ -477,11 +457,159 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                     ),
                   )).toList(),
                 ],
-                
+                // Floating Tasks Section (moved to bottom)
+                if (noDateTasks.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                    child: Text(
+                      'Floating Tasks',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  ...noDateTasks.map((task) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                    child: TaskTile(
+                      key: ValueKey("floating-${task.id}"),
+                      task: task,
+                      onDismissed: (direction) async {
+                        await taskProvider.completeTask(task.id);
+                        if (!mounted) return;
+                        setState(() {});
+                      },
+                    ),
+                  )).toList(),
+                ],
                 // Add some padding at the bottom
                 const SizedBox(height: 24),
               ]),
             ),
+            // Skills Progress Section (Expandable)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
+                child: ExpansionTile(
+                  title: Text(
+                    'Skills Progress',
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  leading: const Icon(Icons.bar_chart),
+                  children: [
+                    Consumer<SkillProvider>(
+                      builder: (context, skillProvider, child) {
+                        final skills = skillProvider.skills;
+                        return Column(
+                          children: skills.map((skill) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                  color: theme.colorScheme.outline.withOpacity(0.2),
+                                ),
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SkillDetailsScreen(skill: skill),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: skill.color.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Icon(
+                                              _getIconData(skill.icon),
+                                              color: skill.color,
+                                              size: 24,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  skill.name,
+                                                  style: theme.textTheme.titleMedium?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  'Level ${skill.level}',
+                                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                                    color: theme.colorScheme.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: skill.color.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              '${skill.currentXp} / ${skill.xpForNextLevel} XP',
+                                              style: TextStyle(
+                                                color: skill.color,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: LinearProgressIndicator(
+                                          value: skill.progressPercentage / 100,
+                                          backgroundColor: skill.color.withOpacity(0.1),
+                                          valueColor: AlwaysStoppedAnimation<Color>(skill.color),
+                                          minHeight: 6,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        skill.description,
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          color: Colors.grey[600],
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
       floatingActionButton: Column(
@@ -524,7 +652,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final skillProvider = Provider.of<SkillProvider>(context, listen: false);
-            final skills = skillProvider.getSkillsList();
+            final skills = skillProvider.skills;
 
             return AlertDialog(
               title: const Text('Add New Task'),
@@ -586,71 +714,6 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Category Section
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Category',
-                              style: TextStyle(
-                                color: Colors.grey[800],
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                            TextButton.icon(
-                              onPressed: () => _showAddCategoryDialog(dialogContext),
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Add New'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFFFF8A43),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: const BorderSide(color: Color(0xFFFF8A43), width: 1),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            border: Border.all(color: Colors.grey[300]!),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedCategory,
-                              isExpanded: true,
-                              icon: const Icon(Icons.arrow_drop_down),
-                              iconSize: 24,
-                              style: TextStyle(
-                                color: Colors.grey[800],
-                                fontSize: 16,
-                              ),
-                              items: [..._defaultCategories, ..._customCategories]
-                                  .map((category) => DropdownMenuItem(
-                                        value: category,
-                                        child: Text(category),
-                                      ))
-                                  .toList(),
-                              onChanged: (value) {
-                                setDialogState(() {
-                                  selectedCategory = value!;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
                     // XP Reward Section
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1079,7 +1142,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                         id: DateTime.now().millisecondsSinceEpoch.toString(),
                         title: title,
                         description: descriptionController.text.trim(),
-                        category: selectedCategory,
+                        category: '', // No category
                         xpReward: xpReward,
                         dueDate: selectedDate != null && selectedTime != null
                             ? DateTime(
