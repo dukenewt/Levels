@@ -46,17 +46,22 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _initializeData();
+    // Defer recurring task window maintenance until after first build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      // taskProvider.maintainRecurringTaskWindow().then((_) {
+      //   _initializeData();
+      // });
+      _initializeData();
+    });
   }
 
   Future<void> _initializeData() async {
     if (!mounted) return;
-    
     setState(() {
       _isLoading = true;
       _error = null;
     });
-
     try {
       // Load data in parallel using Future.wait
       await Future.wait([
@@ -158,247 +163,295 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
   }
 
   Widget _buildTaskTile(Task task, BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => TaskEditingDialog(task: task),
-        ).then((_) {
-          _loadEvents();
-        });
-      },
-      onLongPress: () {
-        showModalBottomSheet(
-          context: context,
-          builder: (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Edit Task'),
-                onTap: () {
-                  Navigator.pop(context);
-                  showDialog(
-                    context: context,
-                    builder: (context) => TaskEditingDialog(task: task),
-                  ).then((_) {
-                    _loadEvents();
-                  });
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.check_circle),
-                title: const Text('Mark as Complete'),
-                onTap: () {
-                  Navigator.pop(context);
-                  final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                  taskProvider.completeTask(task.id);
-                  _loadEvents();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete Task', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  Navigator.pop(context);
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Delete Task'),
-                      content: const Text('Are you sure you want to delete this task?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                            taskProvider.deleteTask(task.id);
-                            Navigator.pop(context);
-                            _loadEvents();
-                          },
-                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
+    final theme = Theme.of(context);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    return Dismissible(
+      key: ValueKey('calendar-${task.id}'),
+      direction: DismissDirection.startToEnd, // swipe right to delete
+      background: Container(
+        color: Colors.red,
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      onDismissed: (direction) async {
+        await taskProvider.deleteTask(task.id);
+        _loadEvents();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Task deleted'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () async {
+                // Optionally, implement undo logic here if you want
+              },
+            ),
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: _getCategoryColor(task.category).withOpacity(0.2),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                task.title,
-                style: const TextStyle(fontSize: 12),
-                overflow: TextOverflow.ellipsis,
-              ),
+      child: GestureDetector(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (context) => TaskEditingDialog(task: task),
+          ).then((_) {
+            _loadEvents();
+          });
+        },
+        onLongPress: () {
+          showModalBottomSheet(
+            context: context,
+            builder: (context) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.edit),
+                  title: const Text('Edit Task'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) => TaskEditingDialog(task: task),
+                    ).then((_) {
+                      _loadEvents();
+                    });
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.check_circle),
+                  title: const Text('Mark as Complete'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                    taskProvider.completeTask(task.id);
+                    _loadEvents();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Delete Task', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Delete Task'),
+                        content: const Text('Are you sure you want to delete this task?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                              taskProvider.deleteTask(task.id);
+                              Navigator.pop(context);
+                              _loadEvents();
+                            },
+                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-            if (task.scheduledTime != null)
-              Text(
-                task.scheduledTime!.format(context),
-                style: const TextStyle(fontSize: 10),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: _getCategoryColor(task.category).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  task.title,
+                  style: const TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-          ],
+              if (task.scheduledTime != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    task.scheduledTime!.format(context),
+                    style: const TextStyle(fontSize: 10),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              if (task.recurrencePattern != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.repeat,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          task.recurrencePattern!.substring(0, 1).toUpperCase() + task.recurrencePattern!.substring(1),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildWorkWeekView() {
-    final now = DateTime.now();
+  Widget _buildWeekGridView() {
     final startOfWeek = _focusedDay.subtract(Duration(days: _focusedDay.weekday - 1));
-    
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed: () {
-                setState(() {
-                  _focusedDay = _focusedDay.subtract(const Duration(days: 7));
-                });
-                _loadEvents();
-              },
-            ),
-            Text(
-              '${DateFormat('MMM d').format(startOfWeek)} - ${DateFormat('MMM d, y').format(startOfWeek.add(const Duration(days: 6)))}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: () {
-                setState(() {
-                  _focusedDay = _focusedDay.add(const Duration(days: 7));
-                });
-                _loadEvents();
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: List.generate(7, (index) {
-            final day = startOfWeek.add(Duration(days: index));
-            final isWorkDay = _workWeekDays.contains(day.weekday);
-            final isSelected = _selectedDay?.day == day.day && 
-                             _selectedDay?.month == day.month && 
-                             _selectedDay?.year == day.year;
-            
-            return Flexible(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedDay = day;
-                  });
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : null,
-                    border: Border(
-                      right: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: index < 6 ? 1 : 0,
-                      ),
-                    ),
-                  ),
-                  child: Column(
+    final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
+    final hours = List.generate(24, (i) => i);
+
+    return SizedBox(
+      height: 1440.0, // 24 hours * 60px per hour
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SingleChildScrollView(
+          child: SizedBox(
+            width: 7 * 120.0 + 60, // 120 per day + 60 for hour column
+            child: Column(
+              children: [
+                // Header row
+                Row(
+                  children: [
+                    Container(width: 60, height: 40), // Empty top-left
+                    ...days.map((day) => Container(
+                          width: 120,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                            border: Border(
+                              right: BorderSide(color: Theme.of(context).dividerColor),
+                            ),
+                          ),
+                          child: Text(
+                            DateFormat('EEE\nMM/dd').format(day),
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        )),
+                  ],
+                ),
+                // All hour rows
+                ...hours.map((hour) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        color: isWorkDay ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : null,
-                        child: Center(
-                          child: Text(
-                            _weekDays[index],
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: isWorkDay ? Theme.of(context).colorScheme.primary : null,
-                            ),
+                        width: 60,
+                        height: 60,
+                        alignment: Alignment.topCenter,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.04),
+                          border: Border(
+                            right: BorderSide(color: Theme.of(context).dividerColor),
+                            top: BorderSide(color: Theme.of(context).dividerColor),
                           ),
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Text(
-                          day.day.toString(),
-                          style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : null,
-                            color: isSelected ? Theme.of(context).colorScheme.primary : null,
-                          ),
+                          '${hour.toString().padLeft(2, '0')}:00',
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: 24, // Hours in a day
-                        itemBuilder: (context, hour) {
-                          final time = TimeOfDay(hour: hour, minute: 0);
-                          final tasks = _getEventsForTimeSlot(day, time);
-                          
-                          return Container(
-                            height: 60,
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: Theme.of(context).dividerColor,
-                                  width: 0.5,
+                      ...days.map((day) {
+                        final tasks = _getEventsForTimeSlot(day, TimeOfDay(hour: hour, minute: 0));
+                        return Container(
+                          width: 120,
+                          height: 60,
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              right: BorderSide(color: Theme.of(context).dividerColor),
+                              top: BorderSide(color: Theme.of(context).dividerColor),
+                            ),
+                          ),
+                          child: tasks.isEmpty
+                              ? null
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ...tasks.take(2).map((task) => Row(
+                                      children: [
+                                        if (task.recurrencePattern != null)
+                                          Padding(
+                                            padding: const EdgeInsets.only(right: 2),
+                                            child: Icon(Icons.repeat, size: 12, color: Theme.of(context).colorScheme.secondary),
+                                          ),
+                                        Expanded(
+                                          child: Text(
+                                            task.title,
+                                            style: Theme.of(context).textTheme.bodySmall,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    )),
+                                    if (tasks.length > 2)
+                                      Text('+${tasks.length - 2} more', style: Theme.of(context).textTheme.labelSmall),
+                                  ],
                                 ),
-                              ),
-                            ),
-                            child: Stack(
-                              children: [
-                                if (tasks.isNotEmpty)
-                                  ...tasks.map((task) => Positioned(
-                                    left: 0,
-                                    right: 0,
-                                    child: _buildTaskTile(task, context),
-                                  )),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                        );
+                      }).toList(),
                     ],
-                  ),
-                ),
-              ),
-            );
-          }),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildDailyView() {
-    final allDayTasks = _getEventsForDay(_focusedDay)
-        .where((task) =>
-            !task.isCompleted &&
-            task.scheduledTime == null &&
-            (task.dueDate == null || (task.dueDate!.hour == 0 && task.dueDate!.minute == 0)))
+    // Get all tasks for the focused day (like week/month views)
+    final dayTasks = _getEventsForDay(_focusedDay)
+        .where((task) => !task.isCompleted)
         .toList();
-    final timedTasks = _getEventsForDay(_focusedDay)
-        .where((task) =>
-            !task.isCompleted &&
-            task.dueDate != null &&
-            !(task.dueDate!.hour == 0 && task.dueDate!.minute == 0))
-        .toList();
+    // Floating tasks: no dueDate and not completed
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final floatingTasks = taskProvider.tasks
         .where((task) => task.dueDate == null && !task.isCompleted)
         .toList();
+
+    // Group dayTasks by hour for display
+    Map<int, List<Task>> tasksByHour = {};
+    for (var task in dayTasks) {
+      int hour = 0;
+      if (task.scheduledTime != null) {
+        hour = task.scheduledTime!.hour;
+      } else if (task.dueDate != null) {
+        hour = task.dueDate!.hour;
+      }
+      tasksByHour.putIfAbsent(hour, () => []).add(task);
+    }
+
     return Column(
       children: [
         Row(
@@ -443,32 +496,13 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
             child: _buildTaskTile(task, context),
           )),
         ],
-        // All Day Tasks Section
-        if (allDayTasks.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'All Day',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          ...allDayTasks.map((task) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: _buildTaskTile(task, context),
-          )),
-        ],
-        // Timed Tasks by Hour
+        // Timed Tasks by Hour (including all-day tasks at hour 0)
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: 24, // Hours in a day
           itemBuilder: (context, hour) {
-            final time = TimeOfDay(hour: hour, minute: 0);
-            final tasks = timedTasks.where((task) =>
-              task.dueDate != null &&
-              task.dueDate!.hour == hour &&
-              task.dueDate!.minute == 0
-            ).toList();
+            final tasks = tasksByHour[hour] ?? [];
             return Container(
               height: 60,
               decoration: BoxDecoration(
@@ -485,7 +519,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                     width: 60,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
-                      time.format(context),
+                      TimeOfDay(hour: hour, minute: 0).format(context),
                       style: const TextStyle(fontSize: 12),
                     ),
                   ),
@@ -498,17 +532,9 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                             itemCount: tasks.length,
                             itemBuilder: (context, idx) {
                               final task = tasks[idx];
-                              return Row(
-                                children: [
-                                  Text(
-                                    task.dueDate != null
-                                        ? ':${task.dueDate!.minute.toString().padLeft(2, '0')}'
-                                        : '',
-                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(child: _buildTaskTile(task, context)),
-                                ],
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                child: _buildTaskTile(task, context),
                               );
                             },
                           ),
@@ -920,7 +946,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
               _currentView == 'day' 
                 ? _buildDailyView() 
                 : _currentView == 'week' 
-                  ? _buildWorkWeekView() 
+                  ? _buildWeekGridView() 
                   : _buildMonthView(),
               const SizedBox(height: 16),
               _buildViewSelector(),
