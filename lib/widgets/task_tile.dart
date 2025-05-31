@@ -96,17 +96,23 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
         _isCompleting = true;
       });
       
-      // Start the animation
-      await _animationController.forward();
-      
-      // Call the completion callback
-      if (mounted) {
+      try {
+        // Get the provider reference before starting animation
         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        
+        // Complete the task first
         await taskProvider.completeTask(widget.task.id);
-      }
-      
-      if (mounted) {
-        setState(() => _isCompleting = false);
+        
+        // Then start the animation if still mounted
+        if (mounted) {
+          await _animationController.forward();
+        }
+      } catch (e) {
+        debugPrint('Error completing task: $e');
+      } finally {
+        if (mounted) {
+          setState(() => _isCompleting = false);
+        }
       }
     }
   }
@@ -140,11 +146,13 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
             elevation: 2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: theme.dividerColor.withOpacity(0.08)),
             ),
+            color: theme.colorScheme.surface,
             child: InkWell(
               onTap: () {
                 // Show edit task dialog
-                _showEditTaskDialog(context);
+                _showTaskMenu(context);
               },
               borderRadius: BorderRadius.circular(12),
               child: Padding(
@@ -223,29 +231,14 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  widget.task.category,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.secondaryContainer,
+                                  color: theme.colorScheme.primary.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   '${widget.task.xpReward} XP',
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSecondaryContainer,
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
@@ -256,7 +249,7 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: theme.colorScheme.tertiaryContainer,
+                                    color: theme.colorScheme.secondary.withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
@@ -265,14 +258,15 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                                       Icon(
                                         Icons.repeat,
                                         size: 14,
-                                        color: theme.colorScheme.onTertiaryContainer,
+                                        color: theme.colorScheme.secondary,
                                       ),
                                       const SizedBox(width: 4),
                                       Flexible(
                                         child: Text(
                                           widget.task.recurrencePattern!,
                                           style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.onTertiaryContainer,
+                                            color: theme.colorScheme.secondary,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -293,20 +287,21 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
+                          color: theme.colorScheme.secondary.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           _formatDate(widget.task.dueDate!),
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
+                            color: theme.colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ],
                     IconButton(
                       icon: const Icon(Icons.edit_outlined),
-                      onPressed: () => _showEditTaskDialog(context),
+                      onPressed: () => _showTaskMenu(context),
                       tooltip: 'Edit Task',
                     ),
                   ],
@@ -315,6 +310,56 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showTaskMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit_outlined),
+            title: const Text('Edit Task'),
+            onTap: () {
+              Navigator.pop(context);
+              _showEditTaskDialog(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline, color: Colors.red),
+            title: const Text('Delete Task', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              Navigator.pop(context);
+              _showDeleteConfirmation(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Task'),
+        content: const Text('Are you sure you want to delete this task? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Provider.of<TaskProvider>(context, listen: false).deleteTask(widget.task.id);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

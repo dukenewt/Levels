@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import 'animated_xp_bar.dart';
 
 class LevelProgressCard extends StatefulWidget {
   final int level;
@@ -23,6 +24,7 @@ class _LevelProgressCardState extends State<LevelProgressCard> with SingleTicker
   late Animation<double> _progressAnimation;
   late int _displayedXp;
   late int _displayedLevel;
+  AnimationType _currentAnimationType = AnimationType.liquid;
   
   @override
   void initState() {
@@ -42,6 +44,15 @@ class _LevelProgressCardState extends State<LevelProgressCard> with SingleTicker
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+
+    // Cycle through animations every 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _currentAnimationType = AnimationType.segmented;
+        });
+      }
+    });
   }
   
   @override
@@ -154,18 +165,16 @@ class _LevelProgressCardState extends State<LevelProgressCard> with SingleTicker
             ),
             const SizedBox(height: 16),
             
-            // Progress Bar
+            // Animated Progress Bar
             AnimatedBuilder(
               animation: _progressAnimation,
               builder: (context, child) {
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: _progressAnimation.value,
-                    backgroundColor: theme.colorScheme.surfaceVariant,
-                    valueColor: AlwaysStoppedAnimation<Color>(currentRank.color),
-                    minHeight: 8,
-                  ),
+                return AnimatedXPBar(
+                  progress: _progressAnimation.value,
+                  color: currentRank.color,
+                  height: 8,
+                  animationType: _currentAnimationType,
+                  duration: const Duration(milliseconds: 1000),
                 );
               },
             ),
