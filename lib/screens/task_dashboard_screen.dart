@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../providers/user_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/skill_provider.dart';
@@ -35,6 +36,8 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  bool _isLoading = false;
+  String? _error;
 
   @override
   void initState() {
@@ -42,6 +45,36 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
     _scrollController.addListener(_scrollListener);
     _selectedDay = DateTime.now();
     _focusedDay = DateTime.now();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final skillProvider = Provider.of<SkillProvider>(context, listen: false);
+      
+      // Use compute to run heavy operations in a separate isolate
+      await Future.microtask(() {
+        if (!mounted) return;
+        skillProvider.loadSkills();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Error loading data: $e';
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -136,11 +169,6 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
     final skillProvider = Provider.of<SkillProvider>(context);
     final theme = Theme.of(context);
     
-    // Ensure skills are loaded
-    if (skillProvider.skills.isEmpty) {
-      skillProvider.loadSkills();
-    }
-
     // Filter tasks for selected day
     List<Task> filteredTasks = _selectedDay == null
       ? taskProvider.getFilteredActiveTasks(context)
@@ -164,7 +192,9 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
     }).toList();
 
     // No Date tasks: tasks with no dueDate at all
-    List<Task> noDateTasks = taskProvider.getFilteredActiveTasks(context).where((task) => task.dueDate == null).toList();
+    List<Task> noDateTasks = taskProvider.getFilteredActiveTasks(context)
+        .where((task) => task.dueDate == null && !task.isCompleted)
+        .toList();
 
     // Get tasks for the next 7 days (week view)
     List<Map<String, dynamic>> weekTasks = List.generate(7, (i) {
@@ -227,52 +257,106 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
               leading: const Icon(Icons.check_circle_outline),
               title: const Text('Tasks'),
               selected: true,
-              onTap: () {
+              onTap: () async {
+                debugPrint('Drawer: Tasks tapped');
                 Navigator.pop(context);
+                
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'TaskDashboardScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TaskDashboardScreen(),
+                        settings: const RouteSettings(name: 'TaskDashboardScreen'),
+                      ),
+                    );
+                  }
+                });
               },
             ),
             ListTile(
               leading: const Icon(Icons.calendar_today),
               title: const Text('Calendar'),
-              onTap: () {
+              onTap: () async {
+                debugPrint('Drawer: Calendar tapped');
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CalendarScreen()),
-                );
+                
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'CalendarScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CalendarScreen(),
+                        settings: const RouteSettings(name: 'CalendarScreen'),
+                      ),
+                    );
+                  }
+                });
               },
             ),
             ListTile(
               leading: const Icon(Icons.bar_chart_outlined),
               title: const Text('Stats'),
-              onTap: () {
+              onTap: () async {
+                debugPrint('Drawer: Stats tapped');
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const StatsScreen()),
-                );
+                
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'StatsScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StatsScreen(),
+                        settings: const RouteSettings(name: 'StatsScreen'),
+                      ),
+                    );
+                  }
+                });
               },
             ),
             ListTile(
               leading: const Icon(Icons.emoji_events_outlined),
               title: const Text('Achievements'),
-              onTap: () {
+              onTap: () async {
+                debugPrint('Drawer: Achievements tapped');
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AchievementsScreen()),
-                );
+                
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'AchievementsScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AchievementsScreen(),
+                        settings: const RouteSettings(name: 'AchievementsScreen'),
+                      ),
+                    );
+                  }
+                });
               },
             ),
             ListTile(
               leading: const Icon(Icons.person_outline),
               title: const Text('Profile'),
-              onTap: () {
+              onTap: () async {
+                debugPrint('Drawer: Profile tapped');
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                );
+                
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'ProfileScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                        settings: const RouteSettings(name: 'ProfileScreen'),
+                      ),
+                    );
+                  }
+                });
               },
             ),
             const Divider(),
@@ -280,6 +364,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
               leading: const Icon(Icons.logout),
               title: const Text('Sign Out'),
               onTap: () {
+                debugPrint('Drawer: Sign Out tapped');
                 Navigator.pop(context);
                 userProvider.signOut();
               },
@@ -361,10 +446,25 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                             });
                           },
                         ),
-                        Text(
-                          DateFormat('EEEE, MMMM d, yyyy').format(_selectedDay ?? DateTime.now()),
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            DateFormat('EEEE, MMMM d, yyyy').format(_selectedDay ?? DateTime.now()),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         IconButton(
@@ -437,27 +537,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                     ),
                   )).toList(),
                 ],
-                // Completed Tasks Section
-                if (taskProvider.completedTasksToday.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-                    child: Text(
-                      'Completed Today',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  ...taskProvider.completedTasksToday.map((task) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                    child: TaskTile(
-                      key: ValueKey("completed-${task.id}"),
-                      task: task,
-                      onDismissed: null, // Completed tasks can't be dismissed
-                    ),
-                  )).toList(),
-                ],
-                // Floating Tasks Section (moved to bottom)
+                // Floating Tasks Section (move above completed)
                 if (noDateTasks.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
@@ -481,133 +561,151 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> {
                     ),
                   )).toList(),
                 ],
-                // Add some padding at the bottom
-                const SizedBox(height: 24),
-              ]),
-            ),
-            // Skills Progress Section (Expandable)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
-                child: ExpansionTile(
-                  title: Text(
-                    'Skills Progress',
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  leading: const Icon(Icons.bar_chart),
-                  children: [
-                    Consumer<SkillProvider>(
-                      builder: (context, skillProvider, child) {
-                        final skills = skillProvider.skills;
-                        return Column(
-                          children: skills.map((skill) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(
-                                  color: theme.colorScheme.outline.withOpacity(0.2),
+                // Skills Progress Section (move above completed)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
+                  child: ExpansionTile(
+                    title: Text(
+                      'Skills Progress',
+                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    leading: const Icon(Icons.bar_chart),
+                    children: [
+                      Consumer<SkillProvider>(
+                        builder: (context, skillProvider, child) {
+                          final skills = skillProvider.skills;
+                          return Column(
+                            children: skills.map((skill) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Card(
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(
+                                    color: theme.colorScheme.outline.withOpacity(0.2),
+                                  ),
                                 ),
-                              ),
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => SkillDetailsScreen(skill: skill),
-                                    ),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              color: skill.color.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Icon(
-                                              _getIconData(skill.icon),
-                                              color: skill.color,
-                                              size: 24,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  skill.name,
-                                                  style: theme.textTheme.titleMedium?.copyWith(
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  'Level ${skill.level}',
-                                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                                    color: theme.colorScheme.onSurfaceVariant,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: skill.color.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              '${skill.currentXp} / ${skill.xpForNextLevel} XP',
-                                              style: TextStyle(
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => SkillDetailsScreen(skill: skill),
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: skill.color.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                _getIconData(skill.icon),
                                                 color: skill.color,
-                                                fontWeight: FontWeight.w600,
+                                                size: 24,
                                               ),
                                             ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    skill.name,
+                                                    style: theme.textTheme.titleMedium?.copyWith(
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'Level ${skill.level}',
+                                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                                      color: theme.colorScheme.onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: skill.color.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                '${skill.currentXp} / ${skill.xpForNextLevel} XP',
+                                                style: TextStyle(
+                                                  color: skill.color,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: LinearProgressIndicator(
+                                            value: skill.progressPercentage / 100,
+                                            backgroundColor: skill.color.withOpacity(0.1),
+                                            valueColor: AlwaysStoppedAnimation<Color>(skill.color),
+                                            minHeight: 6,
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: LinearProgressIndicator(
-                                          value: skill.progressPercentage / 100,
-                                          backgroundColor: skill.color.withOpacity(0.1),
-                                          valueColor: AlwaysStoppedAnimation<Color>(skill.color),
-                                          minHeight: 6,
                                         ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        skill.description,
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          color: Colors.grey[600],
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          skill.description,
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            color: Colors.grey[600],
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          )).toList(),
-                        );
-                      },
-                    ),
-                  ],
+                            )).toList(),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                // Completed Tasks Section (move below skills progress)
+                if (taskProvider.completedTasksToday.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                    child: Text(
+                      'Completed Today',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  ...taskProvider.completedTasksToday.map((task) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                    child: TaskTile(
+                      key: ValueKey("completed-${task.id}"),
+                      task: task,
+                      onDismissed: null, // Completed tasks can't be dismissed
+                    ),
+                  )).toList(),
+                ],
+                // Add some padding at the bottom
+                const SizedBox(height: 24),
+              ]),
             ),
           ],
         ],

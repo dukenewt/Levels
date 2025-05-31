@@ -3,6 +3,10 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/rank_progress_card.dart';
 import '../widgets/level_progress_card.dart';
+import '../screens/task_dashboard_screen.dart';
+import '../screens/calendar_screen.dart';
+import '../screens/stats_screen.dart';
+import '../screens/achievements_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -113,6 +117,164 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildSettingsList(context),
+          ],
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.primaryContainer,
+                  ],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                    child: Icon(
+                      Icons.person,
+                      size: 30,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    userProvider.user?.displayName ?? 'User',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                  Text(
+                    userProvider.user?.email ?? '',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.check_circle_outline),
+              title: const Text('Tasks'),
+              onTap: () async {
+                debugPrint('Drawer: Tasks tapped');
+                Navigator.pop(context);
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'TaskDashboardScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TaskDashboardScreen(),
+                        settings: const RouteSettings(name: 'TaskDashboardScreen'),
+                      ),
+                    );
+                  }
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Calendar'),
+              onTap: () async {
+                debugPrint('Drawer: Calendar tapped');
+                Navigator.pop(context);
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'CalendarScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CalendarScreen(),
+                        settings: const RouteSettings(name: 'CalendarScreen'),
+                      ),
+                    );
+                  }
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart_outlined),
+              title: const Text('Stats'),
+              onTap: () async {
+                debugPrint('Drawer: Stats tapped');
+                Navigator.pop(context);
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'StatsScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StatsScreen(),
+                        settings: const RouteSettings(name: 'StatsScreen'),
+                      ),
+                    );
+                  }
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.emoji_events_outlined),
+              title: const Text('Achievements'),
+              onTap: () async {
+                debugPrint('Drawer: Achievements tapped');
+                Navigator.pop(context);
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'AchievementsScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AchievementsScreen(),
+                        settings: const RouteSettings(name: 'AchievementsScreen'),
+                      ),
+                    );
+                  }
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Profile'),
+              selected: true,
+              onTap: () async {
+                debugPrint('Drawer: Profile tapped');
+                Navigator.pop(context);
+                await Future.microtask(() {
+                  if (!context.mounted) return;
+                  if (ModalRoute.of(context)?.settings.name != 'ProfileScreen') {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                        settings: const RouteSettings(name: 'ProfileScreen'),
+                      ),
+                    );
+                  }
+                });
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Sign Out'),
+              onTap: () {
+                debugPrint('Drawer: Sign Out tapped');
+                Navigator.pop(context);
+                userProvider.signOut();
+              },
+            ),
           ],
         ),
       ),

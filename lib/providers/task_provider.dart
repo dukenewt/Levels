@@ -11,48 +11,22 @@ import 'package:uuid/uuid.dart';
 import '../services/storage_service.dart';
 
 class TaskProvider with ChangeNotifier {
-  final UserProvider _userProvider;
-  final SkillProvider _skillProvider;
-  final StorageService _storage;
   List<Task> _tasks = [];
   final Map<String, List<Task>> _tasksByCategory = {};
+  final TaskRepository _taskRepository;
+  final UserProvider _userProvider;
+  final SkillProvider _skillProvider;
   bool _isLoading = false;
-  OverlayEntry? _levelUpOverlay;
   final _uuid = const Uuid();
 
-  TaskProvider(this._userProvider, this._skillProvider, this._storage) {
-    // Initialize with mock tasks
-    _tasks = [
-      Task(
-        id: '1',
-        title: 'Complete Project Setup',
-        description: 'Set up the initial project structure and dependencies',
-        category: 'work',
-        xpReward: 100,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        isCompleted: false,
-      ),
-      Task(
-        id: '2',
-        title: 'Design UI Components',
-        description: 'Create wireframes and mockups for the main UI components',
-        category: 'work',
-        xpReward: 150,
-        createdAt: DateTime.now().subtract(const Duration(hours: 12)),
-        isCompleted: false,
-      ),
-      Task(
-        id: '3',
-        title: 'Exercise',
-        description: '30 minutes of cardio and strength training',
-        category: 'exercise',
-        xpReward: 50,
-        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-        isCompleted: false,
-      ),
-    ];
-
-    _updateTasksByCategory();
+  TaskProvider({
+    required StorageService storage,
+    required UserProvider userProvider,
+    required SkillProvider skillProvider,
+  }) : _taskRepository = storage.taskRepository,
+       _userProvider = userProvider,
+       _skillProvider = skillProvider {
+    _loadTasks();
   }
 
   List<Task> get tasks => _tasks;
@@ -63,12 +37,56 @@ class TaskProvider with ChangeNotifier {
   
   // Get filtered active tasks based on settings
   List<Task> getFilteredActiveTasks(BuildContext context) {
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
-    return activeTasks.where((task) {
-      if (settings.showWorkTasks && task.category.toLowerCase() == 'work') return true;
-      if (settings.showSchoolTasks && task.category.toLowerCase() == 'school') return true;
-      if (settings.showExerciseTasks && task.category.toLowerCase() == 'exercise') return true;
-      return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    return _tasks.where((task) {
+      // Filter out completed tasks
+      if (task.isCompleted) return false;
+      
+      // For recurring tasks, check if they're due today or in the future
+      if (task.recurrencePattern != null) {
+        if (task.dueDate == null) return true;
+        
+        final dueDate = DateTime(
+          task.dueDate!.year,
+          task.dueDate!.month,
+          task.dueDate!.day,
+        );
+        
+        // Include tasks due today or in the future
+        return !dueDate.isBefore(today);
+      }
+      
+      // For non-recurring tasks, check if they're due today or in the future
+      if (task.dueDate != null) {
+        final dueDate = DateTime(
+          task.dueDate!.year,
+          task.dueDate!.month,
+          task.dueDate!.day,
+        );
+        return !dueDate.isBefore(today);
+      }
+      
+      // Include tasks with no due date
+      return true;
+    }).toList();
+  }
+
+  // Get tasks for a specific date
+  Future<List<Task>> getTasksForDate(DateTime date) async {
+    final targetDate = DateTime(date.year, date.month, date.day);
+    
+    return _tasks.where((task) {
+      if (task.dueDate == null) return false;
+      
+      final taskDate = DateTime(
+        task.dueDate!.year,
+        task.dueDate!.month,
+        task.dueDate!.day,
+      );
+      
+      return taskDate.isAtSameMomentAs(targetDate);
     }).toList();
   }
   
@@ -79,19 +97,15 @@ class TaskProvider with ChangeNotifier {
     
     final completedToday = _tasks.where((task) {
       if (!task.isCompleted || task.completedAt == null) return false;
-      
       final completedDate = DateTime(
         task.completedAt!.year,
         task.completedAt!.month,
         task.completedAt!.day,
       );
-      
-      return completedDate.isAtSameMomentAs(today);
+      return completedDate.isAtSameMomentAs(today) && task.isCompleted;
     }).toList();
-    
     // Sort by completion time, most recent first
     completedToday.sort((a, b) => b.completedAt!.compareTo(a.completedAt!));
-    
     return completedToday;
   }
 
@@ -131,7 +145,7 @@ class TaskProvider with ChangeNotifier {
       if (index != -1) {
         _tasks[index] = task;
         notifyListeners();
-        await _storage.updateTask(task);
+        await _taskRepository.updateTask(task);
       }
     } catch (e) {
       debugPrint('Error updating task: $e');
@@ -229,101 +243,90 @@ class TaskProvider with ChangeNotifier {
     return nextDate;
   }
 
-  void _checkLevelUp(BuildContext context) {
-    final previousLevel = _userProvider.level;
-    final currentLevel = _userProvider.level;
-    if (currentLevel > previousLevel) {
-      _showLevelUpOverlay(context, currentLevel);
-    }
-  }
-
-  Future<void> _showLevelUpOverlay(BuildContext context, int newLevel) async {
-    if (!context.mounted) return;
-    
-    final overlay = Overlay.of(context);
-    if (overlay == null) return;
-
-    late final OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (context) => Material(
-        color: Colors.black54,
-        child: Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 32),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.emoji_events,
-                  size: 64,
-                  color: Colors.amber,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Level Up!',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'You reached level $newLevel!',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () {
-                    entry.remove();
-                  },
-                  child: const Text('Continue'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    overlay.insert(entry);
-    
-    // Auto-remove after 3 seconds
-    await Future.delayed(const Duration(seconds: 3));
-    if (context.mounted && overlay.mounted) {
-      entry.remove();
-    }
-  }
-
-  @override
-  void dispose() {
-    if (_levelUpOverlay != null) {
-      _levelUpOverlay!.remove();
-      _levelUpOverlay = null;
-    }
-    super.dispose();
-  }
-
   Future<void> completeTask(String taskId) async {
-    debugPrint('Starting task completion for task: $taskId');
-    final taskIndex = _tasks.indexWhere((t) => t.id == taskId);
+    // Get a local copy of the task before any async operations
+    final taskIndex = _tasks.indexWhere((task) => task.id == taskId);
     if (taskIndex == -1) return;
 
     final task = _tasks[taskIndex];
-    debugPrint('Adding XP reward: ${task.xpReward}');
+    if (task.isCompleted) return;
 
-    // Update task completion status
-    _tasks[taskIndex] = task.copyWith(isCompleted: true);
+    // Store task data we'll need later
+    final xpReward = task.xpReward;
+    final skillId = task.skillId;
+    final recurrencePattern = task.recurrencePattern;
+
+    try {
+      // Update task completion status immediately
+      _tasks[taskIndex] = task.complete();
+      notifyListeners();
+
+      // Save the task state
+      await _saveTasks();
+
+      // Handle XP and skills in a separate try-catch
+      try {
+        // Add XP to the user's overall XP
+        await _userProvider.addXp(xpReward);
+
+        // Add XP to the associated skill
+        if (skillId != null) {
+          await _skillProvider.addXP(skillId, xpReward);
+        }
+      } catch (e) {
+        debugPrint('Error adding XP: $e');
+        // Don't rethrow - we want to continue with task completion even if XP addition fails
+      }
+
+      // Handle recurring tasks
+      if (recurrencePattern != null && task.dueDate != null) {
+        DateTime? nextOccurrence = task.calculateNextOccurrence(task.dueDate);
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+
+        // Keep calculating next occurrences until we find one in the future
+        while (nextOccurrence != null && !nextOccurrence.isAfter(today)) {
+          nextOccurrence = task.calculateNextOccurrence(nextOccurrence);
+        }
+
+        if (nextOccurrence != null) {
+          // Create a new task instance for the next occurrence
+          final newTask = task.copyWith(
+            id: const Uuid().v4(),
+            dueDate: nextOccurrence,
+            isCompleted: false,
+            completedAt: null,
+            parentTaskId: task.id,
+          );
+
+          // Add the new task
+          _tasks.add(newTask);
+          await _saveTasks();
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error completing task: $e');
+      // If we failed to complete the task, revert the completion status
+      if (taskIndex < _tasks.length) {
+        _tasks[taskIndex] = task;
+        notifyListeners();
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> createTask(Task task) async {
+    // Calculate XP reward based on difficulty if not provided
+    final xpReward = task.xpReward == 50 ? Task.calculateXPReward(task.difficulty) : task.xpReward;
     
-    // Add XP to user's total XP
-    await _userProvider.addXp(task.xpReward);
-    
-    // Add XP to the associated skill
-    final skillId = task.category.toLowerCase();
-    _skillProvider.addXpToSkill(skillId, task.xpReward);
-    
-    _updateTasksByCategory();
+    final newTask = task.copyWith(
+      id: const Uuid().v4(),
+      xpReward: xpReward,
+    );
+
+    _tasks.add(newTask);
+    await _saveTasks();
     notifyListeners();
   }
 
@@ -331,7 +334,7 @@ class TaskProvider with ChangeNotifier {
     try {
       _tasks.removeWhere((task) => task.id == taskId);
       notifyListeners();
-      await _storage.deleteTask(taskId);
+      await _taskRepository.deleteTask(taskId);
     } catch (e) {
       debugPrint('Error deleting task: $e');
       rethrow;
@@ -364,8 +367,40 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  set tasks(List<Task> newTasks) {
+  Future<void> updateTasksList(List<Task> newTasks) async {
     _tasks = newTasks;
+    _updateTasksByCategory();
+    await _saveTasks();
     notifyListeners();
+  }
+
+  Future<void> _loadTasks() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final loadedTasks = await _taskRepository.getTasks();
+      _tasks = loadedTasks;
+      _updateTasksByCategory();
+    } catch (e) {
+      debugPrint('Error loading tasks: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveTasks() async {
+    try {
+      await _taskRepository.saveTasks(_tasks);
+    } catch (e) {
+      debugPrint('Error saving tasks: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 } 

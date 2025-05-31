@@ -19,11 +19,9 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
   late TextEditingController titleController;
   late TextEditingController descriptionController;
   late TextEditingController xpController;
-  late String selectedCategory;
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
   String? selectedRecurrence;
-  final List<String> _defaultCategories = ['Work', 'Personal', 'Health', 'Learning', 'Other'];
   List<String> _customCategories = [];
 
   @override
@@ -32,7 +30,6 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
     titleController = TextEditingController(text: widget.task.title);
     descriptionController = TextEditingController(text: widget.task.description);
     xpController = TextEditingController(text: widget.task.xpReward.toString());
-    selectedCategory = widget.task.category;
     selectedDate = widget.task.dueDate;
     selectedTime = widget.task.dueDate != null 
         ? TimeOfDay.fromDateTime(widget.task.dueDate!)
@@ -135,40 +132,6 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
             // Category and XP Row
             Row(
               children: [
-                // Category Dropdown
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.grey[300]!,
-                        width: 1,
-                      ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: ButtonTheme(
-                        alignedDropdown: true,
-                        child: DropdownButton<String>(
-                          value: selectedCategory,
-                          isExpanded: true,
-                          items: [..._defaultCategories, ..._customCategories]
-                              .map((category) => DropdownMenuItem(
-                                    value: category,
-                                    child: Text(category),
-                                  ))
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setDialogState(() => selectedCategory = value);
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
                 // XP Input
                 SizedBox(
                   width: 100,
@@ -382,7 +345,6 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                 final updatedTask = widget.task.copyWith(
                   title: title,
                   description: description,
-                  category: selectedCategory,
                   xpReward: xp,
                   dueDate: dueDate,
                   recurrencePattern: selectedRecurrence,
