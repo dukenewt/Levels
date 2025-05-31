@@ -6,11 +6,16 @@ import 'providers/user_provider.dart';
 import 'providers/task_provider.dart';
 import 'providers/skill_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/coin_economy_provider.dart';
+import 'providers/theme_provider.dart';
 import 'services/storage_service.dart';
 import 'screens/task_dashboard_screen.dart';
+import 'screens/loading_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize SharedPreferences in the background
   final prefs = await SharedPreferences.getInstance();
   final storageService = StorageService(prefs);
   
@@ -26,173 +31,31 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<StorageService>.value(
-          value: storageService,
-        ),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => SkillProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProxyProvider2<UserProvider, SkillProvider, TaskProvider>(
+        ChangeNotifierProvider(
+          create: (_) => CoinEconomyProvider(storage: storageService),
+        ),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(
           create: (context) => TaskProvider(
-            context.read<UserProvider>(),
-            context.read<SkillProvider>(),
-            context.read<StorageService>(),
-          ),
-          update: (context, userProvider, skillProvider, previous) => TaskProvider(
-            userProvider,
-            skillProvider,
-            context.read<StorageService>(),
+            storage: storageService,
+            userProvider: context.read<UserProvider>(),
+            skillProvider: context.read<SkillProvider>(),
           ),
         ),
       ],
-      child: MaterialApp(
-        title: 'Level Up Tasks',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF78A1E8),
-            primary: const Color(0xFF78A1E8),
-            secondary: const Color(0xFFF5AC3D),
-            background: const Color(0xFFD7CFC6),
-            surface: const Color(0xFFD7CFC6),
-            brightness: Brightness.light,
-          ),
-          cardTheme: CardTheme(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            color: Colors.white,
-          ),
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: Color(0xFF78A1E8),
-            foregroundColor: Colors.white,
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF78A1E8)),
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              backgroundColor: const Color(0xFFF5AC3D),
-              foregroundColor: Colors.white,
-            ),
-          ),
-          floatingActionButtonTheme: const FloatingActionButtonThemeData(
-            backgroundColor: Color(0xFFF5AC3D),
-            foregroundColor: Colors.white,
-          ),
-          textTheme: const TextTheme(
-            headlineLarge: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 32,
-            ),
-            headlineMedium: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-            ),
-            titleLarge: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-            bodyLarge: TextStyle(
-              fontSize: 16,
-            ),
-          ),
-        ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF78A1E8),
-            primary: const Color(0xFF78A1E8),
-            secondary: const Color(0xFFF5AC3D),
-            background: const Color(0xFF2C2C2C),
-            surface: const Color(0xFF2C2C2C),
-            brightness: Brightness.dark,
-          ),
-          cardTheme: CardTheme(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            color: const Color(0xFF3D3D3D),
-          ),
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: Color(0xFF78A1E8),
-            foregroundColor: Colors.white,
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFF3D3D3D),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF78A1E8)),
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              backgroundColor: const Color(0xFFF5AC3D),
-              foregroundColor: Colors.white,
-            ),
-          ),
-          floatingActionButtonTheme: const FloatingActionButtonThemeData(
-            backgroundColor: Color(0xFFF5AC3D),
-            foregroundColor: Colors.white,
-          ),
-          textTheme: const TextTheme(
-            headlineLarge: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 32,
-            ),
-            headlineMedium: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-            ),
-            titleLarge: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-            bodyLarge: TextStyle(
-              fontSize: 16,
-            ),
-          ),
-        ),
-        themeMode: ThemeMode.system,
-        home: const AppInitializer(),
+      child: Consumer2<ThemeProvider, SettingsProvider>(
+        builder: (context, themeProvider, settingsProvider, child) {
+          return MaterialApp(
+            title: 'Daily XP',
+            theme: themeProvider.currentThemeData,
+            darkTheme: themeProvider.currentThemeData,
+            themeMode: settingsProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            home: const AppInitializer(),
+          );
+        },
       ),
     );
   }
@@ -206,6 +69,9 @@ class AppInitializer extends StatefulWidget {
 }
 
 class _AppInitializerState extends State<AppInitializer> {
+  bool _isInitialized = false;
+  String? _error;
+
   @override
   void initState() {
     super.initState();
@@ -213,17 +79,66 @@ class _AppInitializerState extends State<AppInitializer> {
   }
 
   Future<void> _initializeApp() async {
-    // Wait for the next frame to ensure the widget tree is built
-    await Future.microtask(() {});
-    
-    if (!mounted) return;
-    
-    // Load settings
-    await Provider.of<SettingsProvider>(context, listen: false).loadSettings();
+    try {
+      // Load settings in parallel
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      
+      await Future.wait([
+        themeProvider.init(),
+      ]);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        settingsProvider.loadSettings();
+      });
+
+      // Set up user provider context for level up animations
+      if (mounted) {
+        Provider.of<UserProvider>(context, listen: false).setContext(context);
+        setState(() => _isInitialized = true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Error initializing app: $e';
+          _isInitialized = true; // Still set to true to show error UI
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const LoadingScreen();
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(_error!, style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _error = null;
+                    _isInitialized = false;
+                  });
+                  _initializeApp();
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return const TaskDashboardScreen();
   }
 } 
