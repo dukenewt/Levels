@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../models/user_rank.dart';
+import '../widgets/level_up_overlay.dart';
 
 class UserProvider with ChangeNotifier {
   User? _user;
@@ -8,6 +10,9 @@ class UserProvider with ChangeNotifier {
   int _level = 1;
   int _currentXp = 0;
   int _nextLevelXp = 100; // Base XP required for level 2
+  Function(int)? onLevelUp;
+  OverlayEntry? _levelUpOverlay;
+  BuildContext? _context;
 
   UserProvider() {
     // Initialize with mock user data
@@ -22,6 +27,10 @@ class UserProvider with ChangeNotifier {
       achievements: [],
     );
     _initializeRank();
+  }
+
+  void setContext(BuildContext context) {
+    _context = context;
   }
 
   void _initializeRank() {
@@ -100,6 +109,36 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _showLevelUpOverlay(int newLevel) async {
+    if (_context == null) return;
+    final context = _context!;
+    if (!context.mounted) return;
+    
+    final overlay = Overlay.of(context);
+    if (overlay == null) return;
+
+    _levelUpOverlay = OverlayEntry(
+      builder: (context) => LevelUpOverlay(
+        newLevel: newLevel,
+        onDismiss: () {
+          if (_levelUpOverlay != null) {
+            _levelUpOverlay!.remove();
+            _levelUpOverlay = null;
+          }
+        },
+      ),
+    );
+
+    overlay.insert(_levelUpOverlay!);
+    
+    // Auto-remove after 3 seconds
+    await Future.delayed(const Duration(seconds: 3));
+    if (context.mounted && overlay.mounted && _levelUpOverlay != null) {
+      _levelUpOverlay!.remove();
+      _levelUpOverlay = null;
+    }
+  }
+
   Future<void> addXp(int amount) async {
     debugPrint('UserProvider.addXp called with amount: $amount');
     debugPrint('Current XP before update: $_currentXp');
@@ -115,6 +154,9 @@ class UserProvider with ChangeNotifier {
       // Increase XP required for next level (using a simple scaling formula)
       _nextLevelXp = (100 * (1.5 * (_level - 1))).round();
       debugPrint('Leveled up! New level: $_level, XP reset to: $_currentXp, Next level at: $_nextLevelXp');
+      
+      // Show level up overlay
+      await _showLevelUpOverlay(_level);
     }
     
     // Update the user model if it exists
@@ -142,5 +184,14 @@ class UserProvider with ChangeNotifier {
       
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    if (_levelUpOverlay != null) {
+      _levelUpOverlay!.remove();
+      _levelUpOverlay = null;
+    }
+    super.dispose();
   }
 } 

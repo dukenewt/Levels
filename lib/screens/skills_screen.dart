@@ -12,6 +12,11 @@ class SkillsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final skillProvider = Provider.of<SkillProvider>(context);
 
+    // Ensure skills are loaded
+    if (skillProvider.skills.isEmpty) {
+      skillProvider.loadSkills();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Skills'),
@@ -32,7 +37,7 @@ class SkillsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          ...skillProvider.getSkillsList().map((skill) => _buildSkillCard(context, skill)),
+          ...skillProvider.skills.map((skill) => _buildSkillCard(context, skill)),
         ],
       ),
     );
@@ -118,7 +123,7 @@ class SkillsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '${skill.currentXp}/${skill.xpToNextLevel} XP',
+                        '${skill.currentXp} / ${skill.xpForNextLevel} XP',
                         style: TextStyle(
                           color: skill.color,
                           fontWeight: FontWeight.w600,

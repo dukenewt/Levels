@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/theme_provider.dart';
+import 'theme_selection_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -9,6 +11,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     
     return Scaffold(
       appBar: AppBar(
@@ -17,6 +20,60 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Theme Settings Section
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: theme.colorScheme.outline.withOpacity(0.2),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Theme Settings',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    title: const Text('App Theme'),
+                    subtitle: Text(themeProvider.currentTheme.name),
+                    leading: Icon(
+                      Icons.palette,
+                      color: theme.colorScheme.primary,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ThemeSelectionScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(),
+                  SwitchListTile(
+                    title: const Text('Dark Mode'),
+                    subtitle: const Text('Use system theme settings'),
+                    value: settingsProvider.isDarkMode,
+                    onChanged: (value) {
+                      settingsProvider.setDarkMode(value);
+                    },
+                    activeColor: theme.colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
           // Task Filter Settings Section
           Card(
             shape: RoundedRectangleBorder(
