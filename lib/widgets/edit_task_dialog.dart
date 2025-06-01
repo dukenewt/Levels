@@ -81,20 +81,23 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
             // Task Title Input
             Container(
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.grey[300]!,
-                  width: 1,
+                  color: theme.dividerColor,
+                  width: 1.5,
                 ),
               ),
               child: TextField(
                 controller: titleController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: theme.colorScheme.onSurface),
+                decoration: InputDecoration(
                   labelText: 'Task Title',
                   hintText: 'Enter task title',
+                  labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                  hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 16,
                   ),
@@ -106,21 +109,24 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
             // Description Input
             Container(
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.grey[300]!,
-                  width: 1,
+                  color: theme.dividerColor,
+                  width: 1.5,
                 ),
               ),
               child: TextField(
                 controller: descriptionController,
                 maxLines: 3,
-                decoration: const InputDecoration(
+                style: TextStyle(color: theme.colorScheme.onSurface),
+                decoration: InputDecoration(
                   labelText: 'Description',
                   hintText: 'Enter task description',
+                  labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                  hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 16,
                   ),
@@ -137,20 +143,23 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                   width: 100,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey[50],
+                      color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.grey[300]!,
-                        width: 1,
+                        color: theme.dividerColor,
+                        width: 1.5,
                       ),
                     ),
                     child: TextField(
                       controller: xpController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                      decoration: InputDecoration(
                         labelText: 'XP',
+                        labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                        hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 16,
                         ),
@@ -177,8 +186,8 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: theme.colorScheme.surface,
+                    border: Border.all(color: theme.dividerColor, width: 1.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -273,8 +282,8 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: theme.colorScheme.surface,
+                    border: Border.all(color: theme.dividerColor, width: 1.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: DropdownButtonHideUnderline(

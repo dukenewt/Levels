@@ -254,4 +254,14 @@ class SkillProvider with ChangeNotifier {
     await _saveAchievements();
     notifyListeners();
   }
+
+  // Update a skill (for level up, point allocation, etc.)
+  Future<void> updateSkill(Skill updatedSkill) async {
+    final index = _skills.indexWhere((s) => s.id == updatedSkill.id);
+    if (index != -1) {
+      _skills[index] = updatedSkill;
+      await _saveSkills();
+      notifyListeners();
+    }
+  }
 } 

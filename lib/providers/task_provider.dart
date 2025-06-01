@@ -254,7 +254,6 @@ class TaskProvider with ChangeNotifier {
     // Store task data we'll need later
     final xpReward = task.xpReward;
     final skillId = task.skillId;
-    final recurrencePattern = task.recurrencePattern;
 
     try {
       // Update task completion status immediately
@@ -277,34 +276,6 @@ class TaskProvider with ChangeNotifier {
         debugPrint('Error adding XP: $e');
         // Don't rethrow - we want to continue with task completion even if XP addition fails
       }
-
-      // Handle recurring tasks
-      if (recurrencePattern != null && task.dueDate != null) {
-        DateTime? nextOccurrence = task.calculateNextOccurrence(task.dueDate);
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-
-        // Keep calculating next occurrences until we find one in the future
-        while (nextOccurrence != null && !nextOccurrence.isAfter(today)) {
-          nextOccurrence = task.calculateNextOccurrence(nextOccurrence);
-        }
-
-        if (nextOccurrence != null) {
-          // Create a new task instance for the next occurrence
-          final newTask = task.copyWith(
-            id: const Uuid().v4(),
-            dueDate: nextOccurrence,
-            isCompleted: false,
-            completedAt: null,
-            parentTaskId: task.id,
-          );
-
-          // Add the new task
-          _tasks.add(newTask);
-          await _saveTasks();
-          notifyListeners();
-        }
-      }
     } catch (e) {
       debugPrint('Error completing task: $e');
       // If we failed to complete the task, revert the completion status
@@ -317,15 +288,22 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> createTask(Task task) async {
-    // Calculate XP reward based on difficulty if not provided
-    final xpReward = task.xpReward == 50 ? Task.calculateXPReward(task.difficulty) : task.xpReward;
-    
-    final newTask = task.copyWith(
-      id: const Uuid().v4(),
-      xpReward: xpReward,
-    );
-
-    _tasks.add(newTask);
+    // If recurring, generate all instances for the next 30 days
+    if (task.recurrencePattern != null) {
+      final instances = Task.generateRecurringInstances(template: task, daysAhead: 30);
+      print('Generated recurring instances:');
+      for (var t in instances) {
+        print('Instance dueDate: \'${t.dueDate}\'');
+      }
+      _tasks.addAll(instances);
+    } else {
+      final xpReward = task.xpReward == 50 ? Task.calculateXPReward(task.difficulty) : task.xpReward;
+      final newTask = task.copyWith(
+        id: const Uuid().v4(),
+        xpReward: xpReward,
+      );
+      _tasks.add(newTask);
+    }
     await _saveTasks();
     notifyListeners();
   }
@@ -397,6 +375,37 @@ class TaskProvider with ChangeNotifier {
       debugPrint('Error saving tasks: $e');
       rethrow;
     }
+  }
+
+  // Ensure recurring tasks have instances for the next 30 days
+  Future<void> maintainRecurringTaskWindow() async {
+    final now = DateTime.now();
+    final windowEnd = now.add(const Duration(days: 30));
+    final recurringTemplates = _tasks.where((t) => t.recurrencePattern != null && t.parentTaskId == null).toList();
+    for (final template in recurringTemplates) {
+      // Find the latest dueDate for this template
+      final children = _tasks.where((t) => t.parentTaskId == template.id).toList();
+      DateTime? latestDueDate = children.isNotEmpty
+        ? children.map((t) => t.dueDate ?? now).reduce((a, b) => a.isAfter(b) ? a : b)
+        : template.dueDate;
+      if (latestDueDate == null) continue;
+      // If latestDueDate is before windowEnd, generate more instances
+      while (latestDueDate != null && latestDueDate.isBefore(windowEnd)) {
+        final nextInstances = Task.generateRecurringInstances(
+          template: template.copyWith(dueDate: latestDueDate),
+          daysAhead: 1,
+        );
+        // Only add if not already present
+        for (final inst in nextInstances) {
+          if (!_tasks.any((t) => t.dueDate == inst.dueDate && t.parentTaskId == template.id)) {
+            _tasks.add(inst);
+          }
+        }
+        latestDueDate = nextInstances.last.dueDate ?? latestDueDate!.add(const Duration(days: 1));
+      }
+    }
+    await _saveTasks();
+    notifyListeners();
   }
 
   @override
