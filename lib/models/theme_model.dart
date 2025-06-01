@@ -14,6 +14,7 @@ enum ThemeType {
   premiumNeon,
   premiumMinimal,
   professional,
+  natural,
 }
 
 class AppTheme {
@@ -221,6 +222,32 @@ class AppTheme {
     },
   );
 
+  // Natural theme
+  static const AppTheme natural = AppTheme(
+    type: ThemeType.natural,
+    name: 'Natural',
+    description: 'Earthy, vibrant, and natural color palette',
+    isPremium: false,
+    primaryColor: Color(0xFF166534),
+    secondaryColor: Color(0xFF84CC16),
+    backgroundColor: Color(0xFFFFFBEB),
+    surfaceColor: Color(0xFFFFFBEB),
+    textColor: Color(0xFF451A03),
+    accentColor: Color(0xFFEAB308),
+    gradientColors: [
+      Color(0xFF166534),
+      Color(0xFF84CC16),
+      Color(0xFFEAB308),
+    ],
+    blurRadius: 0,
+    glassOpacity: 0,
+    priorityColors: {
+      Priority.low: Color(0xFF84CC16),
+      Priority.medium: Color(0xFFEAB308),
+      Priority.high: Color(0xFF166534),
+    },
+  );
+
   // Get all available themes
   static List<AppTheme> get allThemes => [
     defaultLight,
@@ -230,6 +257,7 @@ class AppTheme {
     premiumNeon,
     premiumMinimal,
     professional,
+    natural,
   ];
 
   // Get theme by type
