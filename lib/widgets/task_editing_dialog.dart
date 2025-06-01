@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
 import 'task_creation_dialog.dart';
+import '../providers/skill_provider.dart';
 
 class TaskEditingDialog extends StatefulWidget {
   final Task task;
@@ -21,12 +22,17 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late int _xpReward;
+  late String _difficulty;
+  int _minXp = 0;
+  int _maxXp = 25;
   late DateTime? _dueDate;
   late TimeOfDay? _scheduledTime;
   late String? _recurrencePattern;
   late List<int>? _weeklyDays;
   late int? _repeatInterval;
   late DateTime? _endDate;
+  late String? _selectedSkillId;
+  int _timeCostMinutes = 10;
 
   final List<String> _recurrenceOptions = [
     'None',
@@ -42,12 +48,16 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
     _titleController = TextEditingController(text: widget.task.title);
     _descriptionController = TextEditingController(text: widget.task.description);
     _xpReward = widget.task.xpReward;
+    _difficulty = widget.task.difficulty;
+    _updateXpRangeForDifficulty(_difficulty);
     _dueDate = widget.task.dueDate;
     _scheduledTime = widget.task.scheduledTime;
     _recurrencePattern = widget.task.recurrencePattern?.capitalize();
     _weeklyDays = widget.task.weeklyDays;
     _repeatInterval = widget.task.repeatInterval;
     _endDate = widget.task.endDate;
+    _selectedSkillId = widget.task.skillId;
+    _timeCostMinutes = widget.task.timeCostMinutes;
   }
 
   @override
@@ -104,6 +114,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
       final updatedTask = widget.task.copyWith(
         title: _titleController.text,
         description: _descriptionController.text,
+        difficulty: _difficulty,
         xpReward: _xpReward,
         dueDate: _dueDate,
         scheduledTime: _scheduledTime,
@@ -111,11 +122,39 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
         weeklyDays: _weeklyDays,
         repeatInterval: _repeatInterval,
         endDate: _endDate,
+        skillId: _selectedSkillId,
+        timeCostMinutes: _timeCostMinutes,
       );
 
       taskProvider.updateTask(updatedTask);
       Navigator.of(context).pop();
     }
+  }
+
+  void _updateXpRangeForDifficulty(String difficulty) {
+    switch (difficulty) {
+      case 'easy':
+        _minXp = 0;
+        _maxXp = 25;
+        break;
+      case 'medium':
+        _minXp = 25;
+        _maxXp = 50;
+        break;
+      case 'hard':
+        _minXp = 50;
+        _maxXp = 100;
+        break;
+      case 'epic':
+        _minXp = 100;
+        _maxXp = 250;
+        break;
+      default:
+        _minXp = 0;
+        _maxXp = 25;
+    }
+    if (_xpReward < _minXp) _xpReward = _minXp;
+    if (_xpReward > _maxXp) _xpReward = _maxXp;
   }
 
   @override
@@ -159,6 +198,48 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              // Skill group dropdown
+              Builder(
+                builder: (context) {
+                  final skillProvider = Provider.of<SkillProvider>(context);
+                  final skills = skillProvider.skills;
+                  return StatefulBuilder(
+                    builder: (context, setStateSB) {
+                      return DropdownButtonFormField<String>(
+                        value: _selectedSkillId,
+                        decoration: InputDecoration(
+                          labelText: 'Related Skill',
+                          border: OutlineInputBorder(),
+                          labelStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem<String>(
+                            value: null,
+                            child: Text(
+                              'None',
+                              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                            ),
+                          ),
+                          ...skills.map((skill) => DropdownMenuItem<String>(
+                                value: skill.id,
+                                child: Text(skill.name),
+                              )),
+                        ],
+                        onChanged: (value) {
+                          setStateSB(() {
+                            _selectedSkillId = value;
+                          });
+                          setState(() {}); // To update parent state on change
+                        },
+                      );
+                    },
+                  );
+                },
               ),
               const SizedBox(height: 16),
               Row(
@@ -275,15 +356,36 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
                 ),
               ],
               const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _difficulty,
+                decoration: const InputDecoration(
+                  labelText: 'Difficulty',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'easy', child: Text('Easy')),
+                  DropdownMenuItem(value: 'medium', child: Text('Medium')),
+                  DropdownMenuItem(value: 'hard', child: Text('Hard')),
+                  DropdownMenuItem(value: 'epic', child: Text('Epic')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _difficulty = value!;
+                    _updateXpRangeForDifficulty(_difficulty);
+                    _xpReward = _minXp;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   const Text('XP Reward:'),
                   Expanded(
                     child: Slider(
                       value: _xpReward.toDouble(),
-                      min: 5,
-                      max: 50,
-                      divisions: 9,
+                      min: _minXp.toDouble(),
+                      max: _maxXp.toDouble(),
+                      divisions: (_maxXp - _minXp) > 0 ? (_maxXp - _minXp) : 1,
                       label: _xpReward.toString(),
                       onChanged: (value) {
                         setState(() {
@@ -293,6 +395,27 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
                     ),
                   ),
                   Text(_xpReward.toString()),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text('Time Cost:'),
+                  Expanded(
+                    child: Slider(
+                      value: _timeCostMinutes.toDouble(),
+                      min: 10,
+                      max: 240,
+                      divisions: 23,
+                      label: '${_timeCostMinutes ~/ 60 > 0 ? '${_timeCostMinutes ~/ 60}h ' : ''}${_timeCostMinutes % 60 > 0 ? '${_timeCostMinutes % 60}m' : ''}',
+                      onChanged: (value) {
+                        setState(() {
+                          _timeCostMinutes = (value ~/ 10) * 10;
+                        });
+                      },
+                    ),
+                  ),
+                  Text('${_timeCostMinutes ~/ 60 > 0 ? '${_timeCostMinutes ~/ 60}h ' : ''}${_timeCostMinutes % 60 > 0 ? '${_timeCostMinutes % 60}m' : ''}'),
                 ],
               ),
               const SizedBox(height: 16),

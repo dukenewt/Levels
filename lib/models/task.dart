@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'skill.dart';
+import 'package:uuid/uuid.dart';
 
 class Task {
   final String id;
@@ -21,6 +22,7 @@ class Task {
   final List<int>? weeklyDays; // 1-7 for days of week (1 = Monday)
   final int? repeatInterval; // For custom intervals (e.g., every 2 days)
   final DateTime? endDate; // Optional end date for recurring tasks
+  final int timeCostMinutes;
 
   Task({
     required this.id,
@@ -41,6 +43,7 @@ class Task {
     this.repeatInterval,
     this.endDate,
     DateTime? createdAt,
+    this.timeCostMinutes = 10,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Task copyWith({
@@ -62,6 +65,7 @@ class Task {
     int? repeatInterval,
     DateTime? endDate,
     DateTime? createdAt,
+    int? timeCostMinutes,
   }) {
     return Task(
       id: id ?? this.id,
@@ -82,6 +86,7 @@ class Task {
       repeatInterval: repeatInterval ?? this.repeatInterval,
       endDate: endDate ?? this.endDate,
       createdAt: createdAt ?? this.createdAt,
+      timeCostMinutes: timeCostMinutes ?? this.timeCostMinutes,
     );
   }
 
@@ -104,6 +109,7 @@ class Task {
       'weeklyDays': weeklyDays,
       'repeatInterval': repeatInterval,
       'endDate': endDate?.toIso8601String(),
+      'timeCostMinutes': timeCostMinutes,
     };
   }
 
@@ -143,6 +149,7 @@ class Task {
       createdAt: json['createdAt'] != null 
           ? DateTime.parse(json['createdAt'] as String)
           : DateTime.now(),
+      timeCostMinutes: json['timeCostMinutes'] as int? ?? 10,
     );
   }
 
@@ -226,5 +233,70 @@ class Task {
       isCompleted: true,
       completedAt: DateTime.now(),
     );
+  }
+
+  // Generate recurring instances for the next [daysAhead] days (default 30)
+  static List<Task> generateRecurringInstances({
+    required Task template,
+    int daysAhead = 30,
+  }) {
+    final List<Task> instances = [];
+    final now = DateTime.now();
+    final endDate = template.endDate ?? now.add(Duration(days: daysAhead));
+    DateTime? current = template.dueDate;
+    if (template.recurrencePattern == null || current == null) {
+      // Not recurring, just return the single instance
+      return [template];
+    }
+    while (current != null && (current.isBefore(endDate) || current.isAtSameMomentAs(endDate))) {
+      // Only add if not already completed (for safety)
+      instances.add(template.copyWith(
+        id: const Uuid().v4(),
+        dueDate: current,
+        isCompleted: false,
+        completedAt: null,
+        parentTaskId: template.id,
+      ));
+      // Calculate next occurrence
+      switch (template.recurrencePattern) {
+        case 'daily':
+          current = current.add(Duration(days: template.repeatInterval ?? 1));
+          break;
+        case 'weekly':
+          if (template.weeklyDays != null && template.weeklyDays!.isNotEmpty) {
+            // Find next valid weekday
+            int currentDay = current.weekday;
+            int? nextDay = template.weeklyDays!.firstWhere(
+              (day) => day > currentDay,
+              orElse: () => template.weeklyDays!.first,
+            );
+            int daysToAdd = nextDay > currentDay
+                ? nextDay - currentDay
+                : 7 - currentDay + nextDay;
+            current = current.add(Duration(days: daysToAdd));
+          } else {
+            current = current.add(const Duration(days: 7));
+          }
+          break;
+        case 'workdays':
+          do {
+            current = current!.add(const Duration(days: 1));
+          } while (current.weekday == DateTime.saturday || current.weekday == DateTime.sunday);
+          break;
+        case 'monthly':
+          current = DateTime(
+            current.year + (current.month == 12 ? 1 : 0),
+            current.month == 12 ? 1 : current.month + 1,
+            current.day,
+            current.hour,
+            current.minute,
+          );
+          break;
+        default:
+          // Not recurring
+          return instances;
+      }
+    }
+    return instances;
   }
 } 

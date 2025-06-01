@@ -13,6 +13,7 @@ import '../screens/stats_screen.dart';
 import '../screens/achievements_screen.dart';
 import '../screens/profile_screen.dart';
 import 'dart:async';
+import '../providers/skill_provider.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({Key? key}) : super(key: key);
@@ -162,9 +163,23 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
     }
   }
 
-  Widget _buildTaskTile(Task task, BuildContext context) {
+  Widget _buildTaskTile(Task task, BuildContext context, {bool showTime = true, bool compact = false}) {
     final theme = Theme.of(context);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final skillProvider = Provider.of<SkillProvider>(context, listen: false);
+    Color? skillColor;
+    if (task.skillId != null) {
+      final skill = skillProvider.getSkillById(task.skillId!);
+      if (skill != null) {
+        skillColor = skill.color;
+      }
+    }
+    final cardColor = skillColor ?? theme.cardColor.withOpacity(0.85);
+    final double fontSize = compact ? 10 : 12;
+    final double timeFontSize = compact ? 8 : 10;
+    final double recurrenceFontSize = compact ? 8 : 10;
+    final double verticalPad = compact ? 1 : 4;
+    final double horizontalPad = compact ? 2 : 4;
     return Dismissible(
       key: ValueKey('calendar-${task.id}'),
       direction: DismissDirection.startToEnd, // swipe right to delete
@@ -261,37 +276,39 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
           );
         },
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          padding: const EdgeInsets.all(4),
+          margin: const EdgeInsets.symmetric(horizontal: 1),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPad, vertical: verticalPad),
           decoration: BoxDecoration(
-            color: _getCategoryColor(task.category).withOpacity(0.2),
-            borderRadius: BorderRadius.circular(4),
+            color: cardColor,
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
               Expanded(
                 child: Text(
                   task.title,
-                  style: const TextStyle(fontSize: 12),
+                  style: TextStyle(fontSize: fontSize),
                   overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
-              if (task.scheduledTime != null)
+              if (showTime && task.scheduledTime != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: Text(
                     task.scheduledTime!.format(context),
-                    style: const TextStyle(fontSize: 10),
+                    style: TextStyle(fontSize: timeFontSize),
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               if (task.recurrencePattern != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 6, vertical: compact ? 1 : 2),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.12),
+                      color: theme.colorScheme.secondary.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -299,17 +316,19 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                       children: [
                         Icon(
                           Icons.repeat,
-                          size: 14,
-                          color: Theme.of(context).colorScheme.secondary,
+                          size: compact ? 10 : 14,
+                          color: theme.colorScheme.secondary,
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: compact ? 2 : 4),
                         Text(
                           task.recurrencePattern!.substring(0, 1).toUpperCase() + task.recurrencePattern!.substring(1),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.secondary,
                             fontWeight: FontWeight.bold,
+                            fontSize: recurrenceFontSize,
                           ),
                           overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ],
                     ),
@@ -326,105 +345,113 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
     final startOfWeek = _focusedDay.subtract(Duration(days: _focusedDay.weekday - 1));
     final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
     final hours = List.generate(24, (i) => i);
+    final theme = Theme.of(context);
 
-    return SizedBox(
-      height: 1440.0, // 24 hours * 60px per hour
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SingleChildScrollView(
-          child: SizedBox(
-            width: 7 * 120.0 + 60, // 120 per day + 60 for hour column
-            child: Column(
-              children: [
-                // Header row
-                Row(
-                  children: [
-                    Container(width: 60, height: 40), // Empty top-left
-                    ...days.map((day) => Container(
-                          width: 120,
-                          height: 40,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
-                            border: Border(
-                              right: BorderSide(color: Theme.of(context).dividerColor),
-                            ),
-                          ),
-                          child: Text(
-                            DateFormat('EEE\nMM/dd').format(day),
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        )),
-                  ],
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sticky hour column
+          Column(
+            children: [
+              Container(width: 60, height: 40, color: theme.colorScheme.surfaceVariant.withOpacity(0.7)), // Empty top-left
+              ...hours.map((hour) => Container(
+                width: 60,
+                height: 60,
+                alignment: Alignment.topCenter,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant.withOpacity(0.7),
+                  border: Border(
+                    right: BorderSide(color: theme.dividerColor),
+                    top: BorderSide(color: theme.dividerColor),
+                  ),
                 ),
-                // All hour rows
-                ...hours.map((hour) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        alignment: Alignment.topCenter,
+                child: Text(
+                  '${hour.toString().padLeft(2, '0')}:00',
+                  style: theme.textTheme.bodySmall,
+                ),
+              )),
+            ],
+          ),
+          // Scrollable days grid
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: 7 * 120.0,
+                child: Column(
+                  children: [
+                    // Header row
+                    Row(
+                      children: days.map((day) => Container(
+                        width: 120,
+                        height: 40,
+                        alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.04),
+                          color: theme.colorScheme.primary.withOpacity(0.08),
                           border: Border(
-                            right: BorderSide(color: Theme.of(context).dividerColor),
-                            top: BorderSide(color: Theme.of(context).dividerColor),
+                            right: BorderSide(color: theme.dividerColor),
                           ),
                         ),
                         child: Text(
-                          '${hour.toString().padLeft(2, '0')}:00',
-                          style: Theme.of(context).textTheme.bodySmall,
+                          DateFormat('EEE\nMM/dd').format(day),
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      ...days.map((day) {
-                        final tasks = _getEventsForTimeSlot(day, TimeOfDay(hour: hour, minute: 0));
-                        return Container(
-                          width: 120,
-                          height: 60,
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              right: BorderSide(color: Theme.of(context).dividerColor),
-                              top: BorderSide(color: Theme.of(context).dividerColor),
+                      )).toList(),
+                    ),
+                    // All hour rows
+                    ...hours.map((hour) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: days.map((day) {
+                          final tasks = _getEventsForTimeSlot(day, TimeOfDay(hour: hour, minute: 0));
+                          return Container(
+                            width: 120,
+                            height: 60,
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                right: BorderSide(color: theme.dividerColor),
+                                top: BorderSide(color: theme.dividerColor),
+                              ),
                             ),
-                          ),
-                          child: tasks.isEmpty
-                              ? null
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ...tasks.take(2).map((task) => Row(
-                                      children: [
-                                        if (task.recurrencePattern != null)
-                                          Padding(
-                                            padding: const EdgeInsets.only(right: 2),
-                                            child: Icon(Icons.repeat, size: 12, color: Theme.of(context).colorScheme.secondary),
-                                          ),
-                                        Expanded(
-                                          child: Text(
-                                            task.title,
-                                            style: Theme.of(context).textTheme.bodySmall,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    )),
-                                    if (tasks.length > 2)
-                                      Text('+${tasks.length - 2} more', style: Theme.of(context).textTheme.labelSmall),
-                                  ],
-                                ),
-                        );
-                      }).toList(),
-                    ],
-                  );
-                }).toList(),
-              ],
+                            child: tasks.isEmpty
+                                ? null
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      ...tasks.take(2).map((task) => Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 2),
+                                        child: _buildTaskTile(task, context, showTime: false, compact: true),
+                                      )),
+                                      if (tasks.length > 2)
+                                        Text('+${tasks.length - 2} more', style: theme.textTheme.labelSmall),
+                                    ],
+                                  ),
+                          );
+                        }).toList(),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -443,14 +470,40 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
     // Group dayTasks by hour for display
     Map<int, List<Task>> tasksByHour = {};
     for (var task in dayTasks) {
-      int hour = 0;
       if (task.scheduledTime != null) {
-        hour = task.scheduledTime!.hour;
+        final start = task.scheduledTime!;
+        final duration = task.timeCostMinutes;
+        final startMinutes = start.hour * 60 + start.minute;
+        final endMinutes = startMinutes + duration;
+        final startHour = start.hour;
+        final endHour = (endMinutes / 60).ceil();
+        for (int hour = startHour; hour < endHour; hour++) {
+          tasksByHour.putIfAbsent(hour, () => []).add(task);
+        }
       } else if (task.dueDate != null) {
-        hour = task.dueDate!.hour;
+        final hour = task.dueDate!.hour;
+        tasksByHour.putIfAbsent(hour, () => []).add(task);
       }
-      tasksByHour.putIfAbsent(hour, () => []).add(task);
     }
+
+    // Calculate slot heights and covered hours for merged multi-hour tasks
+    final Map<int, double> hourHeights = {};
+    final Set<int> coveredHours = {};
+    for (var task in dayTasks) {
+      if (task.scheduledTime != null) {
+        final start = task.scheduledTime!;
+        final duration = task.timeCostMinutes;
+        final startHour = start.hour;
+        final durationHours = (duration / 60).clamp(1, 24);
+        final endHour = (startHour + durationHours).ceil();
+        hourHeights[startHour] = 60.0 * durationHours;
+        for (int h = startHour + 1; h < endHour; h++) {
+          coveredHours.add(h);
+        }
+      }
+    }
+
+    Set<String> renderedTaskIds = {};
 
     return Column(
       children: [
@@ -502,45 +555,73 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
           physics: const NeverScrollableScrollPhysics(),
           itemCount: 24, // Hours in a day
           itemBuilder: (context, hour) {
-            final tasks = tasksByHour[hour] ?? [];
-            return Container(
-              height: 60,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                    width: 0.5,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 60,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      TimeOfDay(hour: hour, minute: 0).format(context),
-                      style: const TextStyle(fontSize: 12),
+            if (coveredHours.contains(hour)) {
+              // This hour is covered by a previous multi-hour task, so skip or render a zero-height container
+              return const SizedBox.shrink();
+            }
+            final slotHeight = hourHeights[hour] ?? 60.0;
+            // Find tasks that start at this hour
+            final startingTasks = (tasksByHour[hour] ?? []).where((task) {
+              if (task.scheduledTime != null) {
+                return task.scheduledTime!.hour == hour && !renderedTaskIds.contains(task.id);
+              } else if (task.dueDate != null) {
+                return task.dueDate!.hour == hour && !renderedTaskIds.contains(task.id);
+              }
+              return false;
+            }).toList();
+
+            // Mark these tasks as rendered
+            for (var task in startingTasks) {
+              renderedTaskIds.add(task.id);
+            }
+
+            return Stack(
+              children: [
+                Container(
+                  height: slotHeight,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                        width: 0.5,
+                      ),
                     ),
                   ),
-                  Expanded(
-                    child: tasks.isEmpty
-                        ? const SizedBox.shrink()
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: tasks.length,
-                            itemBuilder: (context, idx) {
-                              final task = tasks[idx];
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 2),
-                                child: _buildTaskTile(task, context),
-                              );
-                            },
-                          ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          TimeOfDay(hour: hour, minute: 0).format(context),
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      const Expanded(child: SizedBox.shrink()),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                // Render merged task blocks
+                ...startingTasks.map((task) {
+                  final durationHours = (task.timeCostMinutes / 60).clamp(1, 24);
+                  final blockHeight = 60.0 * durationHours;
+                  final startMinute = task.scheduledTime?.minute ?? 0;
+                  final topOffset = (startMinute / 60.0) * 60.0; // Offset for minutes past the hour
+
+                  return Positioned(
+                    top: topOffset,
+                    left: 60,
+                    right: 0,
+                    child: SizedBox(
+                      height: blockHeight - topOffset,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: _buildTaskTile(task, context),
+                      ),
+                    ),
+                  );
+                }),
+              ],
             );
           },
         ),
@@ -923,68 +1004,62 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
           ],
         ),
       ),
-      appBar: AppBar(
-        title: const Text('Calendar'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.colorScheme.primary.withOpacity(0.1),
-              theme.colorScheme.secondary.withOpacity(0.1),
-            ],
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text('Calendar'),
+            floating: true,
+            snap: true,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            forceElevated: true,
           ),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _currentView == 'day' 
-                ? _buildDailyView() 
-                : _currentView == 'week' 
-                  ? _buildWeekGridView() 
-                  : _buildMonthView(),
-              const SizedBox(height: 16),
-              _buildViewSelector(),
-              const SizedBox(height: 16),
-              _buildCalendar(),
-              const SizedBox(height: 16),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: _categories.map((category) {
-                    final isSelected = _selectedCategory == category;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        selected: isSelected,
-                        label: Text(category),
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedCategory = selected ? category : null;
-                          });
-                        },
-                        backgroundColor: theme.cardColor,
-                        selectedColor: _getCategoryColor(category),
-                        checkmarkColor: Colors.white,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
-                        ),
+          SliverToBoxAdapter(
+            child: _currentView == 'day' 
+              ? _buildDailyView() 
+              : _currentView == 'week' 
+                ? _buildWeekGridView() 
+                : _buildMonthView(),
+          ),
+          if (_currentView == 'week')
+            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          SliverToBoxAdapter(child: _buildViewSelector()),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          SliverToBoxAdapter(child: _buildCalendar()),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          SliverToBoxAdapter(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: _categories.map((category) {
+                  final isSelected = _selectedCategory == category;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      selected: isSelected,
+                      label: Text(category),
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedCategory = selected ? category : null;
+                        });
+                      },
+                      backgroundColor: theme.cardColor,
+                      selectedColor: _getCategoryColor(category),
+                      checkmarkColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
                       ),
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 16),
-              _buildXPProgressBar(),
-            ],
+            ),
           ),
-        ),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          SliverToBoxAdapter(child: _buildXPProgressBar()),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

@@ -156,7 +156,7 @@ class UserProvider with ChangeNotifier {
       debugPrint('Leveled up! New level: $_level, XP reset to: $_currentXp, Next level at: $_nextLevelXp');
       
       // Show level up overlay
-      await _showLevelUpOverlay(_level);
+      // await _showLevelUpOverlay(_level); // Disabled as requested
     }
     
     // Update the user model if it exists

@@ -7,7 +7,7 @@ class ThemeProvider with ChangeNotifier {
   static const String _premiumThemesKey = 'unlocked_premium_themes';
 
   late SharedPreferences _prefs;
-  ThemeType _currentTheme = ThemeType.professional;
+  ThemeType _currentTheme = ThemeType.natural;
   final Set<ThemeType> _unlockedPremiumThemes = {};
 
   ThemeType get currentTheme => _currentTheme;

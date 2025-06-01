@@ -5,38 +5,29 @@ class AnimatedXPBar extends StatefulWidget {
   final double progress;
   final Color color;
   final double height;
-  final AnimationType animationType;
+  final bool shimmer;
   final Duration duration;
+  final Duration shimmerDuration;
 
   const AnimatedXPBar({
     Key? key,
     required this.progress,
     required this.color,
     this.height = 8.0,
-    this.animationType = AnimationType.liquid,
+    this.shimmer = false,
     this.duration = const Duration(milliseconds: 1000),
+    this.shimmerDuration = const Duration(seconds: 2),
   }) : super(key: key);
 
   @override
   State<AnimatedXPBar> createState() => _AnimatedXPBarState();
 }
 
-enum AnimationType {
-  liquid,
-  segmented,
-  pulse,
-  morphing,
-}
-
-class _AnimatedXPBarState extends State<AnimatedXPBar> with SingleTickerProviderStateMixin {
+class _AnimatedXPBarState extends State<AnimatedXPBar> with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _progressAnimation;
-  late List<Animation<double>> _segmentAnimations;
-  late List<Animation<double>> _pulseAnimations;
-  late List<Animation<double>> _waveAnimations;
-  final int _numSegments = 10;
-  final int _numPulses = 3;
-  final int _numWaves = 3;
+  late AnimationController _shimmerController;
+  bool _showShimmer = false;
 
   @override
   void initState() {
@@ -45,7 +36,6 @@ class _AnimatedXPBarState extends State<AnimatedXPBar> with SingleTickerProvider
       vsync: this,
       duration: widget.duration,
     );
-
     _progressAnimation = Tween<double>(
       begin: 0,
       end: widget.progress,
@@ -53,53 +43,24 @@ class _AnimatedXPBarState extends State<AnimatedXPBar> with SingleTickerProvider
       parent: _controller,
       curve: Curves.easeInOut,
     ));
-
-    // Initialize segment animations with scale effect
-    _segmentAnimations = List.generate(_numSegments, (index) {
-      final delay = index * (widget.duration.inMilliseconds ~/ _numSegments);
-      return Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-          parent: _controller,
-          curve: Interval(
-            delay / widget.duration.inMilliseconds,
-            (delay + widget.duration.inMilliseconds ~/ _numSegments) / widget.duration.inMilliseconds,
-            curve: Curves.elasticOut,
-          ),
-        ),
-      );
-    });
-
-    // Initialize pulse animations with fade effect
-    _pulseAnimations = List.generate(_numPulses, (index) {
-      final delay = index * (widget.duration.inMilliseconds ~/ _numPulses);
-      return Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-          parent: _controller,
-          curve: Interval(
-            delay / widget.duration.inMilliseconds,
-            (delay + widget.duration.inMilliseconds ~/ _numPulses) / widget.duration.inMilliseconds,
-            curve: Curves.easeInOut,
-          ),
-        ),
-      );
-    });
-
-    // Initialize wave animations for liquid effect
-    _waveAnimations = List.generate(_numWaves, (index) {
-      final delay = index * (widget.duration.inMilliseconds ~/ _numWaves);
-      return Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-          parent: _controller,
-          curve: Interval(
-            delay / widget.duration.inMilliseconds,
-            (delay + widget.duration.inMilliseconds ~/ _numWaves) / widget.duration.inMilliseconds,
-            curve: Curves.easeInOut,
-          ),
-        ),
-      );
-    });
-
     _controller.forward();
+
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: widget.shimmerDuration,
+    );
+    if (widget.shimmer) {
+      _showShimmer = true;
+      _shimmerController.repeat();
+      Future.delayed(widget.shimmerDuration, () {
+        if (mounted) {
+          setState(() {
+            _showShimmer = false;
+            _shimmerController.stop();
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -115,220 +76,137 @@ class _AnimatedXPBarState extends State<AnimatedXPBar> with SingleTickerProvider
       ));
       _controller.forward(from: 0);
     }
+    if (widget.shimmer && !_showShimmer) {
+      _showShimmer = true;
+      _shimmerController.duration = widget.shimmerDuration;
+      _shimmerController.repeat();
+      Future.delayed(widget.shimmerDuration, () {
+        if (mounted) {
+          setState(() {
+            _showShimmer = false;
+            _shimmerController.stop();
+          });
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: Listenable.merge([_controller, _shimmerController]),
       builder: (context, child) {
-        switch (widget.animationType) {
-          case AnimationType.liquid:
-            return _buildLiquidAnimation();
-          case AnimationType.segmented:
-            return _buildSegmentedAnimation();
-          case AnimationType.pulse:
-            return _buildPulseAnimation();
-          case AnimationType.morphing:
-            return _buildMorphingAnimation();
-        }
-      },
-    );
-  }
-
-  Widget _buildLiquidAnimation() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(widget.height / 2),
-      child: Stack(
-        children: [
-          Container(
-            height: widget.height,
-            color: widget.color.withOpacity(0.1),
-          ),
-          FractionallySizedBox(
-            widthFactor: _progressAnimation.value,
-            child: Container(
-              height: widget.height,
-              decoration: BoxDecoration(
-                color: widget.color,
-                borderRadius: BorderRadius.circular(widget.height / 2),
-              ),
-              child: Stack(
-                children: List.generate(_numWaves, (index) {
-                  return CustomPaint(
-                    painter: LiquidFillPainter(
-                      color: widget.color,
-                      progress: _progressAnimation.value,
-                      waveAnimation: _waveAnimations[index],
-                      waveIndex: index,
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSegmentedAnimation() {
-    return Row(
-      children: List.generate(_numSegments, (index) {
-        final segmentWidth = 1.0 / _numSegments;
-        final segmentProgress = math.max(0, math.min(1, (_progressAnimation.value - index * segmentWidth) / segmentWidth));
-        
-        return Expanded(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 1),
-            height: widget.height,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(widget.height / 2),
-              child: Stack(
-                children: [
-                  Container(color: widget.color.withOpacity(0.1)),
-                  Transform.scale(
-                    scale: 0.8 + (_segmentAnimations[index].value * 0.2),
-                    child: FractionallySizedBox(
-                      widthFactor: _segmentAnimations[index].value * segmentProgress,
-                      child: Container(
-                        color: widget.color,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+        return SizedBox(
+          width: double.infinity,
+          height: widget.height,
+          child: CustomPaint(
+            painter: GradientXPBarPainter(
+              progress: _progressAnimation.value,
+              color: widget.color,
+              shimmer: _showShimmer,
+              shimmerValue: _shimmerController.value,
             ),
           ),
         );
-      }),
-    );
-  }
-
-  Widget _buildPulseAnimation() {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(widget.height / 2),
-          child: Stack(
-            children: [
-              Container(
-                height: widget.height,
-                color: widget.color.withOpacity(0.1),
-              ),
-              FractionallySizedBox(
-                widthFactor: _progressAnimation.value,
-                child: Container(
-                  height: widget.height,
-                  color: widget.color,
-                ),
-              ),
-            ],
-          ),
-        ),
-        ...List.generate(_numPulses, (index) {
-          return Positioned(
-            left: _pulseAnimations[index].value * MediaQuery.of(context).size.width,
-            child: Container(
-              height: widget.height,
-              width: 10,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    widget.color.withOpacity(0),
-                    widget.color.withOpacity(0.8),
-                    widget.color.withOpacity(0),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildMorphingAnimation() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(widget.height / 2),
-      child: Stack(
-        children: [
-          Container(
-            height: widget.height,
-            color: widget.color.withOpacity(0.1),
-          ),
-          FractionallySizedBox(
-            widthFactor: _progressAnimation.value,
-            child: Container(
-              height: widget.height,
-              decoration: BoxDecoration(
-                color: widget.color,
-                borderRadius: BorderRadius.circular(
-                  widget.height / 2 * (1 + math.sin(_controller.value * math.pi * 2) * 0.3),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.color.withOpacity(0.3),
-                    blurRadius: 4,
-                    offset: Offset(
-                      math.sin(_controller.value * math.pi * 2) * 2,
-                      math.cos(_controller.value * math.pi * 2) * 2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      },
     );
   }
 }
 
-class LiquidFillPainter extends CustomPainter {
-  final Color color;
+class GradientXPBarPainter extends CustomPainter {
   final double progress;
-  final Animation<double> waveAnimation;
-  final int waveIndex;
+  final Color color;
+  final bool shimmer;
+  final double shimmerValue;
 
-  LiquidFillPainter({
-    required this.color,
+  GradientXPBarPainter({
     required this.progress,
-    required this.waveAnimation,
-    required this.waveIndex,
+    required this.color,
+    required this.shimmer,
+    required this.shimmerValue,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withOpacity(0.7 - (waveIndex * 0.2))
+    final barRadius = Radius.circular(size.height / 2);
+    final backgroundPaint = Paint()
+      ..color = color.withOpacity(0.08)
+      ..style = PaintingStyle.fill;
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final rrect = RRect.fromRectAndRadius(rect, barRadius);
+    canvas.drawRRect(rrect, backgroundPaint);
+
+    // Draw border
+    final borderPaint = Paint()
+      ..color = color.withOpacity(0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawRRect(rrect, borderPaint);
+
+    final fillWidth = size.width * progress.clamp(0.0, 1.0);
+    if (fillWidth <= 0) return;
+    final fillRect = Rect.fromLTWH(0, 0, fillWidth, size.height);
+    final fillRRect = RRect.fromRectAndRadius(fillRect, barRadius);
+
+    // Gradient colors
+    final List<Color> gradientColors = [
+      color.withOpacity(0.95),
+      color.withOpacity(0.8),
+      color.withOpacity(0.95),
+    ];
+    final List<double> stops = [0.0, 0.5, 1.0];
+
+    // Shimmer effect overlay
+    Shader? shader;
+    if (shimmer) {
+      final shimmerWidth = size.width * 0.5;
+      final shimmerStart = shimmerValue * (size.width + shimmerWidth) - shimmerWidth;
+      shader = LinearGradient(
+        colors: [
+          Colors.transparent,
+          Colors.amberAccent.withOpacity(0.9),
+          Colors.white.withOpacity(0.95),
+          Colors.amberAccent.withOpacity(0.9),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+        begin: Alignment(-1.0 + 2 * shimmerStart / size.width, 0),
+        end: Alignment(-1.0 + 2 * (shimmerStart + shimmerWidth) / size.width, 0),
+        tileMode: TileMode.clamp,
+      ).createShader(fillRect);
+    }
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        colors: gradientColors,
+        stops: stops,
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ).createShader(fillRect)
       ..style = PaintingStyle.fill;
 
-    final path = Path();
-    final waveHeight = size.height * 0.3;
-    final frequency = 3.0 + waveIndex;
-    final phase = waveAnimation.value * math.pi * 2;
+    canvas.drawRRect(fillRRect, fillPaint);
 
-    path.moveTo(0, size.height);
-    for (double x = 0; x <= size.width; x++) {
-      final y = size.height - (waveHeight * math.sin((x / size.width * frequency * math.pi) + phase));
-      path.lineTo(x, y);
+    if (shimmer && shader != null) {
+      final shimmerPaint = Paint()
+        ..shader = shader
+        ..blendMode = BlendMode.plus;
+      canvas.drawRRect(fillRRect, shimmerPaint);
     }
-    path.lineTo(size.width, size.height);
-    path.close();
-
-    canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(LiquidFillPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.waveAnimation.value != waveAnimation.value;
+  bool shouldRepaint(covariant GradientXPBarPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.color != color ||
+        oldDelegate.shimmer != shimmer ||
+        oldDelegate.shimmerValue != shimmerValue;
   }
 } 

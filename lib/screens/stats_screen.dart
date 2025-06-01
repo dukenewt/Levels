@@ -259,6 +259,11 @@ class StatsScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Easy: 0-25 XP   Medium: 25-50 XP   Hard: 50-100 XP   Epic: 100-250 XP',
+              style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w500),
+            ),
             const SizedBox(height: 8),
             _TaskDifficultyAnalysis(),
             

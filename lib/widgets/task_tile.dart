@@ -123,21 +123,71 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
     
     return Dismissible(
       key: ValueKey(widget.task.id),
-      direction: DismissDirection.endToStart,
+      direction: DismissDirection.horizontal,
       background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 20.0),
+        child: Container(
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.only(left: 20.0),
+          child: const Icon(Icons.delete, color: Colors.white),
+        ),
+      ),
+      secondaryBackground: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20.0),
-        color: Colors.green,
-        child: const Icon(Icons.check, color: Colors.white),
+        child: Container(
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.green,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20.0),
+          child: const Icon(Icons.check, color: Colors.white),
+        ),
       ),
       confirmDismiss: (direction) async {
-        if (!widget.task.isCompleted && !_isCompleting) {
-          await _handleComplete();
-          return true;
+        if (direction == DismissDirection.endToStart) {
+          // Complete
+          if (!widget.task.isCompleted && !_isCompleting) {
+            await _handleComplete();
+            return true;
+          }
+          return false;
+        } else if (direction == DismissDirection.startToEnd) {
+          // Delete
+          final shouldDelete = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Delete Task'),
+              content: const Text('Are you sure you want to delete this task? This action cannot be undone.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          );
+          return shouldDelete == true;
         }
         return false;
       },
-      onDismissed: widget.onDismissed,
+      onDismissed: (direction) {
+        if (widget.onDismissed != null) {
+          widget.onDismissed!(direction);
+        }
+      },
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) => Transform.scale(

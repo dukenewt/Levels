@@ -2,6 +2,26 @@ import 'dart:convert';
 import 'specialization.dart';
 import 'package:flutter/material.dart';
 
+class SkillPrerequisite {
+  final String requiredSkillId;
+  final int requiredLevel;
+
+  SkillPrerequisite({
+    required this.requiredSkillId,
+    required this.requiredLevel,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'requiredSkillId': requiredSkillId,
+    'requiredLevel': requiredLevel,
+  };
+
+  factory SkillPrerequisite.fromJson(Map<String, dynamic> json) => SkillPrerequisite(
+    requiredSkillId: json['requiredSkillId'],
+    requiredLevel: json['requiredLevel'],
+  );
+}
+
 class Skill {
   final String id;
   final String name;
@@ -18,6 +38,8 @@ class Skill {
   final String? activeSpecializationId;
   final Color color;
   final String icon;
+  final int availablePoints;
+  final List<SkillPrerequisite> prerequisites;
 
   Skill({
     required this.id,
@@ -35,6 +57,8 @@ class Skill {
     this.activeSpecializationId,
     Color? color,
     String? icon,
+    this.availablePoints = 0,
+    this.prerequisites = const [],
   }) : color = color ?? _getDefaultColorForCategory(category),
        icon = icon ?? _getDefaultIconForCategory(category);
 
@@ -221,6 +245,8 @@ class Skill {
     String? activeSpecializationId,
     Color? color,
     String? icon,
+    int? availablePoints,
+    List<SkillPrerequisite>? prerequisites,
   }) {
     return Skill(
       id: id ?? this.id,
@@ -238,6 +264,8 @@ class Skill {
       activeSpecializationId: activeSpecializationId ?? this.activeSpecializationId,
       color: color ?? this.color,
       icon: icon ?? this.icon,
+      availablePoints: availablePoints ?? this.availablePoints,
+      prerequisites: prerequisites ?? this.prerequisites,
     );
   }
 
@@ -259,6 +287,8 @@ class Skill {
       'activeSpecializationId': activeSpecializationId,
       'color': color.value,
       'icon': icon,
+      'availablePoints': availablePoints,
+      'prerequisites': prerequisites.map((p) => p.toJson()).toList(),
     };
   }
 
@@ -282,6 +312,8 @@ class Skill {
       activeSpecializationId: json['activeSpecializationId'],
       color: json['color'] != null ? Color(json['color']) : null,
       icon: json['icon'],
+      availablePoints: json['availablePoints'] ?? 0,
+      prerequisites: (json['prerequisites'] as List<dynamic>? ?? []).map((p) => SkillPrerequisite.fromJson(p)).toList(),
     );
   }
 }
