@@ -1,5 +1,5 @@
-## Refactoring starting 6.2.25 added the core folder in lib. 
-
+## 6.2.25 Refactoring starting  added the core folder in lib. 
+## 6.3.25 added the error handling to the taskCompletion widget within the task_tile and added a testing structure to be able to scale the error handling as the app grows. 
 ## Getting Started
 
 ### Prerequisites
