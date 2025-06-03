@@ -561,7 +561,8 @@ class _WeeklyTaskTrendsChart extends StatelessWidget {
           barTouchData: BarTouchData(
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
-              tooltipBgColor: Colors.blueGrey,
+              getTooltipColor: (group) => Colors.blueGrey,
+              tooltipBorderRadius: BorderRadius.circular(8),
             ),
           ),
           titlesData: FlTitlesData(

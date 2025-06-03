@@ -1,0 +1,2 @@
+##6.2.25 - reviewed the calendar screen and finally realized how dumb it was to have it be 1700 lines. Everything was in there the widgets, providers, anything apparently. Decided to learn more about the architecture and created the core app_provider. Now the providers have a heirarchy(?) and the application is not being run on a piece of floss. 
+## 6.2.25 - started the work on better error handling and state management. 
