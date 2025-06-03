@@ -21,6 +21,7 @@ import '../providers/settings_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../widgets/task_creation_dialog.dart';
+import 'notification_preferences_screen.dart';
 
 class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
@@ -46,6 +47,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
   double _dragDx = 0.0;
   bool _isDragging = false;
   DateTime? _pendingDay; // The day to show during the flip
+  late Animation<double> _flipCurve;
 
   @override
   void initState() {
@@ -56,10 +58,14 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
     _initializeData();
     _flipController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 650),
       lowerBound: -1.0,
       upperBound: 1.0,
       value: 0.0,
+    );
+    _flipCurve = CurvedAnimation(
+      parent: _flipController,
+      curve: const _FlipElasticCurve(),
     );
   }
 
@@ -349,7 +355,12 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
               IconButton(
                 icon: const Icon(Icons.notifications_outlined),
                 onPressed: () {
-                  // TODO: Implement notifications
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationPreferencesScreen(),
+                    ),
+                  );
                 },
               ),
               IconButton(
@@ -465,22 +476,32 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
                               }
                             },
                             child: AnimatedBuilder(
-                              animation: _flipController,
+                              animation: _flipCurve,
                               builder: (context, child) {
-                                final double animValue = _flipController.value;
-                                final double angle = animValue * 1.5708; // up to +/- 90 degrees
-                                final bool showPending = _pendingDay != null && animValue.abs() > 0.01;
-                                final DateTime displayDay = showPending ? _pendingDay! : (_selectedDay ?? DateTime.now());
-                                // Fade and shadow effect
-                                final double fade = 1.0 - (animValue.abs() * 0.7);
-                                final double shadowStrength = (animValue.abs() * 0.18) + 0.04;
-                                return Opacity(
-                                  opacity: fade.clamp(0.3, 1.0),
-                                  child: Transform(
-                                    alignment: Alignment.center,
+                                final double animValue = _flipCurve.value;
+                                final bool isRollingUp = animValue < 0; // up for next day, down for previous
+                                final double t = animValue.abs().clamp(0.0, 1.0);
+                                final bool showPending = _pendingDay != null && t > 0.01;
+                                final DateTime currentDay = _selectedDay ?? DateTime.now();
+                                final DateTime nextDay = _pendingDay ?? currentDay;
+                                final theme = Theme.of(context);
+                                // Animation split: 0.0-0.5 is front, 0.5-1.0 is back
+                                final double frontInterval = (t < 0.5) ? t * 2 : 1.0;
+                                final double backInterval = (t > 0.5) ? (t - 0.5) * 2 : 0.0;
+                                // Angles
+                                final double frontAngle = (isRollingUp ? 1 : -1) * frontInterval * (3.1416 / 2); // 0 to 90°
+                                final double backAngle = (isRollingUp ? 1 : -1) * ((1 - backInterval) * (3.1416 / 2)); // 90° to 0
+                                // Scaling: min at 90°
+                                final double scale = 1.0 - 0.08 * (1 - ((t - 0.5).abs() * 2));
+                                // Shadow: max at 90°
+                                final double shadowStrength = 0.08 + 0.22 * (1 - ((t - 0.5).abs() * 2));
+                                Widget buildFace(DateTime day, double rotation, bool isFront) {
+                                  return Transform(
+                                    alignment: isRollingUp ? Alignment.bottomCenter : Alignment.topCenter,
                                     transform: Matrix4.identity()
                                       ..setEntry(3, 2, 0.001)
-                                      ..rotateY(angle),
+                                      ..scale(scale, scale)
+                                      ..rotateX(rotation),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                                       decoration: BoxDecoration(
@@ -490,13 +511,13 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
                                         boxShadow: [
                                           BoxShadow(
                                             color: Colors.black.withOpacity(shadowStrength),
-                                            blurRadius: 12,
+                                            blurRadius: 14,
                                             offset: const Offset(0, 4),
                                           ),
                                         ],
                                       ),
                                       child: Text(
-                                        DateFormat('EEEE, MMMM d, yyyy').format(displayDay),
+                                        DateFormat('EEEE, MMMM d, yyyy').format(day),
                                         style: theme.textTheme.titleLarge?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black,
@@ -504,6 +525,33 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
+                                  );
+                                }
+                                return SizedBox(
+                                  height: 56,
+                                  child: Stack(
+                                    children: [
+                                      // Outgoing face (current day)
+                                      if (!showPending || t < 1)
+                                        Opacity(
+                                          opacity: 1 - t,
+                                          child: buildFace(
+                                            currentDay,
+                                            isRollingUp ? frontAngle : -frontAngle,
+                                            true,
+                                          ),
+                                        ),
+                                      // Incoming face (pending day)
+                                      if (showPending)
+                                        Opacity(
+                                          opacity: t,
+                                          child: buildFace(
+                                            nextDay,
+                                            isRollingUp ? backAngle : -backAngle,
+                                            false,
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 );
                               },
@@ -576,6 +624,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
                           setState(() {});
                         }
                       },
+                      compact: false,
                     ),
                   )).toList(),
                 ],
@@ -618,6 +667,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
                           setState(() {});
                         }
                       },
+                      compact: true,
                     ),
                   )).toList(),
                 ],
@@ -661,6 +711,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
                           setState(() {});
                         }
                       },
+                      compact: true,
                     ),
                   )).toList(),
                 ],
@@ -803,6 +854,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
                       key: ValueKey("completed-${task.id}"),
                       task: task,
                       onDismissed: null, // Completed tasks can't be dismissed
+                      compact: true,
                     ),
                   )).toList(),
                 ],
@@ -855,5 +907,26 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
       default:
         return Icons.star;
     }
+  }
+}
+
+class _FlipElasticCurve extends Curve {
+  const _FlipElasticCurve();
+  @override
+  double transform(double t) {
+    // Clamp input to [-1.0, 1.0]
+    t = t.clamp(-1.0, 1.0);
+    final absT = t.abs().clamp(0.0, 1.0);
+    double result;
+    if (absT < 0.85) {
+      // Ease for first 85%
+      result = t.sign * Curves.easeInOutCubic.transform((absT / 0.85).clamp(0.0, 1.0)) * 0.85;
+    } else {
+      // Elastic for last 15%
+      final elastic = Curves.elasticOut.transform(((absT - 0.85) / 0.15).clamp(0.0, 1.0));
+      result = t.sign * (0.85 + elastic * 0.15);
+    }
+    // Clamp output to [-1.0, 1.0]
+    return result.clamp(-1.0, 1.0);
   }
 } 

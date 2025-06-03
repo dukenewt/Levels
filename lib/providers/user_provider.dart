@@ -14,19 +14,44 @@ class UserProvider with ChangeNotifier {
   OverlayEntry? _levelUpOverlay;
   BuildContext? _context;
 
+  bool _isInitialized = false;
+  bool _isInitializing = false;
+  
+  bool get isInitialized => _isInitialized;
+  bool get isInitializing => _isInitializing;
+
   UserProvider() {
-    // Initialize with mock user data
-    _user = User(
-      id: 'mock-user-id',
-      email: 'user@example.com',
-      displayName: 'Demo User',
-      createdAt: DateTime.now(),
-      lastLoginAt: DateTime.now(),
-      level: _level,
-      currentXp: _currentXp,
-      achievements: [],
-    );
-    _initializeRank();
+    _initializeProvider();
+  }
+
+  Future<void> _initializeProvider() async {
+    if (_isInitializing || _isInitialized) return;
+    
+    _isInitializing = true;
+    notifyListeners();
+    
+    try {
+      // Initialize with mock user data (your existing logic)
+      _user = User(
+        id: 'mock-user-id',
+        email: 'user@example.com',
+        displayName: 'Demo User',
+        createdAt: DateTime.now(),
+        lastLoginAt: DateTime.now(),
+        level: _level,
+        currentXp: _currentXp,
+        achievements: [],
+      );
+      _initializeRank();
+      
+      _isInitialized = true;
+    } catch (e) {
+      debugPrint('Error initializing UserProvider: $e');
+      // Handle initialization error
+    } finally {
+      _isInitializing = false;
+      notifyListeners();
+    }
   }
 
   void setContext(BuildContext context) {

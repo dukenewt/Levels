@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/theme_provider.dart';
 import 'theme_selection_screen.dart';
+import 'debug_screen.dart';
+import 'notification_preferences_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -53,6 +55,24 @@ class SettingsScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const ThemeSelectionScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  // Debug Tools Navigation
+                  ListTile(
+                    title: const Text('Debug Tools'),
+                    subtitle: const Text('Test coins and skill points'),
+                    leading: Icon(
+                      Icons.bug_report,
+                      color: theme.colorScheme.primary,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DebugScreen(),
                         ),
                       );
                     },
@@ -164,6 +184,17 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications),
+            title: const Text('Notification Preferences'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationPreferencesScreen()),
+              );
+            },
           ),
         ],
       ),
