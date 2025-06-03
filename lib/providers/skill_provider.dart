@@ -12,6 +12,33 @@ class SkillProvider with ChangeNotifier {
 
   List<Skill> get skills => _skills;
   Map<String, List<SkillAchievement>> get achievements => _achievements;
+  bool _isInitialized = false;
+  bool _isInitializing = false;
+  
+  bool get isInitialized => _isInitialized;
+  bool get isInitializing => _isInitializing;
+
+  SkillProvider() {
+    _initializeProvider();
+  }
+
+  Future<void> _initializeProvider() async {
+    if (_isInitializing || _isInitialized) return;
+    
+    _isInitializing = true;
+    notifyListeners();
+    
+    try {
+      await loadSkills(); // Your existing initialization logic
+      _isInitialized = true;
+    } catch (e) {
+      debugPrint('Error initializing SkillProvider: $e');
+      // Handle initialization error
+    } finally {
+      _isInitializing = false;
+      notifyListeners();
+    }
+  }
 
   // Get skill by ID
   Skill? getSkillById(String id) {
@@ -261,6 +288,15 @@ class SkillProvider with ChangeNotifier {
     if (index != -1) {
       _skills[index] = updatedSkill;
       await _saveSkills();
+      notifyListeners();
+    }
+  }
+
+  // TESTING: Set skill points directly
+  void setTestSkillPoints(String skillId, int points) {
+    final index = _skills.indexWhere((s) => s.id == skillId);
+    if (index != -1) {
+      _skills[index] = _skills[index].copyWith(availablePoints: points);
       notifyListeners();
     }
   }

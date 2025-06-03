@@ -1,16 +1,4 @@
-# Level Up Tasks
-
-A gamified task management app that helps you stay productive by turning your daily tasks into an RPG-like experience. Complete tasks to earn XP, level up, and unlock achievements!
-
-## Features
-
-- 🎮 Gamified task management
-- 📊 Task statistics and progress tracking
-- 🏆 Achievement system
-- 🌙 Dark mode support
-- 📱 Beautiful, modern UI
-- 🔐 User authentication
-- 📈 Visual progress tracking
+## Refactoring starting 6.2.25 added the core folder in lib. 
 
 ## Getting Started
 

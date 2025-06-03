@@ -264,4 +264,10 @@ class CoinEconomyProvider with ChangeNotifier {
       return multiplier * booster.xpMultiplier;
     });
   }
+
+  // TESTING: Set coin balance directly
+  void setTestCoins(int amount) {
+    _coins = amount;
+    notifyListeners();
+  }
 } 

@@ -26,8 +26,40 @@ class TaskProvider with ChangeNotifier {
   }) : _taskRepository = storage.taskRepository,
        _userProvider = userProvider,
        _skillProvider = skillProvider {
-    _loadTasks();
+    // Only load tasks if dependencies are ready
+    if (userProvider.isInitialized && skillProvider.isInitialized) {
+      _loadTasks();
+    } else {
+      // Listen for when dependencies become ready
+      _setupDependencyListeners();
+    }
   }
+
+  void _setupDependencyListeners() {
+    // Listen for when UserProvider becomes ready
+    _userProvider.addListener(_checkDependenciesReady);
+    _skillProvider.addListener(_checkDependenciesReady);
+  }
+
+  void _checkDependenciesReady() {
+    if (_userProvider.isInitialized && 
+        _skillProvider.isInitialized && 
+        !_isLoading && 
+        _tasks.isEmpty) {
+      // Dependencies are now ready, load tasks
+      _userProvider.removeListener(_checkDependenciesReady);
+      _skillProvider.removeListener(_checkDependenciesReady);
+      _loadTasks();
+    }
+  }
+
+  @override
+  void dispose() {
+    _userProvider.removeListener(_checkDependenciesReady);
+    _skillProvider.removeListener(_checkDependenciesReady);
+    super.dispose();
+  }
+
 
   List<Task> get tasks => _tasks;
   Map<String, List<Task>> get tasksByCategory => _tasksByCategory;
@@ -408,8 +440,8 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   super.dispose();
+  // }
 } 

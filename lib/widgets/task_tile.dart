@@ -8,11 +8,19 @@ import 'package:intl/intl.dart';
 class TaskTile extends StatefulWidget {
   final Task task;
   final Function(DismissDirection)? onDismissed;
+  final bool showTime;
+  final bool compact;
+  final bool superCompact;
+  final double? height;
 
   const TaskTile({
     Key? key,
     required this.task,
     this.onDismissed,
+    this.showTime = true,
+    this.compact = false,
+    this.superCompact = false,
+    this.height,
   }) : super(key: key);
 
   @override
@@ -117,10 +125,349 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
     }
   }
 
+  // This method decides what UI to build based on the display mode
+  Widget _buildTaskContent(ThemeData theme) {
+    // Super compact mode: minimal info for calendar cells
+    if (widget.superCompact) {
+      return _buildSuperCompactContent(theme);
+    }
+    
+    // Compact mode: condensed for lists
+    if (widget.compact) {
+      return _buildCompactContent(theme);
+    }
+    
+    // Full mode: all details (original implementation)
+    return _buildFullContent(theme);
+  }
+
+  // Super compact version for calendar grid cells
+  Widget _buildSuperCompactContent(ThemeData theme) {
+    return Container(
+      height: widget.height,
+      padding: const EdgeInsets.all(4.0),
+      child: Row(
+        children: [
+          // Small checkbox
+          GestureDetector(
+            onTap: _handleComplete,
+            child: Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: widget.task.isCompleted 
+                      ? theme.colorScheme.primary 
+                      : theme.colorScheme.outline,
+                  width: 1.5,
+                ),
+                color: widget.task.isCompleted 
+                    ? theme.colorScheme.primary 
+                    : Colors.transparent,
+              ),
+              child: widget.task.isCompleted
+                  ? Icon(
+                      Icons.check,
+                      size: 10,
+                      color: theme.colorScheme.onPrimary,
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 6),
+          
+          // Task title only (truncated)
+          Expanded(
+            child: Text(
+              widget.task.title,
+              style: theme.textTheme.bodySmall?.copyWith(
+                decoration: widget.task.isCompleted
+                    ? TextDecoration.lineThrough 
+                    : null,
+                color: widget.task.isCompleted
+                    ? theme.colorScheme.onSurface.withOpacity(0.6)
+                    : null,
+                fontSize: 11,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Compact version for list views
+  Widget _buildCompactContent(ThemeData theme) {
+    return Container(
+      height: widget.height,
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          // Standard checkbox
+          GestureDetector(
+            onTap: _handleComplete,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: widget.task.isCompleted 
+                      ? theme.colorScheme.primary 
+                      : theme.colorScheme.outline,
+                  width: 2,
+                ),
+                color: widget.task.isCompleted 
+                    ? theme.colorScheme.primary 
+                    : Colors.transparent,
+              ),
+              child: widget.task.isCompleted
+                  ? Icon(
+                      Icons.check,
+                      size: 12,
+                      color: theme.colorScheme.onPrimary,
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 12),
+          
+          // Task info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  widget.task.title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    decoration: widget.task.isCompleted
+                        ? TextDecoration.lineThrough 
+                        : null,
+                    color: widget.task.isCompleted
+                        ? theme.colorScheme.onSurface.withOpacity(0.6)
+                        : null,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                
+                // Show time if requested and available
+                if (widget.showTime && widget.task.scheduledTime != null)
+                  Text(
+                    widget.task.scheduledTime!.format(context),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          
+          // XP badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '${widget.task.xpReward}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Full content version (original implementation, slightly modified)
+  Widget _buildFullContent(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _handleComplete,
+            child: AnimatedBuilder(
+              animation: _checkScaleAnimation,
+              builder: (context, child) {
+                return Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: widget.task.isCompleted 
+                          ? theme.colorScheme.primary 
+                          : theme.colorScheme.outline,
+                      width: 2,
+                    ),
+                    color: widget.task.isCompleted 
+                        ? theme.colorScheme.primary 
+                        : Colors.transparent,
+                  ),
+                  child: widget.task.isCompleted
+                      ? Transform.scale(
+                          scale: _checkScaleAnimation.value,
+                          child: Icon(
+                            Icons.check,
+                            size: 16,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        )
+                      : null,
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.task.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    decoration: widget.task.isCompleted
+                        ? TextDecoration.lineThrough 
+                        : null,
+                    color: widget.task.isCompleted
+                        ? theme.colorScheme.onSurface.withOpacity(0.6)
+                        : null,
+                  ),
+                ),
+                if (widget.task.description.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.task.description,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${widget.task.xpReward} XP',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (widget.task.recurrencePattern != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.repeat,
+                              size: 14,
+                              color: theme.colorScheme.secondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                widget.task.recurrencePattern!,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.secondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (widget.task.dueDate != null && widget.showTime) ...[
+            const SizedBox(width: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _formatDate(widget.task.dueDate!),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.secondary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => _showTaskMenu(context),
+            tooltip: 'Edit Task',
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
+    // For super compact mode, don't use Dismissible (too small)
+    if (widget.superCompact) {
+      return AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) => Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Card(
+            elevation: 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: theme.dividerColor.withOpacity(0.08)),
+            ),
+            color: theme.colorScheme.surface,
+            child: _buildTaskContent(theme),
+          ),
+        ),
+      );
+    }
+    
+    // For full and compact modes, keep the Dismissible functionality
     return Dismissible(
       key: ValueKey(widget.task.id),
       direction: DismissDirection.horizontal,
@@ -199,163 +546,14 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
               side: BorderSide(color: theme.dividerColor.withOpacity(0.08)),
             ),
             color: theme.colorScheme.surface,
-            child: InkWell(
-              onTap: () {
-                // Show edit task dialog
-                _showTaskMenu(context);
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _handleComplete,
-                      child: AnimatedBuilder(
-                        animation: _checkScaleAnimation,
-                        builder: (context, child) {
-                          return Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: widget.task.isCompleted 
-                                    ? theme.colorScheme.primary 
-                                    : theme.colorScheme.outline,
-                                width: 2,
-                              ),
-                              color: widget.task.isCompleted 
-                                  ? theme.colorScheme.primary 
-                                  : Colors.transparent,
-                            ),
-                            child: widget.task.isCompleted
-                                ? Transform.scale(
-                                    scale: _checkScaleAnimation.value,
-                                    child: Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: theme.colorScheme.onPrimary,
-                                    ),
-                                  )
-                                : null,
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.task.title,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              decoration: widget.task.isCompleted
-                                  ? TextDecoration.lineThrough 
-                                  : null,
-                              color: widget.task.isCompleted
-                                  ? theme.colorScheme.onSurface.withOpacity(0.6)
-                                  : null,
-                            ),
-                          ),
-                          if (widget.task.description.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.task.description,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '${widget.task.xpReward} XP',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              if (widget.task.recurrencePattern != null)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.secondary.withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.repeat,
-                                        size: 14,
-                                        color: theme.colorScheme.secondary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          widget.task.recurrencePattern!,
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.secondary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (widget.task.dueDate != null) ...[
-                      const SizedBox(width: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _formatDate(widget.task.dueDate!),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () => _showTaskMenu(context),
-                      tooltip: 'Edit Task',
-                    ),
-                  ],
-                ),
+            child: Container(
+              height: widget.height, // Apply height constraint if provided
+              child: InkWell(
+                onTap: () {
+                  _showTaskMenu(context);
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: _buildTaskContent(theme),
               ),
             ),
           ),

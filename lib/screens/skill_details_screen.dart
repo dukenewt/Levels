@@ -187,7 +187,7 @@ class _SkillDetailsScreenState extends State<SkillDetailsScreen> with SingleTick
               ),
             ),
             const SizedBox(height: 16),
-            ...activeTasks.map((task) => TaskTile(task: task)),
+            ...activeTasks.map((task) => TaskTile(task: task, compact: true)),
             const SizedBox(height: 24),
           ],
           if (upcomingTasks.isNotEmpty) ...[
@@ -198,7 +198,7 @@ class _SkillDetailsScreenState extends State<SkillDetailsScreen> with SingleTick
               ),
             ),
             const SizedBox(height: 16),
-            ...upcomingTasks.map((task) => TaskTile(task: task)),
+            ...upcomingTasks.map((task) => TaskTile(task: task, compact: true)),
             const SizedBox(height: 24),
           ],
           if (completedTasks.isNotEmpty) ...[
@@ -209,7 +209,7 @@ class _SkillDetailsScreenState extends State<SkillDetailsScreen> with SingleTick
               ),
             ),
             const SizedBox(height: 16),
-            ...completedTasks.map((task) => TaskTile(task: task)),
+            ...completedTasks.map((task) => TaskTile(task: task, compact: true)),
           ],
         ],
       ),
