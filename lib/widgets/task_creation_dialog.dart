@@ -257,16 +257,37 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: TextButton.icon(
-                      onPressed: () => _selectDate(context),
-                      icon: const Icon(Icons.calendar_today),
-                      label: Text(
-                        _dueDate != null
-                            ? '${_dueDate!.month}/${_dueDate!.day}/${_dueDate!.year}'
-                            : 'Select Date',
+                    child: InkWell(
+                      onTap: () => _selectDate(context),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Due Date',
+                          border: OutlineInputBorder(),
+                        ),
+                        child: Text(
+                          _dueDate != null
+                              ? '${_dueDate!.month}/${_dueDate!.day}/${_dueDate!.year}'
+                              : 'No Date',
+                          style: TextStyle(
+                            color: _dueDate != null
+                                ? Theme.of(context).textTheme.bodyLarge?.color
+                                : Colors.grey,
+                          ),
+                        ),
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  if (_dueDate != null)
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: 'Clear Date',
+                      onPressed: () {
+                        setState(() {
+                          _dueDate = null;
+                        });
+                      },
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
