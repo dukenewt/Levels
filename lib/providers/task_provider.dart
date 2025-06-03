@@ -9,6 +9,7 @@ import 'settings_provider.dart';
 import '../widgets/level_up_overlay.dart';
 import 'package:uuid/uuid.dart';
 import '../services/storage_service.dart';
+import '../models/task_results.dart';
 
 class TaskProvider with ChangeNotifier {
   List<Task> _tasks = [];
@@ -274,51 +275,92 @@ class TaskProvider with ChangeNotifier {
     print('Calculated next occurrence for ${task.title}: $nextDate'); // Debug print
     return nextDate;
   }
-
-  Future<void> completeTask(String taskId) async {
-    // Get a local copy of the task before any async operations
-    final taskIndex = _tasks.indexWhere((task) => task.id == taskId);
-    if (taskIndex == -1) return;
-
-    final task = _tasks[taskIndex];
-    if (task.isCompleted) return;
-
-    // Store task data we'll need later
-    final xpReward = task.xpReward;
-    final skillId = task.skillId;
-
-    try {
-      // Update task completion status immediately
-      _tasks[taskIndex] = task.complete();
-      notifyListeners();
-
-      // Save the task state
-      await _saveTasks();
-
-      // Handle XP and skills in a separate try-catch
-      try {
-        // Add XP to the user's overall XP
-        await _userProvider.addXp(xpReward);
-
-        // Add XP to the associated skill
-        if (skillId != null) {
-          await _skillProvider.addXP(skillId, xpReward);
-        }
-      } catch (e) {
-        debugPrint('Error adding XP: $e');
-        // Don't rethrow - we want to continue with task completion even if XP addition fails
-      }
-    } catch (e) {
-      debugPrint('Error completing task: $e');
-      // If we failed to complete the task, revert the completion status
-      if (taskIndex < _tasks.length) {
-        _tasks[taskIndex] = task;
-        notifyListeners();
-      }
-      rethrow;
-    }
+    /// Completes a task with comprehensive error handling and state management
+/// Returns a detailed result that tells us exactly what happened
+Future<TaskCompletionResult> completeTask(String taskId) async {
+  // Phase 1: Input validation and precondition checking
+  if (taskId.isEmpty) {
+    debugPrint('TaskProvider.completeTask: Invalid taskId provided');
+    return TaskCompletionResult.failure(
+      'Invalid task ID provided',
+      TaskCompletionError.invalidInput,
+    );
   }
 
+  final taskIndex = _tasks.indexWhere((task) => task.id == taskId);
+  if (taskIndex == -1) {
+    debugPrint('TaskProvider.completeTask: Task not found: $taskId');
+    return TaskCompletionResult.failure(
+      'Task not found',
+      TaskCompletionError.taskNotFound,
+    );
+  }
+
+  final task = _tasks[taskIndex];
+  if (task.isCompleted) {
+    debugPrint('TaskProvider.completeTask: Task already completed: $taskId');
+    return TaskCompletionResult.alreadyCompleted(task);
+  }
+
+  // Phase 2: Prepare for operation and track changes
+  final originalTask = task;
+  final completedTask = task.complete();
+  final operationStartTime = DateTime.now();
+  
+  debugPrint('TaskProvider.completeTask: Starting completion for task: ${task.title}');
+
+  // Phase 3: Apply optimistic update with change tracking
+  _tasks[taskIndex] = completedTask;
+  notifyListeners(); // Give immediate feedback to user
+  
+  // Phase 4: Attempt to persist changes with comprehensive error handling
+  try {
+    await _saveTasks();
+    debugPrint('TaskProvider.completeTask: Task completion persisted successfully');
+    
+    // Phase 5: Handle related operations (XP, achievements) with isolated error handling
+    await _handleTaskCompletionEffects(task, completedTask);
+    
+    return TaskCompletionResult.success(completedTask);
+    
+  } catch (storageError) {
+    debugPrint('TaskProvider.completeTask: Storage error occurred: $storageError');
+    
+    // Phase 6: Revert optimistic update on storage failure
+    _tasks[taskIndex] = originalTask;
+    notifyListeners();
+    
+    return TaskCompletionResult.failure(
+      'Failed to save task completion. Please try again.',
+      TaskCompletionError.storageFailure,
+      originalError: storageError,
+    );
+  }
+}
+
+/// Handles XP and other effects of task completion with isolated error handling
+Future<void> _handleTaskCompletionEffects(Task originalTask, Task completedTask) async {
+  try {
+    // Add XP to user - if this fails, we still want the task to remain completed
+    await _userProvider.addXp(originalTask.xpReward);
+    debugPrint('TaskProvider: Added ${originalTask.xpReward} XP to user');
+  } catch (xpError) {
+    debugPrint('TaskProvider: Failed to add user XP: $xpError');
+    // We don't revert the task completion for XP failures
+    // The task is completed, but we'll note the XP failure for later retry
+  }
+
+  try {
+    // Add XP to skill if associated
+    if (originalTask.skillId != null) {
+      await _skillProvider.addXP(originalTask.skillId!, originalTask.xpReward);
+      debugPrint('TaskProvider: Added ${originalTask.xpReward} XP to skill: ${originalTask.skillId}');
+    }
+  } catch (skillError) {
+    debugPrint('TaskProvider: Failed to add skill XP: $skillError');
+    // Again, we don't revert task completion for skill XP failures
+  }
+}
   Future<void> createTask(Task task) async {
     // If recurring, generate all instances for the next 30 days
     if (task.recurrencePattern != null) {
