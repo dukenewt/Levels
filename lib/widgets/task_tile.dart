@@ -4,6 +4,7 @@ import '../providers/task_provider.dart';
 import 'package:provider/provider.dart';
 import 'edit_task_dialog.dart';
 import 'package:intl/intl.dart';
+import '../models/task_results.dart';
 
 class TaskTile extends StatefulWidget {
   final Task task;
@@ -99,31 +100,105 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
   }
 
   Future<void> _handleComplete() async {
-    if (!widget.task.isCompleted && !_isCompleting) {
-      setState(() {
-        _isCompleting = true;
-      });
+  if (!widget.task.isCompleted && !_isCompleting) {
+    setState(() {
+      _isCompleting = true;
+    });
+    
+    try {
+      // Get the provider reference before starting the operation
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
       
-      try {
-        // Get the provider reference before starting animation
-        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-        
-        // Complete the task first
-        await taskProvider.completeTask(widget.task.id);
-        
-        // Then start the animation if still mounted
-        if (mounted) {
-          await _animationController.forward();
+      // Use our new robust completion method
+      final result = await taskProvider.completeTask(widget.task.id);
+      
+      if (mounted) {
+        if (result.isSuccess) {
+          // Handle successful completion with user feedback
+          await _handleSuccessfulCompletion(result);
+        } else {
+          // Handle errors with specific, helpful feedback
+          await _handleCompletionError(result);
         }
-      } catch (e) {
-        debugPrint('Error completing task: $e');
-      } finally {
-        if (mounted) {
-          setState(() => _isCompleting = false);
-        }
+      }
+    } catch (e) {
+      // This catch block now handles only unexpected errors
+      debugPrint('Unexpected error in task completion: $e');
+      if (mounted) {
+        _showUnexpectedErrorMessage();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCompleting = false);
       }
     }
   }
+}
+
+/// Handles successful task completion with appropriate user feedback
+Future<void> _handleSuccessfulCompletion(TaskCompletionResult result) async {
+  // Start the animation if still mounted
+  await _animationController.forward();
+  
+  // Show success feedback to the user
+  if (mounted && result.completedTask != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Task completed! +${result.completedTask!.xpReward} XP'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+/// Handles task completion errors with specific, actionable feedback
+Future<void> _handleCompletionError(TaskCompletionResult result) async {
+  if (!mounted) return;
+  
+  switch (result.errorType) {
+    case TaskCompletionError.taskNotFound:
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('This task no longer exists. Refreshing your task list.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      // You might want to trigger a task list refresh here
+      break;
+      
+    case TaskCompletionError.storageFailure:
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.errorMessage ?? 'Failed to save. Please try again.'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () => _handleComplete(), // Retry the operation
+          ),
+        ),
+      );
+      break;
+      
+    default:
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.errorMessage ?? 'Something went wrong. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+  }
+}
+
+/// Shows a message for truly unexpected errors
+void _showUnexpectedErrorMessage() {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('An unexpected error occurred. Please restart the app if this continues.'),
+      backgroundColor: Colors.red,
+    ),
+  );
+}
 
   // This method decides what UI to build based on the display mode
   Widget _buildTaskContent(ThemeData theme) {
@@ -150,6 +225,7 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
         children: [
           // Small checkbox
           GestureDetector(
+            key: const Key('task-complete-button'),
             onTap: _handleComplete,
             child: Container(
               width: 16,
@@ -208,6 +284,7 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
         children: [
           // Standard checkbox
           GestureDetector(
+            key: const Key('task-complete-button'),
             onTap: _handleComplete,
             child: Container(
               width: 20,
@@ -295,6 +372,7 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
       child: Row(
         children: [
           GestureDetector(
+            key: const Key('task-complete-button'),
             onTap: _handleComplete,
             child: AnimatedBuilder(
               animation: _checkScaleAnimation,
