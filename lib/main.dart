@@ -1,61 +1,79 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'core/app_providers.dart';
+import 'core/app_initialization_manager.dart';
+import 'core/simple_app_providers.dart';
 import 'services/storage_service.dart';
 import 'screens/task_dashboard_screen.dart';
-import 'providers/user_provider.dart';
 
 void main() async {
+  // Ensure Flutter is ready before we start initialization
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  final storageService = StorageService(prefs);
-  runApp(MyApp(storageService: storageService));
+  
+  try {
+    // Initialize SharedPreferences - this is the only setup we need to do in main()
+    final prefs = await SharedPreferences.getInstance();
+    final storageService = StorageService(prefs);
+    
+    // Start the app with our new, clean initialization system
+    runApp(MyApp(storageService: storageService));
+  } catch (error) {
+    // If we can't even get SharedPreferences, show a basic error
+    debugPrint('Failed to initialize basic services: $error');
+    runApp(const ErrorApp());
+  }
 }
 
+/// The main app widget - much simpler than before!
 class MyApp extends StatelessWidget {
   final StorageService storageService;
+  
   const MyApp({Key? key, required this.storageService}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Use the new wrapper that ensures MaterialApp is always present
-    return AppWithMaterialWrapper(
+    // This single widget handles all initialization and provider setup
+    return AppWithInitialization(
       storageService: storageService,
-      // This is the actual content that will be shown once initialization is complete
-      appContent: const AppInitializer(),
+      appContent: const TaskDashboardScreen(),
     );
   }
 }
 
-class AppInitializer extends StatefulWidget {
-  const AppInitializer({Key? key}) : super(key: key);
-
-  @override
-  State<AppInitializer> createState() => _AppInitializerState();
-}
-
-class _AppInitializerState extends State<AppInitializer> {
-  @override
-  void initState() {
-    super.initState();
-    _initializeApp();
-  }
-
-  Future<void> _initializeApp() async {
-    try {
-      // Set context for UserProvider if needed
-      if (mounted) {
-        Provider.of<UserProvider>(context, listen: false).setContext(context);
-      }
-    } catch (e) {
-      debugPrint('Error in app initialization: $e');
-    }
-  }
+/// Fallback app if basic initialization fails
+class ErrorApp extends StatelessWidget {
+  const ErrorApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // This will be shown once all providers are initialized
-    return const TaskDashboardScreen();
+    return MaterialApp(
+      title: 'Daily XP',
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Failed to Start App',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Could not initialize basic services.\nPlease restart the app.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
