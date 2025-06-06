@@ -19,6 +19,7 @@ class TaskProvider with ChangeNotifier {
   final SkillProvider _skillProvider;
   bool _isLoading = false;
   final _uuid = const Uuid();
+  bool _isInitialized = false;
 
   TaskProvider({
     required StorageService storage,
@@ -165,6 +166,7 @@ class TaskProvider with ChangeNotifier {
   }
   
   bool get isLoading => _isLoading;
+  bool get isInitialized => _isInitialized;
 
   void addTask(Task task) {
     _tasks.add(task);
@@ -434,6 +436,8 @@ Future<void> _handleTaskCompletionEffects(Task originalTask, Task completedTask)
       final loadedTasks = await _taskRepository.getTasks();
       _tasks = loadedTasks;
       _updateTasksByCategory();
+      _isInitialized = true;
+      notifyListeners();
     } catch (e) {
       debugPrint('Error loading tasks: $e');
     } finally {
