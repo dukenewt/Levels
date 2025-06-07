@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'skill.dart';
 import 'package:uuid/uuid.dart';
 
 class Task {
@@ -17,7 +16,6 @@ class Task {
   final String? recurrencePattern; // 'daily', 'weekly', 'monthly', 'workdays', or null for no recurrence
   final DateTime? nextOccurrence;
   final String? parentTaskId; // ID of the original recurring task
-  final String? skillId; // Reference to the associated skill
   final TimeOfDay? scheduledTime; // New field for specific time of day
   final List<int>? weeklyDays; // 1-7 for days of week (1 = Monday)
   final int? repeatInterval; // For custom intervals (e.g., every 2 days)
@@ -37,7 +35,6 @@ class Task {
     this.recurrencePattern,
     this.nextOccurrence,
     this.parentTaskId,
-    this.skillId,
     this.scheduledTime,
     this.weeklyDays,
     this.repeatInterval,
@@ -59,7 +56,6 @@ class Task {
     String? recurrencePattern,
     DateTime? nextOccurrence,
     String? parentTaskId,
-    String? skillId,
     TimeOfDay? scheduledTime,
     List<int>? weeklyDays,
     int? repeatInterval,
@@ -80,7 +76,6 @@ class Task {
       recurrencePattern: recurrencePattern ?? this.recurrencePattern,
       nextOccurrence: nextOccurrence ?? this.nextOccurrence,
       parentTaskId: parentTaskId ?? this.parentTaskId,
-      skillId: skillId ?? this.skillId,
       scheduledTime: scheduledTime ?? this.scheduledTime,
       weeklyDays: weeklyDays ?? this.weeklyDays,
       repeatInterval: repeatInterval ?? this.repeatInterval,
@@ -104,7 +99,6 @@ class Task {
       'dueDate': dueDate?.toIso8601String(),
       'recurrencePattern': recurrencePattern,
       'parentTaskId': parentTaskId,
-      'skillId': skillId,
       'scheduledTime': scheduledTime != null ? '${scheduledTime!.hour}:${scheduledTime!.minute}' : null,
       'weeklyDays': weeklyDays,
       'repeatInterval': repeatInterval,
@@ -139,7 +133,6 @@ class Task {
           ? DateTime.parse(json['nextOccurrence'] as String)
           : null,
       parentTaskId: json['parentTaskId'] as String?,
-      skillId: json['skillId'] as String?,
       scheduledTime: parseTimeOfDay(json['scheduledTime'] as String?),
       weeklyDays: (json['weeklyDays'] as List<dynamic>?)?.cast<int>(),
       repeatInterval: json['repeatInterval'] as int?,
@@ -213,18 +206,7 @@ class Task {
 
   // Calculate XP reward based on difficulty
   static int calculateXPReward(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'easy':
-        return XPTiers.easy['min']! + (DateTime.now().millisecondsSinceEpoch % (XPTiers.easy['max']! - XPTiers.easy['min']!));
-      case 'medium':
-        return XPTiers.medium['min']! + (DateTime.now().millisecondsSinceEpoch % (XPTiers.medium['max']! - XPTiers.medium['min']!));
-      case 'hard':
-        return XPTiers.hard['min']! + (DateTime.now().millisecondsSinceEpoch % (XPTiers.hard['max']! - XPTiers.hard['min']!));
-      case 'epic':
-        return XPTiers.epic['min']! + (DateTime.now().millisecondsSinceEpoch % (XPTiers.epic['max']! - XPTiers.epic['min']!));
-      default:
-        return XPTiers.easy['min']!;
-    }
+    return 50;
   }
 
   // Mark task as completed

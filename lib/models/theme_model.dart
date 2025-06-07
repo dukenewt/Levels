@@ -15,6 +15,7 @@ enum ThemeType {
   premiumMinimal,
   professional,
   natural,
+  cyanPinkTeal,
 }
 
 class AppTheme {
@@ -248,6 +249,32 @@ class AppTheme {
     },
   );
 
+  // Cyan Pink Teal theme
+  static const AppTheme cyanPinkTeal = AppTheme(
+    type: ThemeType.cyanPinkTeal,
+    name: 'Punk',
+    description: 'Vibrant cyan, hot pink, and teal on deep navy',
+    isPremium: false,
+    primaryColor: Color(0xFF00D9FF),
+    secondaryColor: Color(0xFFFF6B9D),
+    backgroundColor: Color(0xFF16213E),
+    surfaceColor: Color(0xFF1A1A2E),
+    textColor: Colors.white,
+    accentColor: Color(0xFF4ECDC4),
+    gradientColors: [
+      Color(0xFF00D9FF),
+      Color(0xFFFF6B9D),
+      Color(0xFF4ECDC4),
+    ],
+    blurRadius: 0,
+    glassOpacity: 0,
+    priorityColors: {
+      Priority.low: Color(0xFF4ECDC4),
+      Priority.medium: Color(0xFFFF6B9D),
+      Priority.high: Color(0xFF00D9FF),
+    },
+  );
+
   // Get all available themes
   static List<AppTheme> get allThemes => [
     defaultLight,
@@ -258,6 +285,7 @@ class AppTheme {
     premiumMinimal,
     professional,
     natural,
+    cyanPinkTeal,
   ];
 
   // Get theme by type

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
+import '../providers/secure_user_provider.dart';
 import '../models/user_rank.dart';
 
 class RankProgressCard extends StatelessWidget {
@@ -8,7 +8,7 @@ class RankProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<UserProvider>(
+    return Consumer<SecureUserProvider>(
       builder: (context, userProvider, child) {
         final currentRank = userProvider.currentRank;
         final nextRank = userProvider.nextRank;

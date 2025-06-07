@@ -1,6 +1,8 @@
+// MVP: Calendar feature shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
+import '../providers/secure_user_provider.dart';
 import '../widgets/calendar/calendar_view_selector.dart';
 import '../widgets/calendar/daily_calendar_view.dart';
 import '../widgets/calendar/week_calendar_view.dart';
@@ -24,7 +26,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final userProvider = Provider.of<UserProvider>(context);
+    final userProvider = Provider.of<SecureUserProvider>(context);
     final calendarProvider = Provider.of<CalendarProvider>(context);
     
     return Scaffold(
@@ -95,7 +97,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildDrawer(BuildContext context, UserProvider userProvider) {
+  Widget _buildDrawer(BuildContext context, SecureUserProvider userProvider) {
     final theme = Theme.of(context);
     
     return Drawer(
@@ -218,3 +220,4 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 }
+*/

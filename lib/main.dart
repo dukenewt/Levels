@@ -7,9 +7,16 @@ import 'core/offline_storage_service.dart';
 import 'services/storage_service.dart';
 import 'services/secure_storage_service.dart';
 import 'screens/task_dashboard_screen.dart';
+import 'screens/stats_screen.dart';
+// import 'screens/achievements_screen.dart'; // MVP: Achievements shelved
+import 'screens/profile_screen.dart';
 import 'core/app_logger.dart';
 import 'core/global_error_handler.dart';
 import 'core/offline_manager.dart';
+import 'core/theme/app_design_tokens.dart';
+import 'package:provider/provider.dart';
+import 'providers/theme_provider.dart';
+import 'services/smart_suggestions_service.dart';
 
 const bool USE_ENHANCED_ARCHITECTURE = true; // Toggle this for testing
 
@@ -27,16 +34,14 @@ void main() async {
     final secureStorageService = SecureStorageService(prefs);
 
     runApp(
-      USE_ENHANCED_ARCHITECTURE
-        ? AppWithEnhancedInitialization(
-            storageService: storageService,
-            secureStorageService: secureStorageService,
-            appContent: const TaskDashboardScreen(),
-          )
-        : AppWithInitialization(
-            storageService: storageService,
-            appContent: const TaskDashboardScreen(),
-          ),
+      ChangeNotifierProvider(
+        create: (_) => ThemeProvider()..init(),
+        child: AppWithEnhancedInitialization(
+          storageService: storageService,
+          secureStorageService: secureStorageService,
+          appContent: const MainTabScaffold(),
+        ),
+      ),
     );
   } catch (error, stackTrace) {
     AppLogger.instance.error('Failed to initialize app', error, stackTrace);
@@ -49,37 +54,42 @@ class ErrorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Daily XP',
-      home: architectureBanner(
-        Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.red,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        return MaterialApp(
+          title: 'Daily XP',
+          theme: themeProvider.currentThemeData,
+          home: architectureBanner(
+            Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Failed to Start App',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Could not initialize basic services.\nPlease restart the app.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Failed to Start App',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Could not initialize basic services.\nPlease restart the app.',
-                  textAlign: TextAlign.center,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -94,4 +104,61 @@ Widget architectureBanner(Widget child) {
       child: child,
     ),
   );
+}
+
+class MainTabScaffold extends StatefulWidget {
+  const MainTabScaffold({Key? key}) : super(key: key);
+
+  @override
+  State<MainTabScaffold> createState() => _MainTabScaffoldState();
+}
+
+class _MainTabScaffoldState extends State<MainTabScaffold> {
+  int _selectedIndex = 0;
+
+  static final List<Widget> _screens = <Widget>[
+    TaskDashboardScreen(),
+    StatsScreen(),
+    // AchievementsScreen(), // MVP: Achievements shelved
+    ProfileScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_circle),
+            label: 'Tasks',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Stats',
+          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.emoji_events),
+          //   label: 'Achievements',
+          // ), // MVP: Achievements shelved
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
 }
