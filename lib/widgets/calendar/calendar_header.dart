@@ -1,3 +1,5 @@
+// MVP: Calendar feature shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
@@ -99,3 +101,4 @@ class CalendarHeader extends StatelessWidget {
     );
   }
 }
+*/

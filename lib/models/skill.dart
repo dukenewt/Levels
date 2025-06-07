@@ -1,3 +1,5 @@
+// MVP: Skills and skill levels shelved. File commented out.
+/*
 import 'dart:convert';
 import 'specialization.dart';
 import 'package:flutter/material.dart';
@@ -347,4 +349,5 @@ class XPTiers {
   static const Map<String, int> medium = {'min': 75, 'max': 150};
   static const Map<String, int> hard = {'min': 200, 'max': 400};
   static const Map<String, int> epic = {'min': 500, 'max': 1000};
-} 
+}
+*/ 

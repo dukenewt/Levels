@@ -1,3 +1,5 @@
+// MVP: Skill level up and branching shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/skill_provider.dart';
@@ -601,4 +603,5 @@ class _HexagonPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-} 
+}
+*/ 

@@ -1,8 +1,10 @@
+// MVP: Calendar feature shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/task.dart';
-import '../../providers/task_provider.dart';
+import '../../providers/secure_task_provider.dart';
 import '../task_tile.dart';
 
 class MonthCalendarView extends StatelessWidget {
@@ -10,7 +12,7 @@ class MonthCalendarView extends StatelessWidget {
 
   const MonthCalendarView({Key? key, required this.focusedDay}) : super(key: key);
 
-  Future<Map<String, List<Task>>> _loadMonthTasks(TaskProvider taskProvider, DateTime focusedDay) async {
+  Future<Map<String, List<Task>>> _loadMonthTasks(SecureTaskProvider taskProvider, DateTime focusedDay) async {
     final firstDayOfMonth = DateTime(focusedDay.year, focusedDay.month, 1);
     final lastDayOfMonth = DateTime(focusedDay.year, focusedDay.month + 1, 0);
     final allMonthTasks = <Task>[];
@@ -32,7 +34,7 @@ class MonthCalendarView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final taskProvider = Provider.of<TaskProvider>(context);
+    final taskProvider = Provider.of<SecureTaskProvider>(context);
     return FutureBuilder<Map<String, List<Task>>>(
       future: _loadMonthTasks(taskProvider, focusedDay),
       builder: (context, snapshot) {
@@ -116,4 +118,5 @@ class MonthCalendarView extends StatelessWidget {
       },
     );
   }
-} 
+}
+*/ 

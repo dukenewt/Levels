@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../models/user_rank.dart';
+import '../models/user_perk.dart';
 import '../services/secure_storage_service.dart';
 import '../core/error_handling.dart';
 
@@ -30,6 +31,8 @@ class SecureUserProvider with ChangeNotifier {
   UserOperationState _operationState = UserOperationState.idle;
   AppException? _lastError;
   final SecureStorageService _storage;
+  List<UserPerk> _unlockedPerks = [];
+  List<UserPerk> get unlockedPerks => List.unmodifiable(_unlockedPerks);
 
   SecureUserProvider({required SecureStorageService storage}) : _storage = storage {
     _initializeProvider();
@@ -81,7 +84,6 @@ class SecureUserProvider with ChangeNotifier {
             lastLoginAt: DateTime.now(),
             level: _level,
             currentXp: _currentXp,
-            achievements: [],
           );
         }
         _isInitialized = true;
@@ -139,7 +141,6 @@ class SecureUserProvider with ChangeNotifier {
         lastLoginAt: DateTime.now(),
         level: _level,
         currentXp: _currentXp,
-        achievements: [],
       );
       await _saveUser();
       return Result.success(null);
@@ -194,6 +195,7 @@ class SecureUserProvider with ChangeNotifier {
       );
       await _saveUser();
     }
+    await checkForNewPerks();
     notifyListeners();
   }
 
@@ -224,5 +226,30 @@ class SecureUserProvider with ChangeNotifier {
 
   void showErrorToUser(BuildContext context, AppException error) {
     ErrorHandlingService().showError(context, error);
+  }
+
+  bool hasPerk(String perkId) {
+    return _unlockedPerks.any((perk) => perk.id == perkId && perk.isActive);
+  }
+
+  Future<void> checkForNewPerks() async {
+    for (final availablePerk in UserPerks.allPerks) {
+      final alreadyUnlocked = _unlockedPerks.any((p) => p.id == availablePerk.id);
+      if (!alreadyUnlocked && _level >= availablePerk.requiredLevel) {
+        final unlockedPerk = availablePerk.copyWith(
+          isUnlocked: true,
+          isActive: true,
+          unlockedAt: DateTime.now(),
+        );
+        _unlockedPerks.add(unlockedPerk);
+        _showPerkUnlockedNotification(unlockedPerk);
+      }
+    }
+    notifyListeners();
+  }
+
+  void _showPerkUnlockedNotification(UserPerk perk) {
+    // TODO: Implement a user-facing notification or dialog
+    debugPrint('Perk unlocked: [32m${perk.name}[0m');
   }
 } 

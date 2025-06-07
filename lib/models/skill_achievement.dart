@@ -1,3 +1,5 @@
+// MVP: Skill achievements shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 
 class SkillAchievement {
@@ -170,4 +172,5 @@ class SkillAchievement {
           : null,
     );
   }
-} 
+}
+*/ 

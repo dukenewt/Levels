@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
-import '../providers/task_provider.dart';
+import '../providers/secure_task_provider.dart';
 import 'task_creation_dialog.dart';
-import '../providers/skill_provider.dart';
 
 class TaskEditingDialog extends StatefulWidget {
   final Task task;
@@ -31,8 +30,8 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
   late List<int>? _weeklyDays;
   late int? _repeatInterval;
   late DateTime? _endDate;
-  late String? _selectedSkillId;
   int _timeCostMinutes = 10;
+  final FocusNode _titleFocusNode = FocusNode();
 
   final List<String> _recurrenceOptions = [
     'None',
@@ -56,7 +55,6 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
     _weeklyDays = widget.task.weeklyDays;
     _repeatInterval = widget.task.repeatInterval;
     _endDate = widget.task.endDate;
-    _selectedSkillId = widget.task.skillId;
     _timeCostMinutes = widget.task.timeCostMinutes;
   }
 
@@ -109,7 +107,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
 
   void _updateTask() {
     if (_formKey.currentState!.validate()) {
-      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
       
       final updatedTask = widget.task.copyWith(
         title: _titleController.text,
@@ -122,7 +120,6 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
         weeklyDays: _weeklyDays,
         repeatInterval: _repeatInterval,
         endDate: _endDate,
-        skillId: _selectedSkillId,
         timeCostMinutes: _timeCostMinutes,
       );
 
@@ -159,6 +156,10 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Request focus after build
+    Future.delayed(const Duration(milliseconds: 100), () {
+      FocusScope.of(context).requestFocus(_titleFocusNode);
+    });
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -179,6 +180,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
+                focusNode: _titleFocusNode,
                 decoration: const InputDecoration(
                   labelText: 'Title',
                   border: OutlineInputBorder(),
@@ -198,48 +200,6 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              // Skill group dropdown
-              Builder(
-                builder: (context) {
-                  final skillProvider = Provider.of<SkillProvider>(context);
-                  final skills = skillProvider.skills;
-                  return StatefulBuilder(
-                    builder: (context, setStateSB) {
-                      return DropdownButtonFormField<String>(
-                        value: _selectedSkillId,
-                        decoration: InputDecoration(
-                          labelText: 'Related Skill',
-                          border: OutlineInputBorder(),
-                          labelStyle: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        items: [
-                          DropdownMenuItem<String>(
-                            value: null,
-                            child: Text(
-                              'None',
-                              style: TextStyle(color: Theme.of(context).colorScheme.primary),
-                            ),
-                          ),
-                          ...skills.map((skill) => DropdownMenuItem<String>(
-                                value: skill.id,
-                                child: Text(skill.name),
-                              )),
-                        ],
-                        onChanged: (value) {
-                          setStateSB(() {
-                            _selectedSkillId = value;
-                          });
-                          setState(() {}); // To update parent state on change
-                        },
-                      );
-                    },
-                  );
-                },
               ),
               const SizedBox(height: 16),
               Row(
@@ -427,7 +387,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
                 children: [
                   TextButton.icon(
                     onPressed: () {
-                      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+                      final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
                       taskProvider.deleteTask(widget.task.id);
                       Navigator.of(context).pop();
                     },
