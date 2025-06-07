@@ -1,3 +1,5 @@
+// MVP: Calendar feature shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/task.dart';
@@ -7,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../providers/calendar_provider.dart';  // ✅
 import '../../models/task.dart';                   // ✅
 import '../widgets/task_tile.dart';
+import 'secure_task_provider.dart';
 
 class CalendarProvider extends ChangeNotifier {
   CalendarFormat _calendarFormat = CalendarFormat.week;
@@ -22,7 +25,7 @@ class CalendarProvider extends ChangeNotifier {
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
   final StorageService storage;
-  TaskProvider? taskProvider; //store reference instead of using context
+  SecureTaskProvider? taskProvider; //store reference instead of using context
 
   final List<String> categories = ['All', 'Work', 'Personal', 'Health', 'Learning', 'Other'];
 
@@ -43,7 +46,7 @@ class CalendarProvider extends ChangeNotifier {
     // _initializeData(); // Initialization requiring context must be triggered from a widget
   }
 
-  Future<void> initialize(TaskProvider taskProvider) async {
+  Future<void> initialize(SecureTaskProvider taskProvider) async {
     if (_isInitialized) return;
     this.taskProvider = taskProvider;
     _isLoading = true;
@@ -177,3 +180,4 @@ class CalendarProvider extends ChangeNotifier {
     }
   }
 }
+*/

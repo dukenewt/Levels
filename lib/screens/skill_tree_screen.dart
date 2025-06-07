@@ -1,3 +1,5 @@
+// MVP: Skill tree feature shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/skill.dart';
@@ -44,46 +46,33 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SkillProvider>(
-      builder: (context, skillProvider, child) {
-        final skill = skillProvider.getSkill(widget.skillId);
-        if (skill == null) {
-          return const Scaffold(
-            body: Center(
-              child: Text('Skill not found'),
-            ),
-          );
-        }
-
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(skill.name),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.info_outline),
-                onPressed: () => _showSkillInfo(context, skill),
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.skillId),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => _showSkillInfo(context),
+          ),
+        ],
+      ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              SkillTreeView(skill: widget.skillId),
+              const SizedBox(height: 24),
+              _buildSkillStats(context),
             ],
           ),
-          body: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  SkillTreeView(skill: skill),
-                  const SizedBox(height: 24),
-                  _buildSkillStats(context, skill),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildSkillStats(BuildContext context, Skill skill) {
+  Widget _buildSkillStats(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -110,28 +99,21 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> with SingleTickerProv
           _buildStatRow(
             context,
             'Total XP',
-            skill.totalXP.toString(),
+            '0',
             Icons.star,
           ),
           const SizedBox(height: 8),
           _buildStatRow(
             context,
             'Current Level',
-            skill.level.toString(),
+            '0',
             Icons.trending_up,
           ),
           const SizedBox(height: 8),
           _buildStatRow(
             context,
-            'Achievements',
-            skill.achievements.length.toString(),
-            Icons.emoji_events,
-          ),
-          const SizedBox(height: 8),
-          _buildStatRow(
-            context,
             'Time Invested',
-            _formatTimeInvested(skill.createdAt),
+            '0 days',
             Icons.timer,
           ),
         ],
@@ -168,26 +150,11 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> with SingleTickerProv
     );
   }
 
-  String _formatTimeInvested(DateTime createdAt) {
-    final now = DateTime.now();
-    final difference = now.difference(createdAt);
-    
-    if (difference.inDays > 365) {
-      final years = (difference.inDays / 365).floor();
-      return '$years ${years == 1 ? 'year' : 'years'}';
-    } else if (difference.inDays > 30) {
-      final months = (difference.inDays / 30).floor();
-      return '$months ${months == 1 ? 'month' : 'months'}';
-    } else {
-      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'}';
-    }
-  }
-
-  void _showSkillInfo(BuildContext context, Skill skill) {
+  void _showSkillInfo(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(skill.name),
+        title: Text(widget.skillId),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +166,7 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> with SingleTickerProv
               ),
             ),
             const SizedBox(height: 8),
-            Text(skill.description),
+            Text(widget.skillId),
             const SizedBox(height: 16),
             Text(
               'Current Title',
@@ -208,7 +175,7 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> with SingleTickerProv
               ),
             ),
             const SizedBox(height: 8),
-            Text(skill.title),
+            Text(widget.skillId),
           ],
         ),
         actions: [
@@ -220,4 +187,4 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> with SingleTickerProv
       ),
     );
   }
-} 
+*/ 
