@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
+import '../providers/secure_user_provider.dart';
 
 class LevelIndicator extends StatelessWidget {
   const LevelIndicator({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<UserProvider>(
+    return Consumer<SecureUserProvider>(
       builder: (context, userProvider, child) {
         final currentXP = userProvider.currentXp;
         final currentLevel = userProvider.level;

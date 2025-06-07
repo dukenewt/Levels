@@ -1,3 +1,5 @@
+// MVP: Skill progression and achievements shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/skill.dart';
@@ -281,7 +283,6 @@ class _SkillProgressionScreenState extends State<SkillProgressionScreen> with Si
 
   @override
   Widget build(BuildContext context) {
-    final skillProvider = Provider.of<SkillProvider>(context);
     final skill = skillProvider.getSkillById(_selectedCategory);
 
     if (skill == null) {
@@ -339,4 +340,5 @@ class _SkillProgressionScreenState extends State<SkillProgressionScreen> with Si
       ),
     );
   }
-} 
+}
+*/ 

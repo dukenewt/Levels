@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
-import '../providers/task_provider.dart';
-import '../providers/skill_provider.dart';
+import '../providers/secure_task_provider.dart';
 
 class TaskCreationDialog extends StatefulWidget {
   final DateTime? initialDate;
@@ -33,11 +32,11 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
   List<int>? _weeklyDays;
   int? _repeatInterval;
   DateTime? _endDate;
-  String? _selectedSkillId;
   int _timeCostMinutes = 10;
   bool _showTimePicker = false;
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
+  final FocusNode _titleFocusNode = FocusNode();
 
   final List<String> _recurrenceOptions = [
     'None',
@@ -104,7 +103,7 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
 
   void _createTask() {
     if (_formKey.currentState!.validate()) {
-      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
       final task = Task(
         id: const Uuid().v4(),
         title: _titleController.text,
@@ -118,7 +117,6 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
         weeklyDays: _weeklyDays,
         repeatInterval: _repeatInterval,
         endDate: _endDate,
-        skillId: _selectedSkillId,
         timeCostMinutes: _timeCostMinutes,
       );
       taskProvider.createTask(task);
@@ -180,8 +178,12 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final skillProvider = Provider.of<SkillProvider>(context);
-    final skills = skillProvider.skills;
+    // Request focus after build
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        FocusScope.of(context).requestFocus(_titleFocusNode);
+      }
+    });
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -202,6 +204,7 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
+                focusNode: _titleFocusNode,
                 decoration: const InputDecoration(
                   labelText: 'Title',
                   border: OutlineInputBorder(),
@@ -221,36 +224,6 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedSkillId,
-                decoration: InputDecoration(
-                  labelText: 'Related Skill',
-                  border: OutlineInputBorder(),
-                  labelStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                items: [
-                  DropdownMenuItem<String>(
-                    value: null,
-                    child: Text(
-                      'None',
-                      style: TextStyle(color: Theme.of(context).colorScheme.primary),
-                    ),
-                  ),
-                  ...skills.map((skill) => DropdownMenuItem<String>(
-                        value: skill.id,
-                        child: Text(skill.name),
-                      )),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedSkillId = value;
-                  });
-                },
               ),
               const SizedBox(height: 16),
               // Date picker row

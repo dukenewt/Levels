@@ -1,3 +1,5 @@
+// MVP: Specializations shelved. File commented out.
+/*
 import 'package:flutter/foundation.dart';
 import '../models/specialization.dart';
 import '../models/skill.dart';
@@ -104,4 +106,5 @@ class SpecializationProvider with ChangeNotifier {
       'achievements': skill.achievements,
     });
   }
-} 
+}
+*/ 

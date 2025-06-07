@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-import '../providers/user_provider.dart';
-import '../providers/task_provider.dart';
+import '../providers/secure_user_provider.dart';
+import '../providers/secure_task_provider.dart';
 import '../providers/skill_provider.dart';
 import '../widgets/level_progress_card.dart';
 import '../widgets/task_tile.dart';
@@ -22,6 +22,9 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../widgets/task_creation_dialog.dart';
 import 'notification_preferences_screen.dart';
+import '../widgets/professional_task_tile.dart';
+import '../widgets/professional_progress_card.dart';
+import '../widgets/smart_suggestions_widget.dart';
 
 class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
@@ -36,833 +39,146 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
   final List<String> _defaultCategories = ['Work', 'Personal', 'Health', 'Learning', 'Other'];
   List<String> _customCategories = [];
 
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-  bool _isLoading = false;
-  String? _error;
-
-  // --- Interactive flip animation fields ---
-  late AnimationController _flipController;
-  double _dragStartX = 0.0;
-  double _dragDx = 0.0;
-  bool _isDragging = false;
-  DateTime? _pendingDay; // The day to show during the flip
-  late Animation<double> _flipCurve;
+  DateTime _selectedDate = DateTime.now();
+  String _viewMode = 'agenda'; // 'agenda', 'today', 'week'
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
-    _selectedDay = DateTime.now();
-    _focusedDay = DateTime.now();
-    _initializeData();
-    _flipController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 650),
-      lowerBound: -1.0,
-      upperBound: 1.0,
-      value: 0.0,
-    );
-    _flipCurve = CurvedAnimation(
-      parent: _flipController,
-      curve: const _FlipElasticCurve(),
-    );
-  }
-
-  Future<void> _initializeData() async {
-    if (!mounted) return;
-    
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final skillProvider = Provider.of<SkillProvider>(context, listen: false);
-      
-      // Use compute to run heavy operations in a separate isolate
-      await Future.microtask(() {
-        if (!mounted) return;
-        skillProvider.loadSkills();
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = 'Error loading data: $e';
-      });
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
-    _flipController.dispose();
     super.dispose();
   }
 
   void _scrollListener() {
     if (_scrollController.offset >= 400) {
-      if (!_showScrollToTop) {
-        setState(() {
-          _showScrollToTop = true;
-        });
-      }
+      if (!_showScrollToTop) setState(() => _showScrollToTop = true);
     } else {
-      if (_showScrollToTop) {
-        setState(() {
-          _showScrollToTop = false;
-        });
-      }
+      if (_showScrollToTop) setState(() => _showScrollToTop = false);
     }
   }
 
   void _scrollToTop() {
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
+    _scrollController.animateTo(0,
+        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+  }
+
+  // Group tasks by date for display
+  Map<DateTime, List<Task>> _groupTasksByDate(List<Task> tasks) {
+    final Map<DateTime, List<Task>> grouped = {};
+    
+    for (final task in tasks) {
+      DateTime dateKey;
+      
+      if (task.dueDate != null) {
+        // Use the task's due date (normalized to day only)
+        dateKey = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+      } else {
+        // Tasks without dates go to a special "No Date" category
+        dateKey = DateTime(1970, 1, 1); // Epoch as placeholder for "no date"
+      }
+      
+      grouped.putIfAbsent(dateKey, () => []).add(task);
+    }
+    
+    return grouped;
+  }
+
+  // Get tasks for the next 7 days for agenda view
+  Map<DateTime, List<Task>> _getAgendaTasks(List<Task> allTasks) {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month, now.day);
+    final endDate = startDate.add(const Duration(days: 7));
+    
+    final relevant = allTasks.where((task) {
+      if (task.isCompleted) return false;
+      if (task.dueDate == null) return true; // Include no-date tasks
+      
+      final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+      return !taskDate.isBefore(startDate) && !taskDate.isAfter(endDate);
+    }).toList();
+    
+    return _groupTasksByDate(relevant);
   }
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final taskProvider = Provider.of<TaskProvider>(context);
-    final skillProvider = Provider.of<SkillProvider>(context);
+    final userProvider = Provider.of<SecureUserProvider>(context);
+    final taskProvider = Provider.of<SecureTaskProvider>(context);
     final theme = Theme.of(context);
-    
-    // Filter tasks for selected day
-    List<Task> filteredTasks = _selectedDay == null
-      ? taskProvider.getFilteredActiveTasks(context)
-      : taskProvider.getFilteredActiveTasks(context).where((task) {
-          if (task.dueDate == null) return false;
-          return task.dueDate!.year == _selectedDay!.year &&
-                 task.dueDate!.month == _selectedDay!.month &&
-                 task.dueDate!.day == _selectedDay!.day;
-        }).toList();
-
-    // All Day tasks: tasks with a date but no time (00:00)
-    List<Task> allDayTasks = filteredTasks.where((task) {
-      if (task.dueDate == null) return false;
-      return task.dueDate!.hour == 0 && task.dueDate!.minute == 0;
-    }).toList();
-
-    // Timed tasks: tasks with a date and a time
-    List<Task> timedTasks = filteredTasks.where((task) {
-      if (task.dueDate == null) return false;
-      return !(task.dueDate!.hour == 0 && task.dueDate!.minute == 0);
-    }).toList();
-
-    // No Date tasks: tasks with no dueDate at all
-    List<Task> noDateTasks = taskProvider.getFilteredActiveTasks(context)
-        .where((task) => task.dueDate == null && !task.isCompleted)
-        .toList();
-
-    // Get tasks for the next 7 days (week view)
-    List<Map<String, dynamic>> weekTasks = List.generate(7, (i) {
-      final day = _focusedDay.add(Duration(days: i - _focusedDay.weekday + 1));
-      final tasksForDay = taskProvider.getFilteredActiveTasks(context).where((task) {
-        if (task.dueDate == null) return false;
-        return task.dueDate!.year == day.year &&
-               task.dueDate!.month == day.month &&
-               task.dueDate!.day == day.day;
-      }).toList();
-      return {'date': day, 'tasks': tasksForDay};
-    });
 
     return Scaffold(
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.primaryContainer,
-                  ],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: theme.colorScheme.onPrimary,
-                    child: Icon(
-                      Icons.person,
-                      size: 30,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    userProvider.user?.displayName ?? 'User',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                  Text(
-                    userProvider.user?.email ?? '',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onPrimary.withOpacity(0.8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.check_circle_outline),
-              title: const Text('Tasks'),
-              selected: true,
-              onTap: () async {
-                debugPrint('Drawer: Tasks tapped');
-                Navigator.pop(context);
-                
-                await Future.microtask(() {
-                  if (!context.mounted) return;
-                  if (ModalRoute.of(context)?.settings.name != 'TaskDashboardScreen') {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TaskDashboardScreen(),
-                        settings: const RouteSettings(name: 'TaskDashboardScreen'),
-                      ),
-                    );
-                  }
-                });
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_today),
-              title: const Text('Calendar'),
-              onTap: () async {
-                debugPrint('Drawer: Calendar tapped');
-                Navigator.pop(context);
-                
-                await Future.microtask(() {
-                  if (!context.mounted) return;
-                  if (ModalRoute.of(context)?.settings.name != 'CalendarScreen') {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CalendarScreen(),
-                        settings: const RouteSettings(name: 'CalendarScreen'),
-                      ),
-                    );
-                  }
-                });
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.bar_chart_outlined),
-              title: const Text('Stats'),
-              onTap: () async {
-                debugPrint('Drawer: Stats tapped');
-                Navigator.pop(context);
-                
-                await Future.microtask(() {
-                  if (!context.mounted) return;
-                  if (ModalRoute.of(context)?.settings.name != 'StatsScreen') {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const StatsScreen(),
-                        settings: const RouteSettings(name: 'StatsScreen'),
-                      ),
-                    );
-                  }
-                });
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.emoji_events_outlined),
-              title: const Text('Achievements'),
-              onTap: () async {
-                debugPrint('Drawer: Achievements tapped');
-                Navigator.pop(context);
-                
-                await Future.microtask(() {
-                  if (!context.mounted) return;
-                  if (ModalRoute.of(context)?.settings.name != 'AchievementsScreen') {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AchievementsScreen(),
-                        settings: const RouteSettings(name: 'AchievementsScreen'),
-                      ),
-                    );
-                  }
-                });
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Profile'),
-              onTap: () async {
-                debugPrint('Drawer: Profile tapped');
-                Navigator.pop(context);
-                
-                await Future.microtask(() {
-                  if (!context.mounted) return;
-                  if (ModalRoute.of(context)?.settings.name != 'ProfileScreen') {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileScreen(),
-                        settings: const RouteSettings(name: 'ProfileScreen'),
-                      ),
-                    );
-                  }
-                });
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sign Out'),
-              onTap: () {
-                debugPrint('Drawer: Sign Out tapped');
-                Navigator.pop(context);
-                userProvider.signOut();
-              },
-            ),
-          ],
-        ),
-      ),
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
+          // App bar with view mode selector
           SliverAppBar(
-            title: Text(
-              'Daily XP',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            title: Text('Daily XP', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
             floating: true,
             actions: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationPreferencesScreen(),
-                    ),
-                  );
-                },
+              // View mode selector
+              PopupMenuButton<String>(
+                initialValue: _viewMode,
+                onSelected: (value) => setState(() => _viewMode = value),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'agenda', child: Text('Agenda (7 days)')),
+                  const PopupMenuItem(value: 'today', child: Text('Today Only')),
+                  const PopupMenuItem(value: 'week', child: Text('This Week')),
+                ],
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_viewMode.toUpperCase(), style: const TextStyle(fontSize: 12)),
+                      const Icon(Icons.arrow_drop_down),
+                    ],
+                  ),
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.settings),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  );
+                  // Navigate to settings
                 },
               ),
             ],
           ),
+
+          // Progress card
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Level Progress Card
-                  Consumer<UserProvider>(
+                  Consumer<SecureUserProvider>(
                     builder: (context, userProvider, child) {
-                      return LevelProgressCard(
-                        level: userProvider.level,
-                        currentXp: userProvider.currentXp,
-                        nextLevelXp: userProvider.nextLevelXp,
+                      return ProfessionalProgressCard(
+                        title: 'Level',
+                        currentValue: userProvider.currentXp,
+                        maxValue: userProvider.nextLevelXp,
+                        color: theme.colorScheme.primary,
+                        subtitle: 'Level ${userProvider.level}',
+                        onTap: () {},
                       );
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SmartSuggestionsWidget(),
                 ],
               ),
             ),
           ),
-          // Calendar Widget
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Daily View Header ONLY (no calendar)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left),
-                          onPressed: () {
-                            setState(() {
-                              _selectedDay = _selectedDay?.subtract(const Duration(days: 1));
-                              _focusedDay = _focusedDay.subtract(const Duration(days: 1));
-                            });
-                            _flipController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                          },
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onHorizontalDragStart: (details) {
-                              _dragStartX = details.localPosition.dx;
-                              _dragDx = 0.0;
-                              _isDragging = true;
-                            },
-                            onHorizontalDragUpdate: (details) {
-                              if (!_isDragging) return;
-                              _dragDx = details.localPosition.dx - _dragStartX;
-                              double progress = (_dragDx / 200.0).clamp(-1.0, 1.0);
-                              _flipController.value = progress;
-                              setState(() {
-                                if (progress > 0.0) {
-                                  _pendingDay = _selectedDay?.subtract(const Duration(days: 1));
-                                } else if (progress < 0.0) {
-                                  _pendingDay = _selectedDay?.add(const Duration(days: 1));
-                                } else {
-                                  _pendingDay = null;
-                                }
-                              });
-                            },
-                            onHorizontalDragEnd: (details) {
-                              _isDragging = false;
-                              final threshold = 0.4;
-                              if (_flipController.value > threshold) {
-                                // Flip to previous day
-                                _flipController.animateTo(1.0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut).then((_) {
-                                  if (!mounted) return;
-                                  setState(() {
-                                    _selectedDay = _selectedDay?.subtract(const Duration(days: 1));
-                                    _focusedDay = _focusedDay.subtract(const Duration(days: 1));
-                                    _pendingDay = null;
-                                    _flipController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                                  });
-                                });
-                              } else if (_flipController.value < -threshold) {
-                                // Flip to next day
-                                _flipController.animateTo(-1.0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut).then((_) {
-                                  if (!mounted) return;
-                                  setState(() {
-                                    _selectedDay = _selectedDay?.add(const Duration(days: 1));
-                                    _focusedDay = _focusedDay.add(const Duration(days: 1));
-                                    _pendingDay = null;
-                                    _flipController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                                  });
-                                });
-                              } else {
-                                // Snap back
-                                _flipController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                                setState(() {
-                                  _pendingDay = null;
-                                });
-                              }
-                            },
-                            child: AnimatedBuilder(
-                              animation: _flipCurve,
-                              builder: (context, child) {
-                                final double animValue = _flipCurve.value;
-                                final bool isRollingUp = animValue < 0; // up for next day, down for previous
-                                final double t = animValue.abs().clamp(0.0, 1.0);
-                                final bool showPending = _pendingDay != null && t > 0.01;
-                                final DateTime currentDay = _selectedDay ?? DateTime.now();
-                                final DateTime nextDay = _pendingDay ?? currentDay;
-                                final theme = Theme.of(context);
-                                // Animation split: 0.0-0.5 is front, 0.5-1.0 is back
-                                final double frontInterval = (t < 0.5) ? t * 2 : 1.0;
-                                final double backInterval = (t > 0.5) ? (t - 0.5) * 2 : 0.0;
-                                // Angles
-                                final double frontAngle = (isRollingUp ? 1 : -1) * frontInterval * (3.1416 / 2); // 0 to 90°
-                                final double backAngle = (isRollingUp ? 1 : -1) * ((1 - backInterval) * (3.1416 / 2)); // 90° to 0
-                                // Scaling: min at 90°
-                                final double scale = 1.0 - 0.08 * (1 - ((t - 0.5).abs() * 2));
-                                // Shadow: max at 90°
-                                final double shadowStrength = 0.08 + 0.22 * (1 - ((t - 0.5).abs() * 2));
-                                Widget buildFace(DateTime day, double rotation, bool isFront) {
-                                  return Transform(
-                                    alignment: isRollingUp ? Alignment.bottomCenter : Alignment.topCenter,
-                                    transform: Matrix4.identity()
-                                      ..setEntry(3, 2, 0.001)
-                                      ..scale(scale, scale)
-                                      ..rotateX(rotation),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(shadowStrength),
-                                            blurRadius: 14,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Text(
-                                        DateFormat('EEEE, MMMM d, yyyy').format(day),
-                                        style: theme.textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return SizedBox(
-                                  height: 56,
-                                  child: Stack(
-                                    children: [
-                                      // Outgoing face (current day)
-                                      if (!showPending || t < 1)
-                                        Opacity(
-                                          opacity: 1 - t,
-                                          child: buildFace(
-                                            currentDay,
-                                            isRollingUp ? frontAngle : -frontAngle,
-                                            true,
-                                          ),
-                                        ),
-                                      // Incoming face (pending day)
-                                      if (showPending)
-                                        Opacity(
-                                          opacity: t,
-                                          child: buildFace(
-                                            nextDay,
-                                            isRollingUp ? backAngle : -backAngle,
-                                            false,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right),
-                          onPressed: () {
-                            setState(() {
-                              _selectedDay = _selectedDay?.add(const Duration(days: 1));
-                              _focusedDay = _focusedDay.add(const Duration(days: 1));
-                            });
-                            _flipController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (filteredTasks.isEmpty && noDateTasks.isEmpty)
-            const SliverFillRemaining(
-              child: EmptyTasksPlaceholder(),
-            )
-          else ...[
-            SliverList(
-              delegate: SliverChildListDelegate([
-                // Active Tasks Section
-                if (timedTasks.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-                    child: Text(
-                      'Tasks for ${DateFormat('MMM d, yyyy').format(_selectedDay!)}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  ...timedTasks.map((task) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                    child: TaskTile(
-                      key: ValueKey("active-${task.id}"),
-                      task: task,
-                      onDismissed: (direction) async {
-                        if (direction == DismissDirection.startToEnd) {
-                          // Delete
-                          final deletedTask = task;
-                          await taskProvider.deleteTask(task.id);
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Task deleted'),
-                              action: SnackBarAction(
-                                label: 'Undo',
-                                onPressed: () async {
-                                  await taskProvider.createTask(deletedTask);
-                                  setState(() {});
-                                },
-                              ),
-                            ),
-                          );
-                          setState(() {});
-                        } else if (direction == DismissDirection.endToStart) {
-                          // Complete
-                          await taskProvider.completeTask(task.id);
-                          if (!mounted) return;
-                          setState(() {});
-                        }
-                      },
-                      compact: false,
-                    ),
-                  )).toList(),
-                ],
-                if (allDayTasks.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                    child: Text(
-                      'All Day',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  ...allDayTasks.map((task) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                    child: TaskTile(
-                      key: ValueKey("allday-${task.id}"),
-                      task: task,
-                      onDismissed: (direction) async {
-                        if (direction == DismissDirection.startToEnd) {
-                          final deletedTask = task;
-                          await taskProvider.deleteTask(task.id);
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Task deleted'),
-                              action: SnackBarAction(
-                                label: 'Undo',
-                                onPressed: () async {
-                                  await taskProvider.createTask(deletedTask);
-                                  setState(() {});
-                                },
-                              ),
-                            ),
-                          );
-                          setState(() {});
-                        } else if (direction == DismissDirection.endToStart) {
-                          await taskProvider.completeTask(task.id);
-                          if (!mounted) return;
-                          setState(() {});
-                        }
-                      },
-                      compact: true,
-                    ),
-                  )).toList(),
-                ],
-                // Floating Tasks Section (move above completed)
-                if (noDateTasks.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-                    child: Text(
-                      'Floating Tasks',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  ...noDateTasks.map((task) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                    child: TaskTile(
-                      key: ValueKey("floating-${task.id}"),
-                      task: task,
-                      onDismissed: (direction) async {
-                        if (direction == DismissDirection.startToEnd) {
-                          final deletedTask = task;
-                          await taskProvider.deleteTask(task.id);
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Task deleted'),
-                              action: SnackBarAction(
-                                label: 'Undo',
-                                onPressed: () async {
-                                  await taskProvider.createTask(deletedTask);
-                                  setState(() {});
-                                },
-                              ),
-                            ),
-                          );
-                          setState(() {});
-                        } else if (direction == DismissDirection.endToStart) {
-                          await taskProvider.completeTask(task.id);
-                          if (!mounted) return;
-                          setState(() {});
-                        }
-                      },
-                      compact: true,
-                    ),
-                  )).toList(),
-                ],
-                // Skills Progress Section (move above completed)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
-                  child: ExpansionTile(
-                    title: Text(
-                      'Skills Progress',
-                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    leading: const Icon(Icons.bar_chart),
-                    children: [
-                      Consumer<SkillProvider>(
-                        builder: (context, skillProvider, child) {
-                          final skills = skillProvider.skills;
-                          return Column(
-                            children: skills.map((skill) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Card(
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(
-                                    color: theme.colorScheme.outline.withOpacity(0.2),
-                                  ),
-                                ),
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => SkillDetailsScreen(skill: skill),
-                                      ),
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(8),
-                                              decoration: BoxDecoration(
-                                                color: skill.color.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Icon(
-                                                _getIconData(skill.icon),
-                                                color: skill.color,
-                                                size: 24,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    skill.name,
-                                                    style: theme.textTheme.titleMedium?.copyWith(
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    'Level ${skill.level}',
-                                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                                      color: theme.colorScheme.onSurfaceVariant,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 6,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: skill.color.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                '${skill.currentXp} / ${skill.xpForNextLevel} XP',
-                                                style: TextStyle(
-                                                  color: skill.color,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: LinearProgressIndicator(
-                                            value: skill.progressPercentage / 100,
-                                            backgroundColor: skill.color.withOpacity(0.1),
-                                            valueColor: AlwaysStoppedAnimation<Color>(skill.color),
-                                            minHeight: 6,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          skill.description,
-                                          style: theme.textTheme.bodyMedium?.copyWith(
-                                            color: Colors.grey[600],
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            )).toList(),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                // Completed Tasks Section (move below skills progress)
-                if (taskProvider.completedTasksToday.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-                    child: Text(
-                      'Completed Today',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  ...taskProvider.completedTasksToday.map((task) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                    child: TaskTile(
-                      key: ValueKey("completed-${task.id}"),
-                      task: task,
-                      onDismissed: null, // Completed tasks can't be dismissed
-                      compact: true,
-                    ),
-                  )).toList(),
-                ],
-                // Add some padding at the bottom
-                const SizedBox(height: 24),
-              ]),
-            ),
-          ],
+
+          // Date navigation (for today/week views)
+          if (_viewMode != 'agenda')
+            SliverToBoxAdapter(child: _buildDateNavigation()),
+
+          // Task sections based on view mode
+          ..._buildTaskSections(taskProvider.getFilteredActiveTasks(context)),
         ],
       ),
       floatingActionButton: Column(
@@ -879,54 +195,232 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
             ),
           FloatingActionButton(
             heroTag: 'addTask',
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => TaskCreationDialog(),
-              );
-            },
+            onPressed: () => showDialog(context: context, builder: (context) => TaskCreationDialog()),
             child: const Icon(Icons.add),
           ),
         ],
       ),
     );
   }
-  
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
-      case 'work':
-        return Icons.work;
-      case 'school':
-        return Icons.school;
-      case 'fitness_center':
-        return Icons.fitness_center;
-      case 'code':
-        return Icons.code;
-      case 'music_note':
-        return Icons.music_note;
-      default:
-        return Icons.star;
-    }
-  }
-}
 
-class _FlipElasticCurve extends Curve {
-  const _FlipElasticCurve();
-  @override
-  double transform(double t) {
-    // Clamp input to [-1.0, 1.0]
-    t = t.clamp(-1.0, 1.0);
-    final absT = t.abs().clamp(0.0, 1.0);
-    double result;
-    if (absT < 0.85) {
-      // Ease for first 85%
-      result = t.sign * Curves.easeInOutCubic.transform((absT / 0.85).clamp(0.0, 1.0)) * 0.85;
-    } else {
-      // Elastic for last 15%
-      final elastic = Curves.elasticOut.transform(((absT - 0.85) / 0.15).clamp(0.0, 1.0));
-      result = t.sign * (0.85 + elastic * 0.15);
+  Widget _buildDateNavigation() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () => setState(() {
+              _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+            }),
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () => setState(() {
+              _selectedDate = _selectedDate.add(const Duration(days: 1));
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildTaskSections(List<Task> allTasks) {
+    Map<DateTime, List<Task>> groupedTasks;
+    
+    switch (_viewMode) {
+      case 'today':
+        groupedTasks = _getTodayTasks(allTasks);
+        break;
+      case 'week':
+        groupedTasks = _getWeekTasks(allTasks);
+        break;
+      case 'agenda':
+      default:
+        groupedTasks = _getAgendaTasks(allTasks);
+        break;
     }
-    // Clamp output to [-1.0, 1.0]
-    return result.clamp(-1.0, 1.0);
+
+    if (groupedTasks.isEmpty) {
+      return [
+        const SliverFillRemaining(
+          child: Center(child: Text('No tasks found for this period')),
+        )
+      ];
+    }
+
+    final sections = <Widget>[];
+    
+    // Sort dates (but put "no date" tasks at the end)
+    final sortedDates = groupedTasks.keys.toList()..sort((a, b) {
+      // Put epoch date (no date tasks) at the end
+      if (a.year == 1970) return 1;
+      if (b.year == 1970) return -1;
+      return a.compareTo(b);
+    });
+
+    for (final date in sortedDates) {
+      final tasks = groupedTasks[date]!;
+      sections.add(_buildDateSection(date, tasks));
+    }
+
+    return sections;
+  }
+
+  Widget _buildDateSection(DateTime date, List<Task> tasks) {
+    // Handle "no date" tasks
+    if (date.year == 1970) {
+      return SliverList(
+        delegate: SliverChildListDelegate([
+          _buildSectionHeader('No Date Set', tasks.length),
+          ...tasks.map((task) => _buildTaskTile(task)),
+          const SizedBox(height: 16),
+        ]),
+      );
+    }
+
+    // Regular date sections
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    
+    String sectionTitle;
+    if (date.isAtSameMomentAs(today)) {
+      sectionTitle = 'Today';
+    } else if (date.isAtSameMomentAs(tomorrow)) {
+      sectionTitle = 'Tomorrow';
+    } else {
+      sectionTitle = DateFormat('EEEE, MMM d').format(date);
+    }
+
+    // Group by time within the day
+    final timedTasks = tasks.where((t) => t.scheduledTime != null).toList();
+    final allDayTasks = tasks.where((t) => t.scheduledTime == null).toList();
+
+    // Sort timed tasks by time
+    timedTasks.sort((a, b) {
+      final aTime = a.scheduledTime!.hour * 60 + a.scheduledTime!.minute;
+      final bTime = b.scheduledTime!.hour * 60 + b.scheduledTime!.minute;
+      return aTime.compareTo(bTime);
+    });
+
+    return SliverList(
+      delegate: SliverChildListDelegate([
+        _buildSectionHeader(sectionTitle, tasks.length),
+        
+        // All day tasks first
+        if (allDayTasks.isNotEmpty) ...[
+          _buildSubSectionHeader('All Day'),
+          ...allDayTasks.map((task) => _buildTaskTile(task)),
+        ],
+        
+        // Timed tasks
+        if (timedTasks.isNotEmpty) ...[
+          if (allDayTasks.isNotEmpty) _buildSubSectionHeader('Scheduled'),
+          ...timedTasks.map((task) => _buildTaskTile(task)),
+        ],
+        
+        const SizedBox(height: 24),
+      ]),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, int count) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              count.toString(),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 16, 24, 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskTile(Task task) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      child: ProfessionalTaskTile(
+        key: ValueKey(task.id),
+        task: task,
+        onComplete: () async {
+          final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+          await taskProvider.completeTask(task.id);
+        },
+        onEdit: () {
+          // Handle edit
+        },
+        showTime: true,
+      ),
+    );
+  }
+
+  // Helper methods for different view modes
+  Map<DateTime, List<Task>> _getTodayTasks(List<Task> allTasks) {
+    final today = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    final relevantTasks = allTasks.where((task) {
+      if (task.isCompleted) return false;
+      if (task.dueDate == null) return false;
+      
+      final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+      return taskDate.isAtSameMomentAs(today);
+    }).toList();
+    
+    return {today: relevantTasks};
+  }
+
+  Map<DateTime, List<Task>> _getWeekTasks(List<Task> allTasks) {
+    final startOfWeek = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+    
+    final relevantTasks = allTasks.where((task) {
+      if (task.isCompleted) return false;
+      if (task.dueDate == null) return false;
+      
+      final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+      return !taskDate.isBefore(startOfWeek) && !taskDate.isAfter(endOfWeek);
+    }).toList();
+    
+    return _groupTasksByDate(relevantTasks);
   }
 } 

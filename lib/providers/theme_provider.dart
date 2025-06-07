@@ -19,6 +19,7 @@ class ThemeProvider with ChangeNotifier {
     _prefs = await SharedPreferences.getInstance();
     _loadTheme();
     _loadUnlockedPremiumThemes();
+    await unlockAllPremiumThemes(); // Unlock all premium themes by default
   }
 
   // Load saved theme
@@ -99,5 +100,16 @@ class ThemeProvider with ChangeNotifier {
   // Get unlocked premium themes
   List<AppTheme> get unlockedPremiumThemesList {
     return premiumThemes.where((theme) => _unlockedPremiumThemes.contains(theme.type)).toList();
+  }
+
+  // Unlock all premium themes
+  Future<void> unlockAllPremiumThemes() async {
+    _unlockedPremiumThemes.addAll(
+      AppTheme.allThemes
+        .where((theme) => theme.isPremium)
+        .map((theme) => theme.type),
+    );
+    await _saveUnlockedPremiumThemes();
+    notifyListeners();
   }
 } 

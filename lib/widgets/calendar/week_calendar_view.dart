@@ -1,8 +1,10 @@
+// MVP: Calendar feature shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/task.dart';
-import '../../providers/task_provider.dart';
+import '../../providers/secure_task_provider.dart';
 import '../task_tile.dart';
 
 class WeekCalendarView extends StatelessWidget {
@@ -10,7 +12,7 @@ class WeekCalendarView extends StatelessWidget {
 
   const WeekCalendarView({Key? key, required this.focusedDay}) : super(key: key);
 
-  Future<Map<DateTime, List<Task>>> _loadWeekTasks(TaskProvider taskProvider, DateTime focusedDay) async {
+  Future<Map<DateTime, List<Task>>> _loadWeekTasks(SecureTaskProvider taskProvider, DateTime focusedDay) async {
     final startOfWeek = focusedDay.subtract(Duration(days: focusedDay.weekday - 1));
     final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
     final Map<DateTime, List<Task>> weekTasks = {};
@@ -23,7 +25,7 @@ class WeekCalendarView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final taskProvider = Provider.of<TaskProvider>(context);
+    final taskProvider = Provider.of<SecureTaskProvider>(context);
     final startOfWeek = focusedDay.subtract(Duration(days: focusedDay.weekday - 1));
     final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
     final theme = Theme.of(context);
@@ -298,4 +300,5 @@ class WeekCalendarView extends StatelessWidget {
       },
     );
   }
-} 
+}
+*/ 

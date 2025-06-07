@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
-import '../providers/task_provider.dart';
+import '../providers/secure_task_provider.dart';
 
 class EditTaskDialog extends StatefulWidget {
   final Task task;
@@ -19,6 +19,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
   late TextEditingController titleController;
   late TextEditingController descriptionController;
   late TextEditingController xpController;
+  late FocusNode titleFocusNode;
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
   String? selectedRecurrence;
@@ -30,6 +31,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
     titleController = TextEditingController(text: widget.task.title);
     descriptionController = TextEditingController(text: widget.task.description);
     xpController = TextEditingController(text: widget.task.xpReward.toString());
+    titleFocusNode = FocusNode();
     selectedDate = widget.task.dueDate;
     selectedTime = widget.task.dueDate != null 
         ? TimeOfDay.fromDateTime(widget.task.dueDate!)
@@ -42,6 +44,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
     titleController.dispose();
     descriptionController.dispose();
     xpController.dispose();
+    titleFocusNode.dispose();
     super.dispose();
   }
 
@@ -52,7 +55,12 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+
+    // Request focus after build
+    Future.delayed(const Duration(milliseconds: 100), () {
+      FocusScope.of(context).requestFocus(titleFocusNode);
+    });
 
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -90,6 +98,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
               ),
               child: TextField(
                 controller: titleController,
+                focusNode: titleFocusNode,
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
                   labelText: 'Task Title',
@@ -322,7 +331,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
             const SizedBox(height: 32),
             // Save Button
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final title = titleController.text.trim();
                 final description = descriptionController.text.trim();
                 final xp = int.tryParse(xpController.text) ?? 0;
@@ -359,7 +368,8 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                   recurrencePattern: selectedRecurrence,
                 );
 
-                taskProvider.updateTask(updatedTask);
+                await taskProvider.updateTask(updatedTask);
+                if (!mounted) return;
                 Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(

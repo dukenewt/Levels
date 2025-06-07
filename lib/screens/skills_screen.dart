@@ -1,3 +1,5 @@
+// MVP: Skills feature shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/skill_provider.dart';
@@ -10,7 +12,6 @@ class SkillsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final skillProvider = Provider.of<SkillProvider>(context);
 
     // Ensure skills are loaded
     if (skillProvider.skills.isEmpty) {
@@ -180,12 +181,17 @@ class SkillsScreen extends StatelessWidget {
   void _showAddSkillDialog(BuildContext context) {
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
+    final nameFocusNode = FocusNode();
     String selectedIcon = 'work';
     Color selectedColor = const Color(0xFF78A1E8);
 
     showDialog(
       context: context,
       builder: (context) {
+        // Request focus after build
+        Future.delayed(const Duration(milliseconds: 100), () {
+          FocusScope.of(context).requestFocus(nameFocusNode);
+        });
         return AlertDialog(
           title: const Text('Add New Skill'),
           content: SingleChildScrollView(
@@ -194,6 +200,7 @@ class SkillsScreen extends StatelessWidget {
               children: [
                 TextField(
                   controller: nameController,
+                  focusNode: nameFocusNode,
                   decoration: const InputDecoration(
                     labelText: 'Skill Name',
                     hintText: 'Enter skill name',
@@ -317,4 +324,5 @@ class SkillsScreen extends StatelessWidget {
         return Icons.help_outline;
     }
   }
-} 
+}
+*/ 

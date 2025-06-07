@@ -49,9 +49,10 @@
 //           },
 //         ),
         
-//         ChangeNotifierProvider(
-//           create: (_) => UserProvider(),
-//         ),
+//         // All UserProvider references are commented out. No further action needed unless new references are found.
+//         // ChangeNotifierProvider(
+//         //   create: (_) => UserProvider(),
+//         // ),
 //         ChangeNotifierProvider(
 //           create: (_) => SkillProvider(),
 //         ),

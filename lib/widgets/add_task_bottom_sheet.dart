@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
-import '../providers/task_provider.dart';
-import '../providers/user_provider.dart';
+import '../providers/secure_task_provider.dart';
+import '../providers/secure_user_provider.dart';
 
 class AddTaskBottomSheet extends StatefulWidget {
   const AddTaskBottomSheet({Key? key}) : super(key: key);
@@ -15,6 +15,7 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final FocusNode _titleFocusNode = FocusNode();
   String _selectedCategory = 'Personal';
   int _xpReward = 10;
 
@@ -29,14 +30,15 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _titleFocusNode.dispose();
     super.dispose();
   }
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+    final userProvider = Provider.of<SecureUserProvider>(context, listen: false);
 
     final task = Task(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -53,6 +55,10 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Request focus after build
+    Future.delayed(const Duration(milliseconds: 100), () {
+      FocusScope.of(context).requestFocus(_titleFocusNode);
+    });
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -73,6 +79,7 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
+                focusNode: _titleFocusNode,
                 decoration: const InputDecoration(
                   labelText: 'Task Title',
                   border: OutlineInputBorder(),

@@ -31,19 +31,11 @@ class EnhancedAppProviders extends StatelessWidget {
         // but might not have power if initialization failed
         ChangeNotifierProvider.value(value: initManager.themeProvider),
         ChangeNotifierProvider.value(value: initManager.settingsProvider),
-        ChangeNotifierProvider.value(value: initManager.userProvider),
-        ChangeNotifierProvider.value(value: initManager.skillProvider),
-        ChangeNotifierProvider.value(value: initManager.specializationProvider),
+        ChangeNotifierProvider.value(value: initManager.secureUserProvider),
         
         // These might be null if initialization failed, so we use nullable providers
-        if (initManager.coinEconomyProvider != null)
-          ChangeNotifierProvider.value(value: initManager.coinEconomyProvider!),
-        if (initManager.taskProvider != null)
-          ChangeNotifierProvider.value(value: initManager.taskProvider!),
         if (initManager.secureTaskProvider != null)
           ChangeNotifierProvider.value(value: initManager.secureTaskProvider!),
-        if (initManager.calendarProvider != null)
-          ChangeNotifierProvider.value(value: initManager.calendarProvider!),
         if (secureStorageService != null)
           Provider<SecureStorageService>.value(value: secureStorageService!),
       ],

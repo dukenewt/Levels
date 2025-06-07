@@ -8,6 +8,7 @@ import 'notification_preferences_screen.dart';
 import '../services/app_backup_service.dart';
 import '../widgets/export_options_dialog.dart';
 import '../models/export_config.dart';
+import '../models/theme_model.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -47,7 +48,7 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ListTile(
                     title: const Text('App Theme'),
-                    subtitle: Text(themeProvider.currentTheme.name),
+                    subtitle: Text(AppTheme.getThemeByType(themeProvider.currentTheme).name),
                     leading: Icon(
                       Icons.palette,
                       color: theme.colorScheme.primary,
@@ -81,15 +82,6 @@ class SettingsScreen extends StatelessWidget {
                     },
                   ),
                   const Divider(),
-                  SwitchListTile(
-                    title: const Text('Dark Mode'),
-                    subtitle: const Text('Use system theme settings'),
-                    value: settingsProvider.isDarkMode,
-                    onChanged: (value) {
-                      settingsProvider.setDarkMode(value);
-                    },
-                    activeColor: theme.colorScheme.primary,
-                  ),
                 ],
               ),
             ),

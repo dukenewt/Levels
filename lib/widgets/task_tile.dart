@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
-import '../providers/task_provider.dart';
+import '../providers/secure_task_provider.dart';
 import 'package:provider/provider.dart';
 import 'edit_task_dialog.dart';
 import 'package:intl/intl.dart';
@@ -107,7 +107,7 @@ class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin
     
     try {
       // Get the provider reference before starting the operation
-      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
       
       // Use our new robust completion method
       final result = await taskProvider.completeTask(widget.task.id);
@@ -643,26 +643,44 @@ void _showUnexpectedErrorMessage() {
   void _showTaskMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.edit_outlined),
-            title: const Text('Edit Task'),
-            onTap: () {
-              Navigator.pop(context);
-              _showEditTaskDialog(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete_outline, color: Colors.red),
-            title: const Text('Delete Task', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context);
-              _showDeleteConfirmation(context);
-            },
-          ),
-        ],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.edit_outlined, color: Theme.of(context).colorScheme.primary),
+              title: Text('Edit Task', style: Theme.of(context).textTheme.titleMedium),
+              onTap: () {
+                Navigator.pop(context);
+                _showEditTaskDialog(context);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              title: const Text('Delete Task', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(context);
+                _showDeleteConfirmation(context);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -681,7 +699,7 @@ void _showUnexpectedErrorMessage() {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Provider.of<TaskProvider>(context, listen: false).deleteTask(widget.task.id);
+              Provider.of<SecureTaskProvider>(context, listen: false).deleteTask(widget.task.id);
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),

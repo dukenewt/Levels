@@ -1,3 +1,5 @@
+// MVP: Skill tree view shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/skill.dart';
@@ -291,4 +293,5 @@ class SkillTreeView extends StatelessWidget {
       ],
     );
   }
-} 
+}
+*/ 

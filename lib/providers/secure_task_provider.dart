@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../models/user.dart';
-import 'user_provider.dart';
-import 'skill_provider.dart';
+import 'secure_user_provider.dart';
+
 import 'settings_provider.dart';
 import '../widgets/level_up_overlay.dart';
 import 'package:uuid/uuid.dart';
 import '../services/secure_storage_service.dart';
 import '../core/error_handling.dart';
+import '../models/task_results.dart';
 
 /// States for async operations to provide proper loading indicators
 enum TaskOperationState {
@@ -24,8 +25,7 @@ class SecureTaskProvider with ChangeNotifier {
   List<Task> _tasks = [];
   final Map<String, List<Task>> _tasksByCategory = {};
   final SecureStorageService _storage;
-  final UserProvider _userProvider;
-  final SkillProvider _skillProvider;
+  final SecureUserProvider _userProvider;
   
   // State management
   TaskOperationState _operationState = TaskOperationState.idle;
@@ -37,13 +37,11 @@ class SecureTaskProvider with ChangeNotifier {
 
   SecureTaskProvider({
     required SecureStorageService storage,
-    required UserProvider userProvider,
-    required SkillProvider skillProvider,
+    required SecureUserProvider userProvider,
   }) : _storage = storage,
-       _userProvider = userProvider,
-       _skillProvider = skillProvider {
+       _userProvider = userProvider {
     // Only initialize if dependencies are ready
-    if (userProvider.isInitialized && skillProvider.isInitialized) {
+    if (userProvider.isInitialized) {
       _initializeProvider();
     } else {
       _setupDependencyListeners();
@@ -101,17 +99,14 @@ class SecureTaskProvider with ChangeNotifier {
   void _setupDependencyListeners() {
     debugPrint('📡 TaskProvider: Setting up dependency listeners');
     _userProvider.addListener(_checkDependenciesReady);
-    _skillProvider.addListener(_checkDependenciesReady);
   }
 
   void _checkDependenciesReady() {
     if (_userProvider.isInitialized && 
-        _skillProvider.isInitialized && 
         !_isInitialized && 
         !_isInitializing) {
       debugPrint('🎉 TaskProvider: Dependencies ready, starting initialization');
       _userProvider.removeListener(_checkDependenciesReady);
-      _skillProvider.removeListener(_checkDependenciesReady);
       _initializeProvider();
     }
   }
@@ -270,19 +265,23 @@ class SecureTaskProvider with ChangeNotifier {
   }
 
   /// Complete task with XP rewards and comprehensive error handling
-  Future<Result<void>> completeTask(String taskId) async {
+  Future<TaskCompletionResult> completeTask(String taskId) async {
     try {
       debugPrint('✅ TaskProvider: Completing task: $taskId');
       
       final taskIndex = _tasks.indexWhere((task) => task.id == taskId);
       if (taskIndex == -1) {
-        return Result.failure(ValidationException('Task not found'));
+        return TaskCompletionResult.failure(
+          'Task not found',
+          TaskCompletionError.taskNotFound,
+          originalError: null,
+        );
       }
 
       final task = _tasks[taskIndex];
       if (task.isCompleted) {
         debugPrint('⚠️ TaskProvider: Task already completed');
-        return Result.failure(ValidationException('Task is already completed'));
+        return TaskCompletionResult.alreadyCompleted(task);
       }
 
       _operationState = TaskOperationState.completing;
@@ -290,8 +289,6 @@ class SecureTaskProvider with ChangeNotifier {
 
       // Store task data for XP operations
       final xpReward = task.xpReward;
-      final skillId = task.skillId;
-      final originalTask = task;
 
       try {
         // Update task completion status (optimistic update)
@@ -303,21 +300,20 @@ class SecureTaskProvider with ChangeNotifier {
         final saveResult = await _storage.taskRepository.updateTask(_tasks[taskIndex]);
         if (!saveResult.isSuccess) {
           // Rollback the completion if save failed
-          _tasks[taskIndex] = originalTask;
+          _tasks[taskIndex] = task;
           _updateTasksByCategory();
           notifyListeners();
-          return Result.failure(saveResult.error!);
+          return TaskCompletionResult.failure(
+            saveResult.error?.toString() ?? 'Failed to save task completion. Please try again.',
+            TaskCompletionError.storageFailure,
+            originalError: saveResult.error,
+          );
         }
 
         // Handle XP rewards in separate try-catch to prevent rollback for XP failures
         try {
           // Add XP to user's overall XP
           await _userProvider.addXp(xpReward);
-
-          // Add XP to associated skill if specified
-          if (skillId != null) {
-            await _skillProvider.addXP(skillId, xpReward);
-          }
           
           debugPrint('✅ TaskProvider: Task completed with XP rewards');
           
@@ -325,20 +321,25 @@ class SecureTaskProvider with ChangeNotifier {
           debugPrint('⚠️ TaskProvider: Task completed but XP addition failed: $xpError');
           // Don't rollback task completion if only XP fails
           _lastError = AppException('Task completed but XP reward failed', originalError: xpError);
+          // Still return success, but with a warning message
+          return TaskCompletionResult.success(_tasks[taskIndex]);
         }
-
-        return Result.success(null);
+        return TaskCompletionResult.success(_tasks[taskIndex]);
 
       } catch (e, stackTrace) {
         debugPrint('❌ TaskProvider: Failed to complete task, reverting: $e');
         // Rollback completion
-        _tasks[taskIndex] = originalTask;
+        _tasks[taskIndex] = task;
         _updateTasksByCategory();
         notifyListeners();
         
         final error = AppException('Failed to complete task', originalError: e);
         ErrorHandlingService().logError(error, stackTrace: stackTrace);
-        return Result.failure(error);
+        return TaskCompletionResult.failure(
+          'Failed to complete task',
+          TaskCompletionError.storageFailure,
+          originalError: e,
+        );
       }
 
     } finally {
@@ -514,7 +515,6 @@ class SecureTaskProvider with ChangeNotifier {
   @override
   void dispose() {
     _userProvider.removeListener(_checkDependenciesReady);
-    _skillProvider.removeListener(_checkDependenciesReady);
     super.dispose();
   }
 } 

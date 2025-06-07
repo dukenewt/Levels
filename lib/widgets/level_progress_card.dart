@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
+import '../providers/secure_user_provider.dart';
 import 'animated_xp_bar.dart';
-import '../screens/level_up_branch_screen.dart';
+import 'gaming_progress_indicators.dart';
 
 class LevelProgressCard extends StatefulWidget {
   final int level;
@@ -28,6 +28,7 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
   bool _showShimmer = false;
   late AnimationController _tileScaleController;
   late Animation<double> _tileScaleAnimation;
+  bool useGamingBar = false; // Feature toggle for demonstration
   
   @override
   void initState() {
@@ -104,7 +105,7 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final userProvider = Provider.of<UserProvider>(context);
+    final userProvider = Provider.of<SecureUserProvider>(context);
     final currentRank = userProvider.currentRank;
     final xpBarColor = theme.colorScheme.primary;
     
@@ -113,11 +114,11 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const LevelUpBranchScreen(),
-            ),
-          );
+          // Navigator.of(context).push(
+          //   MaterialPageRoute(
+          //     builder: (context) => const LevelUpBranchScreen(),
+          //   ),
+          // );
         },
         child: Card(
           elevation: 2,
@@ -135,6 +136,21 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Feature toggle switch
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text('RPG Bar', style: theme.textTheme.bodySmall),
+                    Switch(
+                      value: useGamingBar,
+                      onChanged: (val) {
+                        setState(() {
+                          useGamingBar = val;
+                        });
+                      },
+                    ),
+                  ],
+                ),
                 Row(
                   children: [
                     // Avatar with level
@@ -201,20 +217,30 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
                 ),
                 const SizedBox(height: 16),
                 
-                // Animated Progress Bar
-                AnimatedBuilder(
-                  animation: _animationController,
-                  builder: (context, child) {
-                    return AnimatedXPBar(
+                // Progress Bar (toggle between styles)
+                useGamingBar
+                  ? GamingXPBar(
                       progress: _progressAnimation.value,
-                      color: xpBarColor,
-                      height: 8,
-                      shimmer: _showShimmer,
-                      duration: const Duration(milliseconds: 1000),
-                      shimmerDuration: const Duration(seconds: 4),
-                    );
-                  },
-                ),
+                      primaryColor: xpBarColor,
+                      secondaryColor: xpBarColor.withOpacity(0.7),
+                      label: 'XP',
+                      currentValue: _displayedXp,
+                      maxValue: widget.nextLevelXp,
+                      showPulse: _showShimmer,
+                    )
+                  : AnimatedBuilder(
+                      animation: _animationController,
+                      builder: (context, child) {
+                        return AnimatedXPBar(
+                          progress: _progressAnimation.value,
+                          color: xpBarColor,
+                          height: 8,
+                          shimmer: _showShimmer,
+                          duration: const Duration(milliseconds: 1000),
+                          shimmerDuration: const Duration(seconds: 4),
+                        );
+                      },
+                    ),
               ],
             ),
           ),

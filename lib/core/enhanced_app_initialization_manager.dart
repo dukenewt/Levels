@@ -1,16 +1,14 @@
 import 'package:flutter/foundation.dart';
 import '../providers/user_provider.dart';
-import '../providers/skill_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/calendar_provider.dart';
-import '../providers/coin_economy_provider.dart';
 import '../providers/theme_provider.dart';
-import '../providers/specialization_provider.dart';
 import '../services/storage_service.dart';
 import '../core/error_handling.dart';
 import '../providers/secure_task_provider.dart';
 import '../services/secure_storage_service.dart';
+import '../providers/secure_user_provider.dart';
 
 /// Enhanced initialization manager with comprehensive error handling and graceful degradation.
 /// 
@@ -42,12 +40,8 @@ class EnhancedAppInitializationManager {
   // Think of these as parking spots - they might be empty until a provider arrives
   ThemeProvider? _themeProvider;
   SettingsProvider? _settingsProvider;
-  UserProvider? _userProvider;
-  SkillProvider? _skillProvider;
-  SpecializationProvider? _specializationProvider;
-  CoinEconomyProvider? _coinEconomyProvider;
-  TaskProvider? _taskProvider;
-  CalendarProvider? _calendarProvider;
+  SecureUserProvider? _secureUserProvider;
+  // CalendarProvider? _calendarProvider; // MVP: Calendar shelved
   SecureTaskProvider? _secureTaskProvider;
   SecureStorageService? _secureStorageService;
   
@@ -59,14 +53,10 @@ class EnhancedAppInitializationManager {
   // we create a basic one that still works
   ThemeProvider get themeProvider => _themeProvider ?? ThemeProvider();
   SettingsProvider get settingsProvider => _settingsProvider ?? SettingsProvider();
-  UserProvider get userProvider => _userProvider ?? UserProvider();
-  SkillProvider get skillProvider => _skillProvider ?? SkillProvider();
-  SpecializationProvider get specializationProvider => _specializationProvider ?? SpecializationProvider();
+  SecureUserProvider get secureUserProvider => _secureUserProvider ?? SecureUserProvider(storage: _secureStorageService!);
   
   // These can be null if they fail - the app can still work without them
-  CoinEconomyProvider? get coinEconomyProvider => _coinEconomyProvider;
-  TaskProvider? get taskProvider => _taskProvider;
-  CalendarProvider? get calendarProvider => _calendarProvider;
+  // CalendarProvider? get calendarProvider => _calendarProvider; // MVP: Calendar shelved
   SecureTaskProvider? get secureTaskProvider => _secureTaskProvider;
   
   // Status getters - like dashboard lights that tell you what's working
@@ -117,7 +107,7 @@ class EnhancedAppInitializationManager {
       _currentPhaseDescription = 'Loading your data...';
       final phase2Result = await _initializeUserDataProviders(storageService);
       if (!phase2Result.isSuccess) {
-        _initializationWarnings.add('Some user data failed to load: ${phase2Result.error?.message}');
+        _initializationWarnings.add('Some user data failed to load: [31m${phase2Result.error?.message}[0m');
         debugPrint('⚠️ Phase 2 had issues but continuing...');
       }
       
@@ -190,13 +180,6 @@ class EnhancedAppInitializationManager {
         ));
       }
       
-      // Specialization Provider - Has fallbacks, so not critical
-      // Like decorative features - nice to have but not essential
-      final specializationResult = await _initializeSpecializationProvider();
-      if (!specializationResult.isSuccess) {
-        _initializationWarnings.add('Specialization system may not work properly');
-      }
-      
       return Result.success(null);
       
     } catch (error, stackTrace) {
@@ -220,24 +203,10 @@ class EnhancedAppInitializationManager {
       bool hasAnyFailures = false;
       
       // User Provider - Initialize with default data if saved data fails
-      final userResult = await _initializeUserProvider();
+      final userResult = await _initializeSecureUserProvider();
       if (!userResult.isSuccess) {
-        debugPrint('⚠️ UserProvider failed, creating default user');
-        _userProvider = UserProvider(); // Use default initialization
-        hasAnyFailures = true;
-      }
-      
-      // Skill Provider - Can create default skills if saved data fails
-      final skillResult = await _initializeSkillProvider();
-      if (!skillResult.isSuccess) {
-        debugPrint('⚠️ SkillProvider failed, will use default skills');
-        hasAnyFailures = true;
-      }
-      
-      // Coin Economy Provider - Can start with zero coins if needed
-      final coinResult = await _initializeCoinEconomyProvider(storageService);
-      if (!coinResult.isSuccess) {
-        debugPrint('⚠️ CoinEconomyProvider failed, economy features may not work');
+        _initializationWarnings.add('SecureUserProvider failed, creating default user');
+        _secureUserProvider = SecureUserProvider(storage: _secureStorageService!);
         hasAnyFailures = true;
       }
       
@@ -270,35 +239,29 @@ class EnhancedAppInitializationManager {
     try {
       bool hasAnyFailures = false;
       
-      // Task Provider - Needs user and skill providers to work
-      if (_userProvider != null && _skillProvider != null) {
-        final taskResult = await _initializeTaskProvider(storageService);
-        if (!taskResult.isSuccess) {
-          debugPrint('⚠️ TaskProvider failed, task management may not work properly');
-          hasAnyFailures = true;
-        }
-        // --- SecureTaskProvider (parallel) ---
+      // SecureTaskProvider - Needs user and skill providers to work
+      if (_secureUserProvider != null) {
         final secureTaskResult = await _initializeSecureTaskProvider();
         if (!secureTaskResult.isSuccess) {
           debugPrint('⚠️ SecureTaskProvider failed, secure task management may not work properly');
           hasAnyFailures = true;
         }
       } else {
-        debugPrint('⚠️ Cannot initialize TaskProvider/SecureTaskProvider - missing dependencies');
+        debugPrint('⚠️ Cannot initialize SecureTaskProvider - missing dependencies');
         hasAnyFailures = true;
       }
       
-      // Calendar Provider - Needs task provider to show tasks
-      if (_taskProvider != null) {
-        final calendarResult = await _initializeCalendarProvider(storageService);
-        if (!calendarResult.isSuccess) {
-          debugPrint('⚠️ CalendarProvider failed, calendar view may not work properly');
-          hasAnyFailures = true;
-        }
-      } else {
-        debugPrint('⚠️ Cannot initialize CalendarProvider - TaskProvider not available');
-        hasAnyFailures = true;
-      }
+      // Calendar Provider - Needs secure task provider to show tasks
+      // if (_secureTaskProvider != null) {
+      //   final calendarResult = await _initializeCalendarProvider(storageService);
+      //   if (!calendarResult.isSuccess) {
+      //     debugPrint('⚠️ CalendarProvider failed, calendar view may not work properly');
+      //     hasAnyFailures = true;
+      //   }
+      // } else {
+      //   debugPrint('⚠️ Cannot initialize CalendarProvider - SecureTaskProvider not available');
+      //   hasAnyFailures = true;
+      // }
       
       if (hasAnyFailures) {
         return Result.failure(AppException(
@@ -353,116 +316,19 @@ class EnhancedAppInitializationManager {
     }
   }
   
-  Future<Result<void>> _initializeSpecializationProvider() async {
+  Future<Result<void>> _initializeSecureUserProvider() async {
     try {
-      _specializationProvider = SpecializationProvider();
-      debugPrint('✅ SpecializationProvider initialized');
+      _secureUserProvider = SecureUserProvider(storage: _secureStorageService!);
+      await Future.doWhile(() async {
+        await Future.delayed(const Duration(milliseconds: 50));
+        return !_secureUserProvider!.isInitialized && _secureUserProvider!.isInitializing;
+      });
+      debugPrint('✅ SecureUserProvider initialized');
       return Result.success(null);
     } catch (error) {
       return Result.failure(AppException(
-        'Specialization initialization failed', 
-        code: 'SPEC_INIT_ERROR',
-        originalError: error,
-      ));
-    }
-  }
-  
-  Future<Result<void>> _initializeUserProvider() async {
-    try {
-      _userProvider = UserProvider();
-      
-      // Wait for initialization with timeout
-      // Like waiting for a delivery but giving up if it takes too long
-      await _waitForProviderInitialization(
-        () => _userProvider!.isInitialized,
-        'UserProvider',
-        timeout: const Duration(seconds: 10),
-      );
-      
-      debugPrint('✅ UserProvider initialized');
-      return Result.success(null);
-    } catch (error) {
-      return Result.failure(AppException(
-        'User initialization failed', 
-        code: 'USER_INIT_ERROR',
-        originalError: error,
-      ));
-    }
-  }
-  
-  Future<Result<void>> _initializeSkillProvider() async {
-    try {
-      _skillProvider = SkillProvider();
-      
-      await _waitForProviderInitialization(
-        () => _skillProvider!.isInitialized,
-        'SkillProvider',
-        timeout: const Duration(seconds: 15), // Skills might take longer to load
-      );
-      
-      debugPrint('✅ SkillProvider initialized');
-      return Result.success(null);
-    } catch (error) {
-      return Result.failure(AppException(
-        'Skill initialization failed', 
-        code: 'SKILL_INIT_ERROR',
-        originalError: error,
-      ));
-    }
-  }
-  
-  Future<Result<void>> _initializeCoinEconomyProvider(StorageService storageService) async {
-    try {
-      _coinEconomyProvider = CoinEconomyProvider(storage: storageService);
-      // Give it a moment to load data
-      await Future.delayed(const Duration(milliseconds: 500));
-      debugPrint('✅ CoinEconomyProvider initialized');
-      return Result.success(null);
-    } catch (error) {
-      return Result.failure(AppException(
-        'Coin economy initialization failed', 
-        code: 'COIN_INIT_ERROR',
-        originalError: error,
-      ));
-    }
-  }
-  
-  Future<Result<void>> _initializeTaskProvider(StorageService storageService) async {
-    try {
-      _taskProvider = TaskProvider(
-        storage: storageService,
-        userProvider: _userProvider!,
-        skillProvider: _skillProvider!,
-      );
-      
-      // Tasks might take longer with large datasets
-      await _waitForProviderInitialization(
-        () => _taskProvider?.isInitialized ?? false,
-        'TaskProvider',
-        timeout: const Duration(seconds: 20),
-      );
-      
-      debugPrint('✅ TaskProvider initialized');
-      return Result.success(null);
-    } catch (error) {
-      return Result.failure(AppException(
-        'Task provider initialization failed', 
-        code: 'TASK_INIT_ERROR',
-        originalError: error,
-      ));
-    }
-  }
-  
-  Future<Result<void>> _initializeCalendarProvider(StorageService storageService) async {
-    try {
-      _calendarProvider = CalendarProvider(storage: storageService);
-      await _calendarProvider!.initialize(_taskProvider!).timeout(const Duration(seconds: 10));
-      debugPrint('✅ CalendarProvider initialized');
-      return Result.success(null);
-    } catch (error) {
-      return Result.failure(AppException(
-        'Calendar initialization failed', 
-        code: 'CALENDAR_INIT_ERROR',
+        'SecureUserProvider initialization failed',
+        code: 'SECURE_USER_INIT_ERROR',
         originalError: error,
       ));
     }
@@ -472,8 +338,7 @@ class EnhancedAppInitializationManager {
     try {
       _secureTaskProvider = SecureTaskProvider(
         storage: _secureStorageService!,
-        userProvider: _userProvider!,
-        skillProvider: _skillProvider!,
+        userProvider: _secureUserProvider!,
       );
       // Wait for initialization if needed (optional: add timeout logic)
       await Future.delayed(const Duration(milliseconds: 100));
@@ -521,12 +386,7 @@ class EnhancedAppInitializationManager {
     // Clear provider references - like emptying all the parking spots
     _themeProvider = null;
     _settingsProvider = null;
-    _userProvider = null;
-    _skillProvider = null;
-    _specializationProvider = null;
-    _coinEconomyProvider = null;
-    _taskProvider = null;
-    _calendarProvider = null;
+    _secureUserProvider = null;
     _secureTaskProvider = null;
     _secureStorageService = null;
   }

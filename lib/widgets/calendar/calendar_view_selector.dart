@@ -1,3 +1,5 @@
+// MVP: Calendar feature shelved. File commented out.
+/*
 import 'package:flutter/material.dart';
 
 class CalendarViewSelector extends StatelessWidget {
@@ -97,3 +99,4 @@ class CalendarViewSelector extends StatelessWidget {
     );
   }
 }
+*/

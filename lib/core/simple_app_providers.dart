@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/storage_service.dart';
@@ -28,7 +29,6 @@ class SimpleAppProviders extends StatelessWidget {
         // All providers are already initialized and ready to use
         ChangeNotifierProvider.value(value: initManager.themeProvider),
         ChangeNotifierProvider.value(value: initManager.settingsProvider),
-        ChangeNotifierProvider.value(value: initManager.userProvider),
         ChangeNotifierProvider.value(value: initManager.skillProvider),
         ChangeNotifierProvider.value(value: initManager.specializationProvider),
         ChangeNotifierProvider.value(value: initManager.coinEconomyProvider),
@@ -190,3 +190,4 @@ class _AppWithInitializationState extends State<AppWithInitialization> {
     );
   }
 }
+*/
