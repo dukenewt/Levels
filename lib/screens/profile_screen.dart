@@ -7,6 +7,7 @@ import '../screens/task_dashboard_screen.dart';
 import '../screens/calendar_screen.dart';
 import '../screens/stats_screen.dart';
 import '../screens/achievements_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -24,7 +25,10 @@ class ProfileScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              // TODO: Implement settings navigation
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
             },
           ),
         ],
