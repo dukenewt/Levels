@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
 import '../providers/secure_task_provider.dart';
+import '../services/enhanced_task_completion_service.dart';
+import 'package:intl/intl.dart';
 
 class TaskCreationDialog extends StatefulWidget {
   final DateTime? initialDate;
@@ -22,10 +24,9 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  int _xpReward = 0;
-  String _difficulty = 'easy';
-  int _minXp = 0;
-  int _maxXp = 25;
+  String _difficulty = 'medium';
+  String _category = 'Work'; // Default category
+  int _estimatedXp = 0;
   DateTime? _dueDate;
   TimeOfDay? _scheduledTime;
   String? _recurrencePattern;
@@ -46,12 +47,16 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
     'Monthly',
   ];
 
+  final List<String> _categoryOptions = [
+    'Work', 'Learning', 'Health', 'Social', 'Creativity', 'Maintenance'
+  ];
+
   @override
   void initState() {
     super.initState();
     _dueDate = widget.initialDate ?? DateTime.now();
     _scheduledTime = widget.initialTime ?? TimeOfDay.now();
-    _updateXpRangeForDifficulty(_difficulty);
+    _updateEstimatedXp();
   }
 
   @override
@@ -97,6 +102,7 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
     if (picked != null && picked != _endDate) {
       setState(() {
         _endDate = picked;
+        _updateEstimatedXp();
       });
     }
   }
@@ -108,9 +114,9 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
         id: const Uuid().v4(),
         title: _titleController.text,
         description: _descriptionController.text,
-        category: '',
+        category: _category,
         difficulty: _difficulty,
-        xpReward: _xpReward,
+        xpReward: _estimatedXp, // Use estimated XP
         dueDate: _dueDate,
         scheduledTime: _showTimePicker ? _startTime : null,
         recurrencePattern: _recurrencePattern == 'None' ? null : _recurrencePattern?.toLowerCase(),
@@ -124,30 +130,15 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
     }
   }
 
-  void _updateXpRangeForDifficulty(String difficulty) {
-    switch (difficulty) {
-      case 'easy':
-        _minXp = 0;
-        _maxXp = 25;
-        break;
-      case 'medium':
-        _minXp = 25;
-        _maxXp = 50;
-        break;
-      case 'hard':
-        _minXp = 50;
-        _maxXp = 100;
-        break;
-      case 'epic':
-        _minXp = 100;
-        _maxXp = 250;
-        break;
-      default:
-        _minXp = 0;
-        _maxXp = 25;
-    }
-    if (_xpReward < _minXp) _xpReward = _minXp;
-    if (_xpReward > _maxXp) _xpReward = _maxXp;
+  void _updateEstimatedXp() {
+    final xp = EnhancedTaskCompletionService.calculateEstimatedXP(
+      timeCostMinutes: _timeCostMinutes,
+      category: _category,
+      difficulty: _difficulty,
+    );
+    setState(() {
+      _estimatedXp = xp;
+    });
   }
 
   void _updateTimeCost() {
@@ -156,6 +147,7 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
       final endMinutes = _endTime!.hour * 60 + _endTime!.minute;
       final diff = endMinutes - startMinutes;
       _timeCostMinutes = diff >= 5 ? diff : 5;
+      _updateEstimatedXp();
     }
   }
 
@@ -205,13 +197,18 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
               TextFormField(
                 controller: _titleController,
                 focusNode: _titleFocusNode,
+                maxLength: 100,
                 decoration: const InputDecoration(
                   labelText: 'Title',
                   border: OutlineInputBorder(),
+                  counterText: '',
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a title';
+                  }
+                  if (value.length > 100) {
+                    return 'Title cannot exceed 100 characters';
                   }
                   return null;
                 },
@@ -250,11 +247,9 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   if (_dueDate != null)
                     IconButton(
                       icon: const Icon(Icons.clear),
-                      tooltip: 'Clear Date',
                       onPressed: () {
                         setState(() {
                           _dueDate = null;
@@ -263,252 +258,114 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
-              // Time toggle row
+              const SizedBox(height: 16),
+              // Add Time switch
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  const Text('Add Time'),
                   Switch(
                     value: _showTimePicker,
                     onChanged: (value) {
                       setState(() {
                         _showTimePicker = value;
-                        if (!_showTimePicker) {
-                          _scheduledTime = null;
-                          _startTime = null;
-                          _endTime = null;
-                          _timeCostMinutes = 10;
+                        if (value) {
+                          _startTime = _roundToNearest5(TimeOfDay.now());
+                          _endTime = _roundToNearest5(
+                              TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 30))));
+                          _updateTimeCost();
+                        } else {
+                          _updateEstimatedXp();
                         }
                       });
                     },
                   ),
-                  const SizedBox(width: 4),
-                  Text('Add Time'),
                 ],
               ),
-              // Time pickers row below the switch
-              if (_showTimePicker) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () async {
-                          final picked = await showTimePicker(
-                            context: context,
-                            initialTime: _startTime ?? TimeOfDay(hour: 8, minute: 0),
-                            builder: (context, child) {
-                              return MediaQuery(
-                                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-                                child: child!,
-                              );
-                            },
-                          );
-                          if (picked != null) {
-                            setState(() {
-                              _startTime = _roundToNearest5(picked);
-                              // If end time is before start, reset end time
-                              if (_endTime != null && (_endTime!.hour < _startTime!.hour || (_endTime!.hour == _startTime!.hour && _endTime!.minute <= _startTime!.minute))) {
-                                _endTime = null;
-                              }
-                              _updateTimeCost();
-                            });
-                          }
-                        },
-                        icon: const Icon(Icons.play_arrow),
-                        label: Text(
-                          _startTime != null
-                              ? _startTime!.format(context)
-                              : 'Start Time',
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () async {
-                          final picked = await showTimePicker(
-                            context: context,
-                            initialTime: _endTime ?? (_startTime != null ? _startTime!.replacing(minute: (_startTime!.minute + 5) % 60) : TimeOfDay(hour: 8, minute: 5)),
-                            builder: (context, child) {
-                              return MediaQuery(
-                                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-                                child: child!,
-                              );
-                            },
-                          );
-                          if (picked != null) {
-                            setState(() {
-                              _endTime = _roundToNearest5(picked);
-                              _updateTimeCost();
-                            });
-                          }
-                        },
-                        icon: const Icon(Icons.stop),
-                        label: Text(
-                          _endTime != null
-                              ? _endTime!.format(context)
-                              : 'End Time',
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              if (_showTimePicker) _buildTimeRangePicker(context),
               const SizedBox(height: 16),
+              // Recurrence dropdown
+              _buildRecurrenceDropdown(),
+              const SizedBox(height: 16),
+              // Category dropdown
               DropdownButtonFormField<String>(
-                value: _recurrencePattern ?? 'None',
+                value: _category,
                 decoration: const InputDecoration(
-                  labelText: 'Repeat',
+                  labelText: 'Category',
                   border: OutlineInputBorder(),
                 ),
-                items: _recurrenceOptions.map((option) {
-                  return DropdownMenuItem(
-                    value: option,
-                    child: Text(option),
+                items: _categoryOptions.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
                   );
                 }).toList(),
-                onChanged: (value) {
+                onChanged: (String? newValue) {
                   setState(() {
-                    _recurrencePattern = value;
-                    if (value != 'Weekly') {
-                      _weeklyDays = null;
-                    }
-                    if (value == 'None') {
-                      _endDate = null;
-                      _repeatInterval = null;
-                    }
+                    _category = newValue!;
+                    _updateEstimatedXp();
                   });
                 },
               ),
-              if (_recurrencePattern == 'Weekly') ...[
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  children: List.generate(7, (index) {
-                    final day = index + 1;
-                    final isSelected = _weeklyDays?.contains(day) ?? false;
-                    return FilterChip(
-                      label: Text(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index]),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          _weeklyDays ??= [];
-                          if (selected) {
-                            _weeklyDays!.add(day);
-                          } else {
-                            _weeklyDays!.remove(day);
-                          }
-                          _weeklyDays!.sort();
-                        });
-                      },
-                    );
-                  }),
-                ),
-              ],
-              if (_recurrencePattern != null && _recurrencePattern != 'None') ...[
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    if (_recurrencePattern == 'Daily') ...[
-                      const Text('Every'),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextFormField(
-                          initialValue: '1',
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                          ),
-                          onChanged: (value) {
-                            _repeatInterval = int.tryParse(value);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('days'),
-                    ],
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: () => _selectEndDate(context),
-                      icon: const Icon(Icons.event),
-                      label: Text(
-                        _endDate != null
-                            ? 'Ends ${_endDate!.month}/${_endDate!.day}/${_endDate!.year}'
-                            : 'Set End Date',
-                      ),
-                    ),
-                  ],
-                ),
-              ],
               const SizedBox(height: 16),
+              // Difficulty dropdown
               DropdownButtonFormField<String>(
                 value: _difficulty,
                 decoration: const InputDecoration(
                   labelText: 'Difficulty',
                   border: OutlineInputBorder(),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'easy', child: Text('Easy')),
-                  DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                  DropdownMenuItem(value: 'hard', child: Text('Hard')),
-                  DropdownMenuItem(value: 'epic', child: Text('Epic')),
-                ],
-                onChanged: (value) {
+                items: ['easy', 'medium', 'hard', 'epic'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value.substring(0, 1).toUpperCase() + value.substring(1)),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
                   setState(() {
-                    _difficulty = value!;
-                    _updateXpRangeForDifficulty(_difficulty);
-                    _xpReward = _minXp;
+                    _difficulty = newValue!;
+                    _updateEstimatedXp();
                   });
                 },
               ),
               const SizedBox(height: 16),
+              // Time Cost and Estimated XP
               Row(
                 children: [
-                  const Text('XP Reward:'),
                   Expanded(
-                    child: Slider(
-                      value: _xpReward.toDouble(),
-                      min: _minXp.toDouble(),
-                      max: _maxXp.toDouble(),
-                      divisions: (_maxXp - _minXp) > 0 ? (_maxXp - _minXp) : 1,
-                      label: _xpReward.toString(),
-                      onChanged: (value) {
-                        setState(() {
-                          _xpReward = value.round();
-                        });
-                      },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Time Cost'),
+                        Slider(
+                          value: _timeCostMinutes.toDouble(),
+                          min: 5,
+                          max: 180,
+                          divisions: 35,
+                          label: '${_timeCostMinutes}m',
+                          onChanged: (double value) {
+                            setState(() {
+                              _timeCostMinutes = value.round();
+                              _updateEstimatedXp();
+                            });
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                  Text(_xpReward.toString()),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Text('Time Cost:'),
-                  Expanded(
-                    child: Slider(
-                      value: _timeCostMinutes.toDouble(),
-                      min: 5,
-                      max: 240,
-                      divisions: 47,
-                      label: '${_timeCostMinutes ~/ 60 > 0 ? '${_timeCostMinutes ~/ 60}h ' : ''}${_timeCostMinutes % 60 > 0 ? '${_timeCostMinutes % 60}m' : ''}',
-                      onChanged: (value) {
-                        setState(() {
-                          _timeCostMinutes = (value ~/ 5) * 5;
-                        });
-                      },
-                    ),
+                  const SizedBox(width: 16),
+                  Column(
+                    children: [
+                      Text(
+                        '$_estimatedXp',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const Text('XP'),
+                    ],
                   ),
-                  Text('${_timeCostMinutes ~/ 60 > 0 ? '${_timeCostMinutes ~/ 60}h ' : ''}${_timeCostMinutes % 60 > 0 ? '${_timeCostMinutes % 60}m' : ''}'),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -529,4 +386,163 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
       ),
     );
   }
-} 
+
+  Widget _buildTimeRangePicker(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildTimePickerButton(context, _startTime!, (t) {
+              setState(() {
+                _startTime = t;
+                if (_endTime!.hour * 60 + _endTime!.minute < _startTime!.hour * 60 + _startTime!.minute) {
+                  _endTime = _startTime;
+                }
+                _updateTimeCost();
+              });
+            }),
+            const Text('to'),
+            _buildTimePickerButton(context, _endTime!, (t) {
+              setState(() {
+                _endTime = t;
+                if (_endTime!.hour * 60 + _endTime!.minute < _startTime!.hour * 60 + _startTime!.minute) {
+                  _startTime = _endTime;
+                }
+                _updateTimeCost();
+              });
+            }),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Duration: ${_timeCostMinutes} minutes',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimePickerButton(
+      BuildContext context, TimeOfDay initialTime, Function(TimeOfDay) onTimeChanged) {
+    return TextButton(
+        onPressed: () async {
+          final TimeOfDay? picked = await showTimePicker(
+            context: context,
+            initialTime: initialTime,
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+                child: child!,
+              );
+            },
+          );
+          if (picked != null) {
+            onTimeChanged(_roundToNearest5(picked));
+          }
+        },
+        child: Text(_formatTime(initialTime)));
+  }
+
+  Widget _buildRecurrenceDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: _recurrencePattern ?? 'None',
+          decoration: const InputDecoration(
+            labelText: 'Repeat',
+            border: OutlineInputBorder(),
+          ),
+          items: _recurrenceOptions.map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              _recurrencePattern = newValue == 'None' ? null : newValue;
+              // Reset other recurrence fields when changing pattern
+              _weeklyDays = null;
+              _repeatInterval = null;
+              _endDate = null;
+            });
+          },
+        ),
+        if (_recurrencePattern != null && _recurrencePattern != 'None')
+          _buildRecurrenceOptions(),
+      ],
+    );
+  }
+
+  Widget _buildRecurrenceOptions() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_recurrencePattern == 'Daily') ...[
+            TextFormField(
+              decoration: const InputDecoration(
+                labelText: 'Repeat every (days)',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              initialValue: '1',
+              onChanged: (value) {
+                _repeatInterval = int.tryParse(value) ?? 1;
+              },
+            ),
+          ],
+          if (_recurrencePattern == 'Weekly') ...[
+            const Text('Repeat on:'),
+            Wrap(
+              spacing: 8.0,
+              children: List.generate(7, (index) {
+                final day = index + 1;
+                final dayName = DateFormat.E().format(DateTime(2023, 1, day + 1));
+                return ChoiceChip(
+                  label: Text(dayName),
+                  selected: _weeklyDays?.contains(day) ?? false,
+                  onSelected: (selected) {
+                    setState(() {
+                      _weeklyDays ??= [];
+                      if (selected) {
+                        _weeklyDays!.add(day);
+                      } else {
+                        _weeklyDays!.remove(day);
+                      }
+                      _weeklyDays!.sort();
+                    });
+                  },
+                );
+              }),
+            ),
+          ],
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () => _selectEndDate(context),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'End Date (optional)',
+                border: OutlineInputBorder(),
+              ),
+              child: Text(
+                _endDate != null
+                    ? '${_endDate!.month}/${_endDate!.day}/${_endDate!.year}'
+                    : 'No end date',
+                style: TextStyle(
+                  color: _endDate != null
+                      ? Theme.of(context).textTheme.bodyLarge?.color
+                      : Colors.grey,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

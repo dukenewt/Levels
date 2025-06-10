@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../models/user.dart';
 import 'secure_user_provider.dart';
+import 'package:collection/collection.dart';
 
 import 'settings_provider.dart';
 import '../widgets/level_up_overlay.dart';
@@ -11,6 +12,8 @@ import 'package:uuid/uuid.dart';
 import '../services/secure_storage_service.dart';
 import '../core/error_handling.dart';
 import '../models/task_results.dart';
+import '../services/enhanced_task_completion_service.dart';
+import '../widgets/xp_reward_snackbar.dart';
 
 /// States for async operations to provide proper loading indicators
 enum TaskOperationState {
@@ -258,6 +261,60 @@ class SecureTaskProvider with ChangeNotifier {
       ErrorHandlingService().logError(error, stackTrace: stackTrace);
       return Result.failure(error);
       
+    } finally {
+      _operationState = TaskOperationState.idle;
+      notifyListeners();
+    }
+  }
+
+  /// Completes a task and calculates XP reward dynamically, showing UI feedback.
+  Future<TaskCompletionResult> completeTaskWithIntelligentXP(BuildContext context, String taskId) async {
+    _operationState = TaskOperationState.completing;
+    notifyListeners();
+
+    try {
+      // Call the service statically, passing the required providers
+      final result = await EnhancedTaskCompletionService.completeTaskWithIntelligentXP(
+        taskId: taskId,
+        taskProvider: this,
+        userProvider: _userProvider,
+        additionalContext: {'completionTime': DateTime.now()},
+      );
+
+      if (result.isSuccess) {
+        // The service now handles all the logic, including saving and updating the user
+        // We just need to reflect the successful state.
+        final completedTask = result.enhancedCompletion!.completedTask;
+
+        // Manually update the local task list since the service doesn't have direct access
+        final taskIndex = _tasks.indexWhere((t) => t.id == taskId);
+        if (taskIndex != -1) {
+          _tasks[taskIndex] = completedTask;
+          _updateTasksByCategory();
+        }
+        
+        // Show snackbar feedback
+        if (context.mounted) {
+          XPRewardSnackbar.show(context, result.enhancedCompletion!);
+        }
+
+        return TaskCompletionResult.success(completedTask);
+      } else {
+        // If the static service method fails, return its failure result
+        return TaskCompletionResult.failure(
+          result.errorMessage ?? 'Failed in enhanced completion',
+          result.errorType ?? TaskCompletionError.storageFailure,
+          originalError: result.originalError,
+        );
+      }
+    } catch (e, stackTrace) {
+      final error = AppException("Failed to complete task with intelligent XP", originalError: e);
+      ErrorHandlingService().logError(error, stackTrace: stackTrace);
+      return TaskCompletionResult.failure(
+        'An unexpected error occurred during intelligent completion.',
+        TaskCompletionError.storageFailure,
+        originalError: e,
+      );
     } finally {
       _operationState = TaskOperationState.idle;
       notifyListeners();

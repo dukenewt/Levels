@@ -1,640 +1,404 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'dart:math' as math;
+
 import '../models/task.dart';
 import '../providers/secure_task_provider.dart';
-import 'package:provider/provider.dart';
-import 'edit_task_dialog.dart';
-import 'package:intl/intl.dart';
 import '../models/task_results.dart';
+import 'task_editing_dialog.dart';
+import 'xp_orb_overlay.dart';
+import 'package:intl/intl.dart';
 
 class TaskTile extends StatefulWidget {
   final Task task;
   final Function(DismissDirection)? onDismissed;
   final bool showTime;
-  final bool compact;
-  final bool superCompact;
-  final double? height;
+  final VoidCallback? onEdit;
 
   const TaskTile({
     Key? key,
     required this.task,
     this.onDismissed,
     this.showTime = true,
-    this.compact = false,
-    this.superCompact = false,
-    this.height,
+    this.onEdit,
   }) : super(key: key);
 
   @override
   State<TaskTile> createState() => _TaskTileState();
 }
 
-class _TaskTileState extends State<TaskTile> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
+class _TaskTileState extends State<TaskTile>
+    with TickerProviderStateMixin {
+  
+  late AnimationController _dissolveController;
+  late AnimationController _rippleController;
+  late AnimationController _idleController;
+  
   late Animation<double> _scaleAnimation;
-  late Animation<double> _checkScaleAnimation;
-  late Animation<Color?> _colorAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _rotationAnimation;
+  late Animation<double> _rippleAnimation;
+  late Animation<Color?> _colorShiftAnimation;
+  late Animation<double> _idleFloatAnimation;
+  
   bool _isCompleting = false;
+  bool _showRipples = false;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    _setupControllers();
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _setupAnimations();
+        _startIdleAnimation();
+      }
+    });
+  }
+
+  void _setupControllers() {
+    _dissolveController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _setupAnimations();
+    
+    _rippleController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    
+    _idleController = AnimationController(
+      duration: const Duration(milliseconds: 3000),
+      vsync: this,
+    );
   }
 
   void _setupAnimations() {
     final theme = Theme.of(context);
     
-    // Scale animation for the entire tile
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.95)
-            .chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 30.0,
+        tween: Tween<double>(begin: 1.0, end: 1.05)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 20.0,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.95, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
-        weight: 70.0,
+        tween: Tween<double>(begin: 1.05, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeInExpo)),
+        weight: 80.0,
       ),
-    ]).animate(_animationController);
+    ]).animate(_dissolveController);
 
-    // Check mark scale animation
-    _checkScaleAnimation = TweenSequence<double>([
+    _fadeAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.2)
-            .chain(CurveTween(curve: Curves.easeOut)),
-        weight: 40.0,
+        tween: Tween<double>(begin: 1.0, end: 1.0),
+        weight: 20.0,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.2, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 60.0,
+        tween: Tween<double>(begin: 1.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeInCubic)),
+        weight: 80.0,
       ),
-    ]).animate(_animationController);
+    ]).animate(_dissolveController);
 
-    // Color animation for the check mark
-    _colorAnimation = ColorTween(
-      begin: theme.colorScheme.outline,
-      end: theme.colorScheme.primary,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-      ),
-    );
+    _rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.05,
+    ).animate(CurvedAnimation(
+      parent: _dissolveController,
+      curve: Curves.easeInOut,
+    ));
+
+    _colorShiftAnimation = ColorTween(
+      begin: Colors.transparent,
+      end: theme.colorScheme.primary.withOpacity(0.2),
+    ).animate(CurvedAnimation(
+      parent: _dissolveController,
+      curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+    ));
+
+    _rippleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _rippleController,
+      curve: Curves.easeOut,
+    ));
+
+    _idleFloatAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _idleController,
+      curve: Curves.easeInOut,
+    ));
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
+  void _startIdleAnimation() {
+    if (!widget.task.isCompleted) {
+      Future.delayed(Duration(milliseconds: 500 + (widget.task.id.hashCode % 2000)), () {
+        if (mounted && !_isCompleting) {
+          _idleController.repeat(reverse: true);
+        }
+      });
+    }
   }
 
   Future<void> _handleComplete() async {
-  if (!widget.task.isCompleted && !_isCompleting) {
-    setState(() {
-      _isCompleting = true;
-    });
-    
-    try {
-      // Get the provider reference before starting the operation
-      final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+    if (!widget.task.isCompleted && !_isCompleting) {
+      setState(() {
+        _isCompleting = true;
+        _showRipples = true;
+      });
       
-      // Use our new robust completion method
-      final result = await taskProvider.completeTask(widget.task.id);
+      _idleController.stop();
       
-      if (mounted) {
-        if (result.isSuccess) {
-          // Handle successful completion with user feedback
-          await _handleSuccessfulCompletion(result);
-        } else {
-          // Handle errors with specific, helpful feedback
-          await _handleCompletionError(result);
+      try {
+        final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+        
+        _startCompletionAnimation();
+        
+        final result = await taskProvider.completeTaskWithIntelligentXP(context, widget.task.id);
+        
+        if (mounted) {
+          if (result.isSuccess) {
+            await _dissolveController.forward();
+            _showSuccessMessage(result);
+          } else {
+            await _revertAnimations();
+            _handleCompletionError(result);
+          }
+        }
+      } catch (e) {
+        debugPrint('Unexpected error in task completion: $e');
+        if (mounted) {
+          await _revertAnimations();
+          _showUnexpectedErrorMessage();
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isCompleting = false);
         }
       }
-    } catch (e) {
-      // This catch block now handles only unexpected errors
-      debugPrint('Unexpected error in task completion: $e');
-      if (mounted) {
-        _showUnexpectedErrorMessage();
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isCompleting = false);
-      }
     }
   }
-}
 
-/// Handles successful task completion with appropriate user feedback
-Future<void> _handleSuccessfulCompletion(TaskCompletionResult result) async {
-  // Start the animation if still mounted
-  await _animationController.forward();
-  
-  // Show success feedback to the user
-  if (mounted && result.completedTask != null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Task completed! +${result.completedTask!.xpReward} XP'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-}
-
-/// Handles task completion errors with specific, actionable feedback
-Future<void> _handleCompletionError(TaskCompletionResult result) async {
-  if (!mounted) return;
-  
-  switch (result.errorType) {
-    case TaskCompletionError.taskNotFound:
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('This task no longer exists. Refreshing your task list.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      // You might want to trigger a task list refresh here
-      break;
-      
-    case TaskCompletionError.storageFailure:
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.errorMessage ?? 'Failed to save. Please try again.'),
-          backgroundColor: Colors.red,
-          action: SnackBarAction(
-            label: 'Retry',
-            onPressed: () => _handleComplete(), // Retry the operation
-          ),
-        ),
-      );
-      break;
-      
-    default:
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.errorMessage ?? 'Something went wrong. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-  }
-}
-
-/// Shows a message for truly unexpected errors
-void _showUnexpectedErrorMessage() {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('An unexpected error occurred. Please restart the app if this continues.'),
-      backgroundColor: Colors.red,
-    ),
-  );
-}
-
-  // This method decides what UI to build based on the display mode
-  Widget _buildTaskContent(ThemeData theme) {
-    // Super compact mode: minimal info for calendar cells
-    if (widget.superCompact) {
-      return _buildSuperCompactContent(theme);
-    }
+  void _startCompletionAnimation() {
+    _dissolveController.forward();
     
-    // Compact mode: condensed for lists
-    if (widget.compact) {
-      return _buildCompactContent(theme);
-    }
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted && _showRipples) {
+        _rippleController.forward();
+      }
+    });
     
-    // Full mode: all details (original implementation)
-    return _buildFullContent(theme);
+    _triggerXPOrbAnimation();
   }
 
-  // Super compact version for calendar grid cells
-  Widget _buildSuperCompactContent(ThemeData theme) {
-    return Container(
-      height: widget.height,
-      padding: const EdgeInsets.all(4.0),
-      child: Row(
-        children: [
-          // Small checkbox
-          GestureDetector(
-            key: const Key('task-complete-button'),
-            onTap: _handleComplete,
-            child: Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: widget.task.isCompleted 
-                      ? theme.colorScheme.primary 
-                      : theme.colorScheme.outline,
-                  width: 1.5,
-                ),
-                color: widget.task.isCompleted 
-                    ? theme.colorScheme.primary 
-                    : Colors.transparent,
-              ),
-              child: widget.task.isCompleted
-                  ? Icon(
-                      Icons.check,
-                      size: 10,
-                      color: theme.colorScheme.onPrimary,
-                    )
-                  : null,
-            ),
-          ),
-          const SizedBox(width: 6),
-          
-          // Task title only (truncated)
-          Expanded(
-            child: Text(
-              widget.task.title,
-              style: theme.textTheme.bodySmall?.copyWith(
-                decoration: widget.task.isCompleted
-                    ? TextDecoration.lineThrough 
-                    : null,
-                color: widget.task.isCompleted
-                    ? theme.colorScheme.onSurface.withOpacity(0.6)
-                    : null,
-                fontSize: 11,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
+  void _triggerXPOrbAnimation() {
+    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox != null) {
+      final Offset taskPosition = renderBox.localToGlobal(Offset.zero);
+      final Size taskSize = renderBox.size;
+      
+      final Offset startPosition = Offset(
+        taskPosition.dx + taskSize.width / 2,
+        taskPosition.dy + taskSize.height / 2,
+      );
+      
+      XPOrbOverlay.show(
+        context: context,
+        startPosition: startPosition,
+        xpAmount: widget.task.xpReward,
+      );
+    }
   }
 
-  // Compact version for list views
-  Widget _buildCompactContent(ThemeData theme) {
-    return Container(
-      height: widget.height,
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          // Standard checkbox
-          GestureDetector(
-            key: const Key('task-complete-button'),
-            onTap: _handleComplete,
-            child: Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: widget.task.isCompleted 
-                      ? theme.colorScheme.primary 
-                      : theme.colorScheme.outline,
-                  width: 2,
-                ),
-                color: widget.task.isCompleted 
-                    ? theme.colorScheme.primary 
-                    : Colors.transparent,
-              ),
-              child: widget.task.isCompleted
-                  ? Icon(
-                      Icons.check,
-                      size: 12,
-                      color: theme.colorScheme.onPrimary,
-                    )
-                  : null,
-            ),
-          ),
-          const SizedBox(width: 12),
-          
-          // Task info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  widget.task.title,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    decoration: widget.task.isCompleted
-                        ? TextDecoration.lineThrough 
-                        : null,
-                    color: widget.task.isCompleted
-                        ? theme.colorScheme.onSurface.withOpacity(0.6)
-                        : null,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                
-                // Show time if requested and available
-                if (widget.showTime && widget.task.scheduledTime != null)
-                  Text(
-                    widget.task.scheduledTime!.format(context),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          
-          // XP badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '${widget.task.xpReward}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _revertAnimations() async {
+    setState(() {
+      _showRipples = false;
+    });
+    
+    await Future.wait([
+      _dissolveController.reverse(),
+      _rippleController.reverse(),
+    ]);
+    
+    _startIdleAnimation();
   }
 
-  // Full content version (original implementation, slightly modified)
-  Widget _buildFullContent(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          GestureDetector(
-            key: const Key('task-complete-button'),
-            onTap: _handleComplete,
-            child: AnimatedBuilder(
-              animation: _checkScaleAnimation,
-              builder: (context, child) {
-                return Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: widget.task.isCompleted 
-                          ? theme.colorScheme.primary 
-                          : theme.colorScheme.outline,
-                      width: 2,
-                    ),
-                    color: widget.task.isCompleted 
-                        ? theme.colorScheme.primary 
-                        : Colors.transparent,
-                  ),
-                  child: widget.task.isCompleted
-                      ? Transform.scale(
-                          scale: _checkScaleAnimation.value,
-                          child: Icon(
-                            Icons.check,
-                            size: 16,
-                            color: theme.colorScheme.onPrimary,
-                          ),
-                        )
-                      : null,
-                );
-              },
-            ),
+  void _showSuccessMessage(TaskCompletionResult result) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('Task completed! +${result.completedTask?.xpReward ?? 0} XP'),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.task.title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    decoration: widget.task.isCompleted
-                        ? TextDecoration.lineThrough 
-                        : null,
-                    color: widget.task.isCompleted
-                        ? theme.colorScheme.onSurface.withOpacity(0.6)
-                        : null,
-                  ),
-                ),
-                if (widget.task.description.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.task.description,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${widget.task.xpReward} XP',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    if (widget.task.recurrencePattern != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.repeat,
-                              size: 14,
-                              color: theme.colorScheme.secondary,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                widget.task.recurrencePattern!,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.secondary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
-          if (widget.task.dueDate != null && widget.showTime) ...[
-            const SizedBox(width: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _formatDate(widget.task.dueDate!),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.secondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => _showTaskMenu(context),
-            tooltip: 'Edit Task',
-          ),
-        ],
-      ),
-    );
+        ),
+      );
+    }
+  }
+
+  void _handleCompletionError(TaskCompletionResult result) {
+     if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.errorMessage ?? 'Failed to complete task.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showUnexpectedErrorMessage() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('An unexpected error occurred.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    // For super compact mode, don't use Dismissible (too small)
-    if (widget.superCompact) {
-      return AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Card(
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(color: theme.dividerColor.withOpacity(0.08)),
-            ),
-            color: theme.colorScheme.surface,
-            child: _buildTaskContent(theme),
-          ),
-        ),
-      );
-    }
-    
-    // For full and compact modes, keep the Dismissible functionality
-    return Dismissible(
-      key: ValueKey(widget.task.id),
-      direction: DismissDirection.horizontal,
-      background: Container(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 20.0),
-        child: Container(
-          height: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.red,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.only(left: 20.0),
-          child: const Icon(Icons.delete, color: Colors.white),
-        ),
-      ),
-      secondaryBackground: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20.0),
-        child: Container(
-          height: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.green,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20.0),
-          child: const Icon(Icons.check, color: Colors.white),
-        ),
-      ),
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.endToStart) {
-          // Complete
-          if (!widget.task.isCompleted && !_isCompleting) {
-            await _handleComplete();
-            return true;
-          }
-          return false;
-        } else if (direction == DismissDirection.startToEnd) {
-          // Delete
-          final shouldDelete = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Delete Task'),
-              content: const Text('Are you sure you want to delete this task? This action cannot be undone.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+    if (_idleController == null) return const SizedBox.shrink();
+
+    return Stack(
+      children: [
+        AnimatedBuilder(
+          animation: Listenable.merge([
+            _dissolveController,
+            _idleController,
+          ]),
+          builder: (context, child) {
+            final idleOffset = _isCompleting ? 0.0 : 
+              (math.sin(_idleFloatAnimation.value * math.pi * 2) * 1.0);
+            
+            return Transform.translate(
+              offset: Offset(0, idleOffset),
+              child: Transform.scale(
+                scale: _scaleAnimation.value,
+                child: Transform.rotate(
+                  angle: _rotationAnimation.value,
+                  child: Opacity(
+                    opacity: _fadeAnimation.value,
+                    child: child
+                  ),
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            ),
-          );
-          return shouldDelete == true;
-        }
-        return false;
-      },
-      onDismissed: (direction) {
-        if (widget.onDismissed != null) {
-          widget.onDismissed!(direction);
-        }
-      },
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
+              ),
+            );
+          },
+          child: Container(
+              decoration: BoxDecoration(
+              color: _colorShiftAnimation.value,
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: theme.dividerColor.withOpacity(0.08)),
             ),
-            color: theme.colorScheme.surface,
-            child: Container(
-              height: widget.height, // Apply height constraint if provided
-              child: InkWell(
-                onTap: () {
-                  _showTaskMenu(context);
-                },
+            child: Card(
+              elevation: 1,
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                child: _buildTaskContent(theme),
+              ),
+              child: _buildTaskContent(Theme.of(context)),
+            ),
+          ),
+        ),
+        
+        if (_showRipples)
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: AnimatedBuilder(
+                animation: _rippleAnimation,
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: RipplePainter(
+                      animationValue: _rippleAnimation.value,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  );
+                },
               ),
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _buildTaskContent(ThemeData theme) {
+     return InkWell(
+        onTap: () => _showTaskMenu(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: _handleComplete,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: widget.task.isCompleted 
+                        ? Colors.transparent 
+                        : theme.colorScheme.outline,
+                    width: 2,
+                  ),
+                  color: widget.task.isCompleted 
+                      ? theme.colorScheme.primary 
+                      : Colors.transparent,
+                ),
+                child: widget.task.isCompleted
+                    ? Icon(
+                        Icons.check,
+                        size: 16,
+                        color: theme.colorScheme.onPrimary,
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.task.title,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  if (widget.task.description.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.task.description,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (widget.task.dueDate != null && widget.showTime) ...[
+              const SizedBox(width: 16),
+              Text(_formatDate(widget.task.dueDate!))
+            ],
+          ],
         ),
       ),
     );
@@ -652,21 +416,16 @@ void _showUnexpectedErrorMessage() {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            ListTile(
+             ListTile(
               leading: Icon(Icons.edit_outlined, color: Theme.of(context).colorScheme.primary),
               title: Text('Edit Task', style: Theme.of(context).textTheme.titleMedium),
               onTap: () {
                 Navigator.pop(context);
-                _showEditTaskDialog(context);
+                if (widget.onEdit != null) {
+                  widget.onEdit!();
+                } else {
+                  _showEditTaskDialog(context);
+                }
               },
             ),
             const Divider(),
@@ -678,10 +437,16 @@ void _showUnexpectedErrorMessage() {
                 _showDeleteConfirmation(context);
               },
             ),
-            const SizedBox(height: 8),
           ],
         ),
       ),
+    );
+  }
+
+   void _showEditTaskDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => TaskEditingDialog(task: widget.task),
     );
   }
 
@@ -707,26 +472,93 @@ void _showUnexpectedErrorMessage() {
       ),
     );
   }
-
-  void _showEditTaskDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => EditTaskDialog(task: widget.task),
-    );
-  }
-
+  
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = date.difference(now);
 
-    if (difference.inDays == 0) {
+    if (DateUtils.isSameDay(date, now)) {
       return 'Today';
-    } else if (difference.inDays == 1) {
+    } else if (DateUtils.isSameDay(date, now.add(const Duration(days: 1)))) {
       return 'Tomorrow';
-    } else if (difference.inDays == -1) {
+    } else if (DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))) {
       return 'Yesterday';
     } else {
-      return '${date.month}/${date.day}';
+      return DateFormat.MMMd().format(date);
     }
+  }
+
+
+  @override
+  void dispose() {
+    _dissolveController.dispose();
+    _rippleController.dispose();
+    _idleController.dispose();
+    super.dispose();
+  }
+}
+
+class RipplePainter extends CustomPainter {
+  final double animationValue;
+  final Color color;
+  
+  RipplePainter({
+    required this.animationValue,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxRadius = math.max(size.width, size.height) * 0.8;
+    
+    _paintRippleWave(canvas, center, maxRadius, 0, 0.0);
+    _paintRippleWave(canvas, center, maxRadius, 1, 0.2);
+    _paintRippleWave(canvas, center, maxRadius, 2, 0.4);
+  }
+
+  void _paintRippleWave(Canvas canvas, Offset center, double maxRadius, 
+                       int waveIndex, double delay) {
+    final waveProgress = (animationValue - delay).clamp(0.0, 1.0);
+    
+    if (waveProgress > 0) {
+      final radius = maxRadius * waveProgress;
+      final opacity = (1.0 - waveProgress) * (0.4 - waveIndex * 0.1);
+      
+      final paint = Paint()
+        ..color = color.withOpacity(opacity)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0 - waveIndex;
+      
+      canvas.drawCircle(center, radius, paint);
+      
+      if (waveIndex == 0) {
+        _paintSparkles(canvas, center, radius, waveProgress);
+      }
+    }
+  }
+
+  void _paintSparkles(Canvas canvas, Offset center, double radius, double progress) {
+    final sparkleCount = 8;
+    final sparklePaint = Paint()
+      ..color = color.withOpacity(0.8)
+      ..style = PaintingStyle.fill;
+    
+    for (int i = 0; i < sparkleCount; i++) {
+      final angle = (i * math.pi * 2 / sparkleCount) + (progress * math.pi);
+      final sparkleRadius = 2.0 * (1.0 - progress);
+      
+      final sparklePosition = Offset(
+        center.dx + math.cos(angle) * radius,
+        center.dy + math.sin(angle) * radius,
+      );
+      
+      canvas.drawCircle(sparklePosition, sparkleRadius, sparklePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant RipplePainter oldDelegate) {
+    return oldDelegate.animationValue != animationValue;
   }
 } 

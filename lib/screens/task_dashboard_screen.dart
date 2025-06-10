@@ -25,6 +25,7 @@ import 'notification_preferences_screen.dart';
 import '../widgets/professional_task_tile.dart';
 import '../widgets/professional_progress_card.dart';
 import '../widgets/smart_suggestions_widget.dart';
+import '../widgets/task_editing_dialog.dart';
 
 class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
@@ -117,33 +118,65 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
         slivers: [
           // App bar with view mode selector
           SliverAppBar(
-            title: Text('Daily XP', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+            title: Text('TaskBound', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
             floating: true,
             actions: [
               // View mode selector
-              PopupMenuButton<String>(
-                initialValue: _viewMode,
-                onSelected: (value) => setState(() => _viewMode = value),
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'agenda', child: Text('Agenda (7 days)')),
-                  const PopupMenuItem(value: 'today', child: Text('Today Only')),
-                  const PopupMenuItem(value: 'week', child: Text('This Week')),
-                ],
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_viewMode.toUpperCase(), style: const TextStyle(fontSize: 12)),
-                      const Icon(Icons.arrow_drop_down),
-                    ],
+              Container(
+                margin: const EdgeInsets.only(right: 8.0),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: PopupMenuButton<String>(
+                  initialValue: _viewMode,
+                  onSelected: (value) => setState(() => _viewMode = value),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'agenda',
+                      child: Text('Agenda (7 days)'),
+                    ),
+                    PopupMenuItem(
+                      value: 'today',
+                      child: Text('Today Only'),
+                    ),
+                    PopupMenuItem(
+                      value: 'week',
+                      child: Text('This Week'),
+                    ),
+                  ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _viewMode.toUpperCase(),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.settings),
                 onPressed: () {
-                  // Navigate to settings
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
                 },
               ),
             ],
@@ -388,7 +421,10 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
           await taskProvider.completeTask(task.id);
         },
         onEdit: () {
-          // Handle edit
+          showDialog(
+            context: context,
+            builder: (context) => TaskEditingDialog(task: task),
+          );
         },
         showTime: true,
       ),

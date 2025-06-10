@@ -62,6 +62,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _titleFocusNode.dispose();
     super.dispose();
   }
 
