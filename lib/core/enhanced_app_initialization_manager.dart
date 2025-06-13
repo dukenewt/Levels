@@ -1,14 +1,12 @@
 import 'package:flutter/foundation.dart';
-import '../providers/user_provider.dart';
 import '../providers/settings_provider.dart';
-import '../providers/task_provider.dart';
-import '../providers/calendar_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/storage_service.dart';
 import '../core/error_handling.dart';
 import '../providers/secure_task_provider.dart';
 import '../services/secure_storage_service.dart';
 import '../providers/secure_user_provider.dart';
+import 'package:flutter/material.dart';
 
 /// Enhanced initialization manager with comprehensive error handling and graceful degradation.
 /// 

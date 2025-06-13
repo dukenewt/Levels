@@ -1,146 +1,57 @@
 import '../models/task.dart';
 import '../models/task_results.dart';
-import 'intelligent_xp_engine.dart';
+import '../core/error_handling.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+
+import '../providers/secure_task_provider.dart';
+import '../providers/secure_user_provider.dart';
+import 'smooth_xp_animation_service.dart';
 
 /// Enhanced task completion service that integrates intelligent XP calculation
 /// This bridges your existing task completion with the new XP engine
 class TaskCompletionService {
+  final SecureUserProvider _userProvider;
+  final SecureTaskProvider _taskProvider;
+
+  TaskCompletionService(this._userProvider, this._taskProvider);
+
   static const String _streakKey = 'task_streaks';
   static const String _perfectWeeksKey = 'perfect_weeks';
   static const String _dailyCompletionsKey = 'daily_completions';
 
-  /// Complete a task with intelligent XP calculation
-  static Future<EnhancedTaskCompletion> completeTaskWithIntelligentXP(
-    Task task,
-    {Map<String, dynamic>? additionalContext}
-  ) async {
-    final completionTime = DateTime.now();
-    
-    // Build completion context for XP calculation
-    final context = await buildCompletionContext(
-      task,
-      completionTime,
-      additionalContext ?? {},
+  Future<Result<TaskCompletionResult>> completeTask(Task task, {bool isEnhanced = false}) async {
+    if (task.isCompleted) {
+      return Result.failure(ValidationException('Task already completed'));
+    }
+
+    final updatedTask = task.complete();
+    final xpGained = task.xpReward;
+
+    // Use smooth XP animation service for better visual feedback
+    await SmoothXPAnimationService.instance.addXPWithAnimation(
+      userProvider: _userProvider,
+      xpAmount: xpGained,
     );
 
-    // Calculate intelligent XP rewards
-    final baseXP = IntelligentXPEngine.calculateBaseXP(task);
-    final bonusXP = IntelligentXPEngine.calculateBonusXP(task, context);
-    
-    // Create XP breakdown for user transparency
-    final xpBreakdown = await _createXPBreakdown(task, context, baseXP, bonusXP);
-    
-    // Update completion tracking for future calculations
-    await _updateCompletionTracking(task, completionTime);
-    
-    // Create enhanced completion result
-    return EnhancedTaskCompletion(
-      completedTask: task.copyWith(
-        isCompleted: true,
-        completedAt: completionTime,
-        xpReward: baseXP + bonusXP, // Override with intelligent XP
+    // The smooth animation service already adds the XP, so we don't need to add it again
+    // For now, we'll check level-up in the user provider's callback system
+
+    await _updateCompletionTracking(task, DateTime.now());
+
+    return Result.success(
+      TaskCompletionResult(
+        isSuccess: true,
+        updatedTask: updatedTask,
+        xpGained: xpGained,
+        leveledUp: false, // Level up detection handled by animation service
+        newLevel: null,
       ),
-      baseXP: baseXP,
-      bonusXP: bonusXP,
-      xpBreakdown: xpBreakdown,
     );
-  }
-
-  /// Build context for XP calculation based on completion patterns
-  static Future<CompletionContext> buildCompletionContext(
-    Task task,
-    DateTime completionTime,
-    Map<String, dynamic> additionalContext,
-  ) async {
-    final streak = await _calculateCurrentStreak(task);
-    final perfectWeeks = await _calculatePerfectWeeksThisMonth(task);
-    
-    return CompletionContext(
-      completionTime: completionTime,
-      currentStreak: streak,
-      perfectWeeksThisMonth: perfectWeeks,
-      isPartOfChallenge: additionalContext['isPartOfChallenge'] ?? false,
-      additionalContext: additionalContext,
-    );
-  }
-
-  /// Create detailed XP breakdown for user understanding
-  static Future<Map<String, int>> _createXPBreakdown(
-    Task task,
-    CompletionContext context,
-    int baseXP,
-    int bonusXP,
-  ) async {
-    final breakdown = <String, int>{'base_xp': baseXP};
-    
-    // Calculate individual bonus components
-    if (context.currentStreak > 1) {
-      final streakBonus = IntelligentXPEngine.calculateStreakBonus(task, context.currentStreak);
-      if (streakBonus > 0) breakdown['streak_bonus'] = streakBonus;
-    }
-    
-    if (context.perfectWeeksThisMonth > 0) {
-      final perfectWeekBonus = IntelligentXPEngine.calculatePerfectWeekBonus(task, context.perfectWeeksThisMonth);
-      if (perfectWeekBonus > 0) breakdown['perfect_week_bonus'] = perfectWeekBonus;
-    }
-    
-    if (IntelligentXPEngine.isMorningHabit(task) && 
-        IntelligentXPEngine.isCompletedInMorning(context.completionTime)) {
-      final morningBonus = (task.xpReward * 0.1).round();
-      if (morningBonus > 0) breakdown['morning_bonus'] = morningBonus;
-    }
-    
-    return breakdown;
-  }
-
-  /// Calculate current streak for a specific task pattern
-  static Future<int> _calculateCurrentStreak(Task task) async {
-    final prefs = await SharedPreferences.getInstance();
-    final streakData = prefs.getString(_streakKey);
-    
-    if (streakData == null) return 0;
-    
-    try {
-      final Map<String, dynamic> streaks = json.decode(streakData);
-      final taskKey = _getTaskStreakKey(task);
-      final taskStreak = streaks[taskKey];
-      
-      if (taskStreak == null) return 0;
-      
-      final lastCompletion = DateTime.parse(taskStreak['lastCompletion']);
-      final streak = taskStreak['count'] as int;
-      
-      // Check if streak is still valid (completed within expected interval)
-      if (_isStreakValid(task, lastCompletion)) {
-        return streak;
-      }
-      
-      return 0; // Streak broken
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  /// Calculate perfect weeks this month for task category
-  static Future<int> _calculatePerfectWeeksThisMonth(Task task) async {
-    final prefs = await SharedPreferences.getInstance();
-    final perfectWeeksData = prefs.getString(_perfectWeeksKey);
-    
-    if (perfectWeeksData == null) return 0;
-    
-    try {
-      final Map<String, dynamic> perfectWeeks = json.decode(perfectWeeksData);
-      final categoryKey = '${task.category}_${DateTime.now().year}_${DateTime.now().month}';
-      return perfectWeeks[categoryKey] ?? 0;
-    } catch (e) {
-      return 0;
-    }
   }
 
   /// Update completion tracking for future XP calculations
-  static Future<void> _updateCompletionTracking(Task task, DateTime completionTime) async {
+  Future<void> _updateCompletionTracking(Task task, DateTime completionTime) async {
     await Future.wait([
       _updateStreak(task, completionTime),
       _updateDailyCompletions(task, completionTime),
@@ -149,7 +60,7 @@ class TaskCompletionService {
   }
 
   /// Update streak tracking
-  static Future<void> _updateStreak(Task task, DateTime completionTime) async {
+  Future<void> _updateStreak(Task task, DateTime completionTime) async {
     final prefs = await SharedPreferences.getInstance();
     final streakData = prefs.getString(_streakKey);
     
@@ -195,7 +106,7 @@ class TaskCompletionService {
   }
 
   /// Update daily completion tracking
-  static Future<void> _updateDailyCompletions(Task task, DateTime completionTime) async {
+  Future<void> _updateDailyCompletions(Task task, DateTime completionTime) async {
     final prefs = await SharedPreferences.getInstance();
     final dailyData = prefs.getString(_dailyCompletionsKey);
     
@@ -221,7 +132,7 @@ class TaskCompletionService {
   }
 
   /// Update perfect weeks tracking
-  static Future<void> _updatePerfectWeeks(Task task, DateTime completionTime) async {
+  Future<void> _updatePerfectWeeks(Task task, DateTime completionTime) async {
     // This is a simplified version - you might want to implement more sophisticated
     // perfect week detection based on your specific requirements
     final prefs = await SharedPreferences.getInstance();
@@ -248,7 +159,7 @@ class TaskCompletionService {
   }
 
   /// Generate task streak key based on task type
-  static String _getTaskStreakKey(Task task) {
+  String _getTaskStreakKey(Task task) {
     // For recurring tasks, use the parent task ID or recurrence pattern
     if (task.recurrencePattern != null) {
       return '${task.parentTaskId ?? task.id}_${task.recurrencePattern}';
@@ -259,7 +170,7 @@ class TaskCompletionService {
   }
 
   /// Check if streak is still valid based on task recurrence
-  static bool _isStreakValid(Task task, DateTime lastCompletion) {
+  bool _isStreakValid(Task task, DateTime lastCompletion) {
     final now = DateTime.now();
     final daysSinceLastCompletion = now.difference(lastCompletion).inDays;
     
@@ -289,34 +200,18 @@ class TaskCompletionService {
   }
 
   /// Simple heuristic for perfect week detection
-  static Future<bool> _isPerfectWeekCandidate(String category, DateTime completionTime) async {
+  Future<bool> _isPerfectWeekCandidate(String category, DateTime completionTime) async {
     // This is a placeholder - implement your own logic for what constitutes a "perfect week"
     // For example, completing all health tasks every day for a week
     return false; // Implement based on your requirements
   }
 
-  /// Get user-friendly streak information
-  static Future<Map<String, dynamic>> getStreakInfo(Task task) async {
-    final streak = await _calculateCurrentStreak(task);
-    final perfectWeeks = await _calculatePerfectWeeksThisMonth(task);
-    
-    return {
-      'currentStreak': streak,
-      'perfectWeeksThisMonth': perfectWeeks,
-      'streakDescription': _getStreakDescription(streak, task.recurrencePattern),
-    };
-  }
-
   /// Generate user-friendly streak description
-  static String _getStreakDescription(int streak, String? recurrencePattern) {
+  String _getStreakDescription(int streak, String? recurrencePattern) {
     if (streak == 0) return 'Start your streak!';
     if (streak == 1) return 'Great start! 🌟';
-    
-    final unit = recurrencePattern == 'weekly' ? 'week' : 'day';
-    final plural = streak > 1 ? '${unit}s' : unit;
-    
-    if (streak < 7) return '$streak $plural in a row! 🔥';
-    if (streak < 30) return '$streak $plural streak! Amazing! 🚀';
-    return '$streak $plural streak! You\'re unstoppable! 💪';
+    if (streak < 7) return '$streak-day streak 🔥';
+    if (streak < 30) return 'Over a week! Keep it up!';
+    return 'Over a month! You\'re a legend! 🏆';
   }
 } 

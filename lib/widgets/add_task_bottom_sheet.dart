@@ -49,7 +49,7 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
       createdAt: DateTime.now(),
     );
 
-    taskProvider.addTask(task);
+    taskProvider.createTask(task);
     Navigator.pop(context);
   }
 

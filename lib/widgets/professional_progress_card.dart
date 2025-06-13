@@ -44,8 +44,32 @@ class _ProfessionalProgressCardState extends State<ProfessionalProgressCard>
       curve: Curves.easeOutCubic,
     ));
     Future.delayed(AppDesignTokens.medium, () {
-      if (mounted) _progressController.forward();
+      if (mounted) {
+        _progressController.safeForward();
+      }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfessionalProgressCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.currentValue != oldWidget.currentValue || widget.maxValue != oldWidget.maxValue) {
+      // Recalculate the progress and update the animation
+      final double newEndValue = widget.maxValue > 0 ? widget.currentValue / widget.maxValue : 0.0;
+      
+      _progressAnimation = Tween<double>(
+        begin: _progressAnimation.value, // Start from the current progress
+        end: newEndValue,
+      ).animate(CurvedAnimation(
+        parent: _progressController,
+        curve: Curves.easeOutCubic,
+      ));
+
+      // Reset and restart the animation
+      _progressController
+        ..reset()
+        ..forward();
+    }
   }
 
   @override
@@ -69,10 +93,19 @@ class _ProfessionalProgressCardState extends State<ProfessionalProgressCard>
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(AppDesignTokens.radiusLg),
             boxShadow: [
+              // Primary depth shadow
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+                spreadRadius: 0,
+              ),
+              // Colored accent shadow for vibrancy
+              BoxShadow(
+                color: widget.color.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+                spreadRadius: 0,
               ),
             ],
             border: Border.all(

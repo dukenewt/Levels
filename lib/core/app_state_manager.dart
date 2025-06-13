@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'app_logger.dart';
+
 // Create a new file: lib/core/app_state_manager.dart
 class AppStateManager extends ChangeNotifier {
   // Core state that all providers need
@@ -24,7 +27,7 @@ class AppStateManager extends ChangeNotifier {
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
-      AppLogger.error('Failed to initialize app state', e);
+      AppLogger.instance.error('Failed to initialize app state', e);
       rethrow;
     }
   }

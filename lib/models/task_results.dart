@@ -4,24 +4,32 @@ import 'task.dart';
 /// This gives us explicit, testable outcomes for every operation
 class TaskCompletionResult {
   final bool isSuccess;
-  final Task? completedTask;
+  final Task? updatedTask;
   final String? errorMessage;
   final TaskCompletionError? errorType;
   final dynamic originalError;
+  final int xpGained;
+  final bool leveledUp;
+  final int? newLevel;
+  final int streakBonus;
 
-  TaskCompletionResult._({
+  TaskCompletionResult({
     required this.isSuccess,
-    this.completedTask,
+    this.updatedTask,
     this.errorMessage,
     this.errorType,
     this.originalError,
+    this.xpGained = 0,
+    this.leveledUp = false,
+    this.newLevel,
+    this.streakBonus = 0,
   });
 
   /// Creates a successful completion result
   factory TaskCompletionResult.success(Task completedTask) {
-    return TaskCompletionResult._(
+    return TaskCompletionResult(
       isSuccess: true,
-      completedTask: completedTask,
+      updatedTask: completedTask,
     );
   }
 
@@ -31,7 +39,7 @@ class TaskCompletionResult {
     TaskCompletionError errorType, {
     dynamic originalError,
   }) {
-    return TaskCompletionResult._(
+    return TaskCompletionResult(
       isSuccess: false,
       errorMessage: errorMessage,
       errorType: errorType,
@@ -41,9 +49,9 @@ class TaskCompletionResult {
 
   /// Creates a result for when task was already completed
   factory TaskCompletionResult.alreadyCompleted(Task task) {
-    return TaskCompletionResult._(
+    return TaskCompletionResult(
       isSuccess: true,
-      completedTask: task,
+      updatedTask: task,
       errorMessage: 'Task was already completed',
     );
   }
