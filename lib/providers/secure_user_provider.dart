@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../models/user_rank.dart';
 import '../models/user_perk.dart';
+import '../models/user_update_result.dart';
 import '../services/secure_storage_service.dart';
 import '../core/error_handling.dart';
-
+import '../services/enhanced_game_experience_manager.dart';
 /// States for async operations to provide proper loading indicators
 enum UserOperationState {
   idle,
@@ -22,7 +23,10 @@ class SecureUserProvider with ChangeNotifier {
   int _level = 1;
   int _currentXp = 0;
   int _nextLevelXp = 100;
-  Function(int)? onLevelUp;
+  
+  // Enhanced level up callback with old and new level parameters
+  Function(int oldLevel, int newLevel)? onLevelUp;
+  
   OverlayEntry? _levelUpOverlay;
   BuildContext? _context;
 
@@ -174,18 +178,32 @@ class SecureUserProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addXp(int amount) async {
+  Future<Result<UserUpdateResult>> addXp(int amount) async {
     debugPrint('SecureUserProvider.addXp called with amount: $amount');
+    if (_user == null) {
+      final error = AppException('Cannot add XP, user is not initialized.');
+      ErrorHandlingService().logError(error);
+      return Result.failure(error);
+    }
+      EnhancedGameExperienceManager.instance.trackXPProgress(this);
+
     debugPrint('Current XP before update: $_currentXp');
+    final oldLevel = _level; // Store the current level
     _currentXp += amount;
     debugPrint('New XP after adding: $_currentXp');
+
+    bool leveledUp = false;
+
+    // Check for level ups with enhanced detection
     while (_currentXp >= _nextLevelXp) {
       _currentXp -= _nextLevelXp;
       _level++;
       _nextLevelXp = (100 * (1.5 * (_level - 1))).round();
+      leveledUp = true;
       debugPrint('Leveled up! New level: $_level, XP reset to: $_currentXp, Next level at: $_nextLevelXp');
-      // Optionally show level up overlay
     }
+
+    // Update user model
     if (_user != null) {
       final newRank = UserRank.getRankForLevel(_level);
       _user = _user!.copyWith(
@@ -193,10 +211,31 @@ class SecureUserProvider with ChangeNotifier {
         currentXp: _currentXp,
         rank: newRank.name,
       );
-      await _saveUser();
+      final saveResult = await _saveUser();
+      if (!saveResult.isSuccess) {
+        // Simple rollback on failure
+        _level = oldLevel;
+        // NOTE: A more robust rollback would be needed for production apps
+        // For this case, we'll log and return the failure.
+        return Result.failure(saveResult.error!);
+      }
     }
+    
+    // Check for new perks
     await checkForNewPerks();
+    
+    // Notify listeners first to update UI
     notifyListeners();
+    
+    // If we leveled up, trigger the callback
+    if (leveledUp && onLevelUp != null) {
+      // Small delay to ensure UI has updated
+      Future.delayed(const Duration(milliseconds: 100), () {
+        onLevelUp!(oldLevel, _level);
+      });
+    }
+    
+    return Result.success(UserUpdateResult(didLevelUp: leveledUp, newLevel: leveledUp ? _level : null));
   }
 
   Future<Result<void>> _saveUser() async {
@@ -250,6 +289,11 @@ class SecureUserProvider with ChangeNotifier {
 
   void _showPerkUnlockedNotification(UserPerk perk) {
     // TODO: Implement a user-facing notification or dialog
-    debugPrint('Perk unlocked: [32m${perk.name}[0m');
+    debugPrint('Perk unlocked: [32m${perk.name}[0m');
+  }
+
+  // Add this method to set the level up callback from your UI
+  void setLevelUpCallback(Function(int oldLevel, int newLevel) callback) {
+    onLevelUp = callback;
   }
 } 

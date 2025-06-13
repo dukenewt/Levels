@@ -1,32 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:async';
+import 'package:intl/intl.dart';
 import '../providers/secure_user_provider.dart';
 import '../providers/secure_task_provider.dart';
-import '../providers/skill_provider.dart';
-import '../widgets/level_progress_card.dart';
-import '../widgets/task_tile.dart';
-import '../widgets/empty_tasks_placeholder.dart';
 import '../models/task.dart';
-import '../models/skill.dart';
-import 'stats_screen.dart';
-import 'achievements_screen.dart';
-import 'profile_screen.dart';
-import 'calendar_screen.dart';
-import 'skills_screen.dart';
-import 'skill_details_screen.dart';
-import '../widgets/level_indicator.dart';
 import 'settings_screen.dart';
-import '../providers/settings_provider.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart';
 import '../widgets/task_creation_dialog.dart';
-import 'notification_preferences_screen.dart';
-import '../widgets/professional_task_tile.dart';
-import '../widgets/professional_progress_card.dart';
+import '../widgets/task_tile.dart';
+// import '../widgets/professional_progress_card.dart';
 import '../widgets/smart_suggestions_widget.dart';
 import '../widgets/task_editing_dialog.dart';
-
+import '../widgets/unified_progress_bar.dart';
+import '../widgets/wheel_of_time_progress.dart';
+import '../services/game_experience_manager.dart';
+import '../services/enhanced_game_experience_manager.dart';
 class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
 
@@ -47,6 +34,14 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
+    
+    // Initialize the enhanced game experience manager after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        EnhancedGameExperienceManager.instance.initialize(context);
+        debugPrint('🎮 Enhanced GameExperienceManager initialized');
+      }
+    });
   }
 
   @override
@@ -182,27 +177,11 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
             ],
           ),
 
-          // Progress card
+          // Progress card - Wheel of Time style
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Consumer<SecureUserProvider>(
-                    builder: (context, userProvider, child) {
-                      return ProfessionalProgressCard(
-                        title: 'Level',
-                        currentValue: userProvider.currentXp,
-                        maxValue: userProvider.nextLevelXp,
-                        color: theme.colorScheme.primary,
-                        subtitle: 'Level ${userProvider.level}',
-                        onTap: () {},
-                      );
-                    },
-                  ),
-                  const SmartSuggestionsWidget(),
-                ],
-              ),
+              child: const WheelOfTimeProgress(),
             ),
           ),
 
@@ -212,6 +191,14 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
 
           // Task sections based on view mode
           ..._buildTaskSections(taskProvider.getFilteredActiveTasks(context)),
+
+          // Smart suggestions at the bottom so they don't block task view
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: SmartSuggestionsWidget(),
+            ),
+          ),
         ],
       ),
       floatingActionButton: Column(
@@ -411,22 +398,17 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
   }
 
   Widget _buildTaskTile(Task task) {
+    final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-      child: ProfessionalTaskTile(
-        key: ValueKey(task.id),
+      child: TaskTile(
         task: task,
-        onComplete: () async {
-          final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
-          await taskProvider.completeTask(task.id);
-        },
         onEdit: () {
           showDialog(
             context: context,
             builder: (context) => TaskEditingDialog(task: task),
           );
         },
-        showTime: true,
       ),
     );
   }

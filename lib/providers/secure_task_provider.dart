@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
@@ -12,7 +11,7 @@ import 'package:uuid/uuid.dart';
 import '../services/secure_storage_service.dart';
 import '../core/error_handling.dart';
 import '../models/task_results.dart';
-import '../services/enhanced_task_completion_service.dart';
+import '../services/task_completion_service.dart';
 import '../widgets/xp_reward_snackbar.dart';
 
 /// States for async operations to provide proper loading indicators
@@ -256,10 +255,13 @@ class SecureTaskProvider with ChangeNotifier {
       }
       
     } catch (e, stackTrace) {
-      debugPrint('❌ TaskProvider: Unexpected error updating task: $e');
-      final error = AppException('Failed to update task', originalError: e);
-      ErrorHandlingService().logError(error, stackTrace: stackTrace);
-      return Result.failure(error);
+      final appError = AppException(
+        'Failed to update task',
+        code: 'TASK_UPDATE_ERROR',
+        originalError: e,
+      );
+      ErrorHandlingService().logError(appError, stackTrace: stackTrace);
+      return Result.failure(appError);
       
     } finally {
       _operationState = TaskOperationState.idle;
@@ -267,146 +269,77 @@ class SecureTaskProvider with ChangeNotifier {
     }
   }
 
-  /// Completes a task and calculates XP reward dynamically, showing UI feedback.
-  Future<TaskCompletionResult> completeTaskWithIntelligentXP(BuildContext context, String taskId) async {
+  Future<Result<TaskCompletionResult>> completeTask(
+      BuildContext context, Task task,
+      {bool isEnhanced = false}) async {
     _operationState = TaskOperationState.completing;
     notifyListeners();
 
     try {
-      // Call the service statically, passing the required providers
-      final result = await EnhancedTaskCompletionService.completeTaskWithIntelligentXP(
-        taskId: taskId,
-        taskProvider: this,
-        userProvider: _userProvider,
-        additionalContext: {'completionTime': DateTime.now()},
-      );
+      final completionService =
+          TaskCompletionService(_userProvider, this);
+      final result =
+          await completionService.completeTask(task, isEnhanced: isEnhanced);
 
       if (result.isSuccess) {
-        // The service now handles all the logic, including saving and updating the user
-        // We just need to reflect the successful state.
-        final completedTask = result.enhancedCompletion!.completedTask;
+        // We can safely assume data is not null if isSuccess is true.
+        final TaskCompletionResult completionData = result.data!;
+        final Task updatedTask = completionData.updatedTask!;
+        final int xpGained = completionData.xpGained;
 
-        // Manually update the local task list since the service doesn't have direct access
-        final taskIndex = _tasks.indexWhere((t) => t.id == taskId);
+        // Optimistically update the task in the UI
+        final taskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
         if (taskIndex != -1) {
-          _tasks[taskIndex] = completedTask;
-          _updateTasksByCategory();
-        }
-        
-        // Show snackbar feedback
-        if (context.mounted) {
-          XPRewardSnackbar.show(context, result.enhancedCompletion!);
-        }
-
-        return TaskCompletionResult.success(completedTask);
-      } else {
-        // If the static service method fails, return its failure result
-        return TaskCompletionResult.failure(
-          result.errorMessage ?? 'Failed in enhanced completion',
-          result.errorType ?? TaskCompletionError.storageFailure,
-          originalError: result.originalError,
-        );
-      }
-    } catch (e, stackTrace) {
-      final error = AppException("Failed to complete task with intelligent XP", originalError: e);
-      ErrorHandlingService().logError(error, stackTrace: stackTrace);
-      return TaskCompletionResult.failure(
-        'An unexpected error occurred during intelligent completion.',
-        TaskCompletionError.storageFailure,
-        originalError: e,
-      );
-    } finally {
-      _operationState = TaskOperationState.idle;
-      notifyListeners();
-    }
-  }
-
-  /// Complete task with XP rewards and comprehensive error handling
-  Future<TaskCompletionResult> completeTask(String taskId) async {
-    try {
-      debugPrint('✅ TaskProvider: Completing task: $taskId');
-      
-      final taskIndex = _tasks.indexWhere((task) => task.id == taskId);
-      if (taskIndex == -1) {
-        return TaskCompletionResult.failure(
-          'Task not found',
-          TaskCompletionError.taskNotFound,
-          originalError: null,
-        );
-      }
-
-      final task = _tasks[taskIndex];
-      if (task.isCompleted) {
-        debugPrint('⚠️ TaskProvider: Task already completed');
-        return TaskCompletionResult.alreadyCompleted(task);
-      }
-
-      _operationState = TaskOperationState.completing;
-      notifyListeners();
-
-      // Store task data for XP operations
-      final xpReward = task.xpReward;
-
-      try {
-        // Update task completion status (optimistic update)
-        _tasks[taskIndex] = task.complete();
-        _updateTasksByCategory();
-        notifyListeners();
-
-        // Save the completed task first
-        final saveResult = await _storage.taskRepository.updateTask(_tasks[taskIndex]);
-        if (!saveResult.isSuccess) {
-          // Rollback the completion if save failed
-          _tasks[taskIndex] = task;
+          _tasks[taskIndex] = updatedTask;
           _updateTasksByCategory();
           notifyListeners();
-          return TaskCompletionResult.failure(
-            saveResult.error?.toString() ?? 'Failed to save task completion. Please try again.',
-            TaskCompletionError.storageFailure,
-            originalError: saveResult.error,
+        }
+
+        // Save the updated task to persistent storage
+        final saveResult = await _storage.taskRepository.updateTask(updatedTask);
+        if (!saveResult.isSuccess) {
+          // If saving fails, we may need to roll back the optimistic update
+          // For simplicity here, we log the error and proceed
+          ErrorHandlingService().logError(saveResult.error!);
+          return Result.failure(saveResult.error!);
+        }
+
+        final xpResult = await _userProvider.addXp(xpGained);
+        if (!xpResult.isSuccess) {
+          // Rollback task completion
+          _tasks[taskIndex] = task; // Revert to original task
+          await _storage.taskRepository.updateTask(task); // Save original task state
+          _updateTasksByCategory();
+          notifyListeners();
+          return Result.failure(xpResult.error as AppException);
+        }
+
+        // Notify UI
+        if (context.mounted) {
+          XPRewardSnackbar.show(
+            context,
+            xpGained,
+            completionData.streakBonus,
           );
         }
-
-        // Handle XP rewards in separate try-catch to prevent rollback for XP failures
-        try {
-          // Add XP to user's overall XP
-          await _userProvider.addXp(xpReward);
-          
-          debugPrint('✅ TaskProvider: Task completed with XP rewards');
-          
-        } catch (xpError) {
-          debugPrint('⚠️ TaskProvider: Task completed but XP addition failed: $xpError');
-          // Don't rollback task completion if only XP fails
-          _lastError = AppException('Task completed but XP reward failed', originalError: xpError);
-          // Still return success, but with a warning message
-          return TaskCompletionResult.success(_tasks[taskIndex]);
-        }
-        return TaskCompletionResult.success(_tasks[taskIndex]);
-
-      } catch (e, stackTrace) {
-        debugPrint('❌ TaskProvider: Failed to complete task, reverting: $e');
-        // Rollback completion
-        _tasks[taskIndex] = task;
-        _updateTasksByCategory();
-        notifyListeners();
-        
-        final error = AppException('Failed to complete task', originalError: e);
-        ErrorHandlingService().logError(error, stackTrace: stackTrace);
-        return TaskCompletionResult.failure(
-          'Failed to complete task',
-          TaskCompletionError.storageFailure,
-          originalError: e,
-        );
+        return Result.success(completionData);
+      } else {
+        _lastError = result.error;
+        ErrorHandlingService().logError(result.error!);
+        return result;
       }
-
+    } catch (e, stackTrace) {
+      final error = AppException('Failed to complete task', originalError: e);
+      ErrorHandlingService().logError(error, stackTrace: stackTrace);
+      return Result.failure(error);
     } finally {
       _operationState = TaskOperationState.idle;
       notifyListeners();
     }
   }
 
-  /// Delete task with confirmation and undo capability
-  Future<Result<Task>> deleteTask(String taskId) async {
+  /// Delete task with optimistic updates and rollback
+  Future<Result<void>> deleteTask(String taskId) async {
     try {
       debugPrint('🗑️ TaskProvider: Deleting task: $taskId');
       

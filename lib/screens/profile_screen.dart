@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/secure_user_provider.dart';
-import '../widgets/rank_progress_card.dart';
-import '../widgets/level_progress_card.dart';
-import '../screens/task_dashboard_screen.dart';
-import '../screens/calendar_screen.dart';
-import '../screens/stats_screen.dart';
-import '../screens/achievements_screen.dart';
+import '../providers/theme_provider.dart';
 import 'settings_screen.dart';
+import 'theme_selection_screen.dart';
+import '../models/user_rank.dart';
+import '../widgets/professional_progress_card.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -52,22 +50,6 @@ class ProfileScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
-            ),
-            const SizedBox(height: 32),
-
-            // Rank Progress Card
-            const RankProgressCard(),
-            const SizedBox(height: 24),
-
-            // Level Progress Card
-            Consumer<SecureUserProvider>(
-              builder: (context, userProvider, child) {
-                return LevelProgressCard(
-                  level: userProvider.level,
-                  currentXp: userProvider.currentXp,
-                  nextLevelXp: userProvider.nextLevelXp,
-                );
-              },
             ),
             const SizedBox(height: 32),
 

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'core/app_initialization_manager.dart';
-import 'core/simple_app_providers.dart';
 import 'core/enhanced_app_providers.dart';
 import 'core/offline_storage_service.dart';
-import 'services/storage_service.dart';
 import 'services/secure_storage_service.dart';
 import 'screens/task_dashboard_screen.dart';
 import 'screens/stats_screen.dart';
@@ -13,10 +10,8 @@ import 'screens/profile_screen.dart';
 import 'core/app_logger.dart';
 import 'core/global_error_handler.dart';
 import 'core/offline_manager.dart';
-import 'core/theme/app_design_tokens.dart';
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
-import 'services/smart_suggestions_service.dart';
 
 const bool USE_ENHANCED_ARCHITECTURE = true; // Toggle this for testing
 
