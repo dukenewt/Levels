@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import '../services/intelligent_xp_engine.dart';
+import '../core/theme/app_design_tokens.dart';
 
 /// Enhanced snackbar that shows XP rewards with beautiful animations and breakdown
 class XPRewardSnackbar extends StatefulWidget {
-  final EnhancedTaskCompletion completion;
+  final int xpGained;
+  final int? streakBonus;
 
   const XPRewardSnackbar({
     Key? key,
-    required this.completion,
+    required this.xpGained,
+    this.streakBonus,
   }) : super(key: key);
 
   @override
   State<XPRewardSnackbar> createState() => _XPRewardSnackbarState();
 
   /// Static method to show the XP reward snackbar
-  static void show(BuildContext context, EnhancedTaskCompletion completion) {
+  static void show(BuildContext context, int xpGained, int? streakBonus) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: XPRewardSnackbar(completion: completion),
+        content: XPRewardSnackbar(xpGained: xpGained, streakBonus: streakBonus),
         backgroundColor: Colors.transparent,
         elevation: 0,
         behavior: SnackBarBehavior.floating,
@@ -67,7 +70,7 @@ class _XPRewardSnackbarState extends State<XPRewardSnackbar>
 
     _xpCountAnimation = Tween<double>(
       begin: 0.0,
-      end: widget.completion.totalXP.toDouble(),
+      end: widget.xpGained.toDouble(),
     ).animate(CurvedAnimation(
       parent: _xpController,
       curve: Curves.easeOutQuart,
@@ -76,7 +79,9 @@ class _XPRewardSnackbarState extends State<XPRewardSnackbar>
     // Start animations
     _mainController.forward();
     Future.delayed(const Duration(milliseconds: 200), () {
-      _xpController.forward();
+      if (mounted) {
+        _xpController.safeForward();
+      }
     });
   }
 
@@ -143,18 +148,6 @@ class _XPRewardSnackbarState extends State<XPRewardSnackbar>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Task completion message
-                        Text(
-                          '${widget.completion.completedTask.title} completed!',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        
                         // XP breakdown
                         _buildXPBreakdown(theme),
                       ],
@@ -191,76 +184,47 @@ class _XPRewardSnackbarState extends State<XPRewardSnackbar>
   }
 
   Widget _buildXPBreakdown(ThemeData theme) {
-    final breakdown = widget.completion.xpBreakdown;
-    final bonusEntries = breakdown.entries
-        .where((entry) => entry.key != 'base_xp' && entry.value > 0)
-        .toList();
-
-    if (bonusEntries.isEmpty) {
+    if (widget.streakBonus == null || widget.streakBonus == 0) {
       return Text(
-        '+${widget.completion.baseXP} base XP',
+        '+${widget.xpGained} XP',
         style: theme.textTheme.bodyMedium?.copyWith(
           color: Colors.white.withOpacity(0.9),
         ),
       );
     }
 
+    final baseXP = widget.xpGained - widget.streakBonus!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          '+${widget.completion.baseXP} base XP',
+          '+$baseXP base XP',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: Colors.white.withOpacity(0.9),
           ),
         ),
-        ...bonusEntries.map((entry) => Padding(
+        Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Row(
             children: [
               Icon(
-                _getBonusIcon(entry.key),
+                Icons.local_fire_department,
                 size: 12,
                 color: Colors.white.withOpacity(0.8),
               ),
               const SizedBox(width: 4),
               Text(
-                '+${entry.value} ${_getBonusLabel(entry.key)}',
+                '+${widget.streakBonus} streak bonus',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: Colors.white.withOpacity(0.8),
                 ),
               ),
             ],
           ),
-        )),
+        ),
       ],
     );
-  }
-
-  IconData _getBonusIcon(String bonusType) {
-    switch (bonusType) {
-      case 'streak_bonus':
-        return Icons.local_fire_department;
-      case 'morning_bonus':
-        return Icons.wb_sunny;
-      case 'perfect_week_bonus':
-        return Icons.emoji_events;
-      default:
-        return Icons.add;
-    }
-  }
-
-  String _getBonusLabel(String bonusType) {
-    switch (bonusType) {
-      case 'streak_bonus':
-        return 'streak';
-      case 'morning_bonus':
-        return 'morning';
-      case 'perfect_week_bonus':
-        return 'perfect week';
-      default:
-        return 'bonus';
-    }
   }
 } 

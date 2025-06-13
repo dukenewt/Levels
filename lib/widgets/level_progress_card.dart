@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/secure_user_provider.dart';
-import 'animated_xp_bar.dart';
-import 'gaming_progress_indicators.dart';
+import 'unified_progress_bar.dart';
 
 class LevelProgressCard extends StatefulWidget {
   final int level;
@@ -28,7 +27,6 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
   bool _showShimmer = false;
   late AnimationController _tileScaleController;
   late Animation<double> _tileScaleAnimation;
-  bool useGamingBar = false; // Feature toggle for demonstration
   
   @override
   void initState() {
@@ -136,21 +134,6 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Feature toggle switch
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text('RPG Bar', style: theme.textTheme.bodySmall),
-                    Switch(
-                      value: useGamingBar,
-                      onChanged: (val) {
-                        setState(() {
-                          useGamingBar = val;
-                        });
-                      },
-                    ),
-                  ],
-                ),
                 Row(
                   children: [
                     // Avatar with level
@@ -217,30 +200,26 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
                 ),
                 const SizedBox(height: 16),
                 
-                // Progress Bar (toggle between styles)
-                useGamingBar
-                  ? GamingXPBar(
+                // Progress Bar
+                AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    return UnifiedProgressBar(
                       progress: _progressAnimation.value,
                       primaryColor: xpBarColor,
-                      secondaryColor: xpBarColor.withOpacity(0.7),
-                      label: 'XP',
+                      label: "XP",
                       currentValue: _displayedXp,
                       maxValue: widget.nextLevelXp,
-                      showPulse: _showShimmer,
-                    )
-                  : AnimatedBuilder(
-                      animation: _animationController,
-                      builder: (context, child) {
-                        return AnimatedXPBar(
-                          progress: _progressAnimation.value,
-                          color: xpBarColor,
-                          height: 8,
-                          shimmer: _showShimmer,
-                          duration: const Duration(milliseconds: 1000),
-                          shimmerDuration: const Duration(seconds: 4),
-                        );
+                      isLevelUp: _showShimmer,
+                      height: 12,
+                      onAnimationComplete: () {
+                        setState(() {
+                          _showShimmer = false;
+                        });
                       },
-                    ),
+                    );
+                  },
+                ),
               ],
             ),
           ),

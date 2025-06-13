@@ -7,26 +7,26 @@ import 'package:flutter/material.dart';
 class Result<T> {
   final T? _data;
   final AppException? _error;
-  final bool isSuccess;
 
-  // Private constructor to ensure we only create Results through the factory methods
-  Result._(this._data, this._error, this.isSuccess);
+  Result._(this._data, this._error);
+
+  bool get isSuccess => _error == null;
 
   /// Creates a successful result containing data
   factory Result.success(T data) {
-    return Result._(data, null, true);
+    return Result._(data, null);
   }
 
   /// Creates a failed result containing an error
   factory Result.failure(AppException error) {
-    return Result._(null, error, false);
+    return Result._(null, error);
   }
 
   /// Get the data if successful, or throw if failed
   /// Only use this when you're sure the result is successful
   T get data {
     if (!isSuccess) {
-      throw StateError('Tried to get data from a failed result: [31m[1m[4m${_error?.message}[0m');
+      throw StateError('Tried to get data from a failed result:  [31m [1m [4m${_error?.message} [0m');
     }
     return _data!;
   }
@@ -100,8 +100,7 @@ class StorageException extends AppException {
 
 /// Exception for network errors (connectivity, timeouts, etc.)
 class NetworkException extends AppException {
-  NetworkException(String message, {dynamic originalError, StackTrace? stackTrace})
-      : super(message, code: 'NETWORK_ERROR', originalError: originalError, stackTrace: stackTrace);
+  NetworkException(String message) : super(message, code: 'NETWORK_ERROR');
 }
 
 /// A service to handle and log errors consistently throughout the app.

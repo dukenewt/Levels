@@ -51,73 +51,81 @@ class AppTheme {
     required this.priorityColors,
   });
 
-  // Default light theme
+  // ENHANCED Default Light - Modern blue to purple gradient
   static const AppTheme defaultLight = AppTheme(
     type: ThemeType.defaultLight,
-    name: 'Default Light',
-    description: 'Clean and modern light theme',
+    name: 'Ocean Breeze',
+    description: 'Fresh and energizing light theme with ocean-to-sky gradients',
     isPremium: false,
-    primaryColor: Color(0xFF78A1E8),
-    secondaryColor: Color(0xFFF5AC3D),
-    backgroundColor: Color(0xFFD7CFC6),
-    surfaceColor: Colors.white,
-    textColor: Colors.black87,
-    accentColor: Color(0xFF78A1E8),
-    gradientColors: [Color(0xFF78A1E8), Color(0xFFF5AC3D)],
+    primaryColor: Color(0xFF4F46E5), // Indigo
+    secondaryColor: Color(0xFF06B6D4), // Cyan
+    backgroundColor: Color(0xFFF8FAFC), // Very light blue-grey
+    surfaceColor: Color(0xFFFFFFFF),
+    textColor: Color(0xFF1E293B), // Dark slate
+    accentColor: Color(0xFFF59E0B), // Amber for highlights
+    gradientColors: [
+      Color(0xFF4F46E5), // Indigo
+      Color(0xFF7C3AED), // Purple
+      Color(0xFF06B6D4), // Cyan
+    ],
     blurRadius: 0,
     glassOpacity: 0,
     priorityColors: {
-      Priority.low: Color(0xFF4CAF50),
-      Priority.medium: Color(0xFFFFC107),
-      Priority.high: Color(0xFFFF5722),
+      Priority.low: Color(0xFF10B981),    // Emerald
+      Priority.medium: Color(0xFFF59E0B), // Amber
+      Priority.high: Color(0xFFEF4444),   // Red
     },
   );
 
-  // Default dark theme
+  // ENHANCED Default Dark - Warm sunset gradient
   static const AppTheme defaultDark = AppTheme(
     type: ThemeType.defaultDark,
-    name: 'Default Dark',
-    description: 'Comfortable dark theme',
+    name: 'Midnight Glow',
+    description: 'Comfortable dark theme with warm sunset undertones',
     isPremium: false,
-    primaryColor: Color(0xFF78A1E8),
-    secondaryColor: Color(0xFFF5AC3D),
-    backgroundColor: Color(0xFF2C2C2C),
-    surfaceColor: Color(0xFF3D3D3D),
-    textColor: Colors.white,
-    accentColor: Color(0xFF78A1E8),
-    gradientColors: [Color(0xFF78A1E8), Color(0xFFF5AC3D)],
+    primaryColor: Color(0xFF6366F1), // Lighter indigo for dark theme
+    secondaryColor: Color(0xFFEC4899), // Pink
+    backgroundColor: Color(0xFF0F172A), // Very dark slate
+    surfaceColor: Color(0xFF1E293B), // Dark slate
+    textColor: Color(0xFFF1F5F9), // Light slate
+    accentColor: Color(0xFFFBBF24), // Yellow for highlights
+    gradientColors: [
+      Color(0xFF6366F1), // Indigo
+      Color(0xFFEC4899), // Pink
+      Color(0xFFF59E0B), // Amber
+    ],
     blurRadius: 0,
     glassOpacity: 0,
     priorityColors: {
-      Priority.low: Color(0xFF4CAF50),
-      Priority.medium: Color(0xFFFFC107),
-      Priority.high: Color(0xFFFF5722),
+      Priority.low: Color(0xFF34D399),    // Emerald
+      Priority.medium: Color(0xFFFBBF24), // Yellow
+      Priority.high: Color(0xFFF87171),   // Light red
     },
   );
 
-  // Premium Glass Dark theme
+  // Keep your existing premium themes but with enhanced colors
   static const AppTheme premiumGlassDark = AppTheme(
     type: ThemeType.premiumGlassDark,
     name: 'Glass Dark',
     description: 'Premium dark theme with glassmorphism effects',
     isPremium: true,
-    primaryColor: Color(0xFF6C63FF),
-    secondaryColor: Color(0xFFFF6584),
-    backgroundColor: Color(0xFF1A1A2E),
+    primaryColor: Color(0xFF8B5CF6), // Purple
+    secondaryColor: Color(0xFF06B6D4), // Cyan
+    backgroundColor: Color(0xFF0C0A1E), // Deep purple-black
     surfaceColor: Color(0x1AFFFFFF),
     textColor: Colors.white,
-    accentColor: Color(0xFF6C63FF),
+    accentColor: Color(0xFFFBBF24), // Gold accent
     gradientColors: [
-      Color(0xFF6C63FF),
-      Color(0xFFFF6584),
-      Color(0xFF1A1A2E),
+      Color(0xFF8B5CF6), // Purple
+      Color(0xFF06B6D4), // Cyan
+      Color(0xFF10B981), // Emerald
     ],
     blurRadius: 20,
     glassOpacity: 0.1,
     priorityColors: {
-      Priority.low: Color(0xFF00E676),
-      Priority.medium: Color(0xFFFFD600),
-      Priority.high: Color(0xFFFF1744),
+      Priority.low: Color(0xFF10B981),
+      Priority.medium: Color(0xFFFBBF24),
+      Priority.high: Color(0xFFEF4444),
     },
   );
 
@@ -198,54 +206,55 @@ class AppTheme {
     },
   );
 
-  // Professional theme
+  // Professional theme with subtle gradients
   static const AppTheme professional = AppTheme(
     type: ThemeType.professional,
-    name: 'Professional',
-    description: 'Clean and professional theme with navy blue accents',
+    name: 'Executive',
+    description: 'Sophisticated theme with subtle gradients for professional use',
     isPremium: false,
-    primaryColor: Color(0xFF1E40AF),
-    secondaryColor: Color(0xFF3B82F6),
-    backgroundColor: Color(0xFFFFFFFF),
+    primaryColor: Color(0xFF1E40AF), // Navy blue
+    secondaryColor: Color(0xFF059669), // Emerald
+    backgroundColor: Color(0xFFFAFAFA), // Off-white
     surfaceColor: Color(0xFFFFFFFF),
-    textColor: Color(0xFF374151),
-    accentColor: Color(0xFFF97316),
+    textColor: Color(0xFF374151), // Cool grey
+    accentColor: Color(0xFFDC2626), // Red for important actions
     gradientColors: [
-      Color(0xFF1E40AF),
-      Color(0xFF3B82F6),
+      Color(0xFF1E40AF), // Navy
+      Color(0xFF3730A3), // Indigo
+      Color(0xFF059669), // Emerald
     ],
     blurRadius: 0,
     glassOpacity: 0,
     priorityColors: {
-      Priority.low: Color(0xFF3B82F6),
-      Priority.medium: Color(0xFFF97316),
-      Priority.high: Color(0xFF1E40AF),
+      Priority.low: Color(0xFF059669),
+      Priority.medium: Color(0xFFD97706),
+      Priority.high: Color(0xFFDC2626),
     },
   );
 
-  // Natural theme
+  // Natural theme enhanced
   static const AppTheme natural = AppTheme(
     type: ThemeType.natural,
-    name: 'Natural',
-    description: 'Earthy, vibrant, and natural color palette',
+    name: 'Forest Path',
+    description: 'Earthy and calming with nature-inspired gradients',
     isPremium: false,
-    primaryColor: Color(0xFF166534),
-    secondaryColor: Color(0xFF84CC16),
-    backgroundColor: Color(0xFFFFFBEB),
-    surfaceColor: Color(0xFFFFFBEB),
-    textColor: Color(0xFF451A03),
-    accentColor: Color(0xFFEAB308),
+    primaryColor: Color(0xFF059669), // Forest green
+    secondaryColor: Color(0xFFc9e9c9), // Lime
+    backgroundColor: Color(0xFFf9efd9), // Warm white
+    surfaceColor: Color(0xFFf9efd9),
+    textColor: Color(0xFF365314), // Dark green
+    accentColor: Color(0xFFD97706), // Orange
     gradientColors: [
-      Color(0xFF166534),
-      Color(0xFF84CC16),
-      Color(0xFFEAB308),
+      Color(0xFF059669), // Forest green
+      Color(0xFF84CC16), // Lime
+      Color(0xFFEAB308), // Golden
     ],
     blurRadius: 0,
     glassOpacity: 0,
     priorityColors: {
       Priority.low: Color(0xFF84CC16),
       Priority.medium: Color(0xFFEAB308),
-      Priority.high: Color(0xFF166534),
+      Priority.high: Color(0xFFDC2626),
     },
   );
 
@@ -293,8 +302,13 @@ class AppTheme {
     return allThemes.firstWhere((theme) => theme.type == type);
   }
 
-  // Convert to ThemeData
+  // Enhanced ThemeData conversion with better gradient integration
   ThemeData toThemeData() {
+    final isDark = type == ThemeType.defaultDark || 
+                   type == ThemeType.premiumGlassDark || 
+                   type == ThemeType.premiumNeon ||
+                   type == ThemeType.cyanPinkTeal;
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
@@ -305,50 +319,57 @@ class AppTheme {
         surface: surfaceColor,
         onBackground: textColor,
         onSurface: textColor,
-        brightness: type == ThemeType.defaultDark || 
-                   type == ThemeType.premiumGlassDark || 
-                   type == ThemeType.premiumNeon
-            ? Brightness.dark
-            : Brightness.light,
+        brightness: isDark ? Brightness.dark : Brightness.light,
       ),
+      
+      // Enhanced card theme with subtle gradients
       cardTheme: CardTheme(
-        elevation: 0,
+        elevation: 2,
+        shadowColor: primaryColor.withOpacity(0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        color: surfaceColor.withOpacity(glassOpacity),
+        color: surfaceColor,
       ),
+      
+      // Enhanced AppBar with gradient potential
       appBarTheme: AppBarTheme(
-        centerTitle: true,
+        centerTitle: false,
         elevation: 0,
         backgroundColor: backgroundColor,
         foregroundColor: textColor,
+        titleTextStyle: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
       ),
+      
+      // Better input decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceColor.withOpacity(glassOpacity),
+        fillColor: surfaceColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: primaryColor.withOpacity(0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: primaryColor.withOpacity(0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primaryColor),
+          borderSide: BorderSide(color: primaryColor, width: 2),
         ),
-        labelStyle: TextStyle(color: textColor.withOpacity(0.85)),
-        hintStyle: TextStyle(color: textColor.withOpacity(0.6)),
-        floatingLabelStyle: TextStyle(color: textColor),
-        iconColor: textColor,
-        suffixIconColor: textColor,
+        labelStyle: TextStyle(color: textColor.withOpacity(0.8)),
+        hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
       ),
+      
+      // Enhanced button themes
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -356,29 +377,41 @@ class AppTheme {
           foregroundColor: Colors.white,
         ),
       ),
+      
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
+        elevation: 4,
       ),
+      
+      // Enhanced text theme
       textTheme: TextTheme(
         headlineLarge: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 32,
           color: textColor,
+          letterSpacing: -0.5,
         ),
         headlineMedium: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 24,
           color: textColor,
+          letterSpacing: -0.25,
         ),
         titleLarge: TextStyle(
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
           fontSize: 20,
           color: textColor,
         ),
         bodyLarge: TextStyle(
           fontSize: 16,
           color: textColor,
+          height: 1.5,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          color: textColor.withOpacity(0.8),
+          height: 1.4,
         ),
       ),
     );

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:collection/collection.dart';
 import 'user_rank.dart';
 
 class User {

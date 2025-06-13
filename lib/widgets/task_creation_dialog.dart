@@ -3,67 +3,822 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
 import '../providers/secure_task_provider.dart';
-import '../services/enhanced_task_completion_service.dart';
+import '../services/intelligent_xp_engine.dart';
+import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
 
-class TaskCreationDialog extends StatefulWidget {
+class EnhancedTaskCreationDialog extends StatefulWidget {
   final DateTime? initialDate;
   final TimeOfDay? initialTime;
 
-  const TaskCreationDialog({
+  const EnhancedTaskCreationDialog({
     Key? key,
     this.initialDate,
     this.initialTime,
   }) : super(key: key);
 
   @override
-  State<TaskCreationDialog> createState() => _TaskCreationDialogState();
+  State<EnhancedTaskCreationDialog> createState() => _EnhancedTaskCreationDialogState();
 }
 
-class _TaskCreationDialogState extends State<TaskCreationDialog> {
+class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  
+  // Task properties
   String _difficulty = 'medium';
-  String _category = 'Work'; // Default category
-  int _estimatedXp = 0;
+  String _category = 'Work';
+  int _estimatedXp = 50;
   DateTime? _dueDate;
   TimeOfDay? _scheduledTime;
   String? _recurrencePattern;
   List<int>? _weeklyDays;
   int? _repeatInterval;
   DateTime? _endDate;
-  int _timeCostMinutes = 10;
+  int _timeInvestmentMinutes = 30;
   bool _showTimePicker = false;
-  TimeOfDay? _startTime;
-  TimeOfDay? _endTime;
+  
+  // Animation controllers
+  late AnimationController _slideController;
+  late AnimationController _xpAnimationController;
+  
+  // Animations
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _xpScaleAnimation;
+  
   final FocusNode _titleFocusNode = FocusNode();
 
   final List<String> _recurrenceOptions = [
-    'None',
-    'Daily',
-    'Weekly',
-    'Workdays',
-    'Monthly',
+    'None', 'Daily', 'Weekly', 'Workdays', 'Monthly'
   ];
 
   final List<String> _categoryOptions = [
     'Work', 'Learning', 'Health', 'Social', 'Creativity', 'Maintenance'
   ];
 
+  final Map<String, IconData> _categoryIcons = {
+    'Work': Icons.work_outline,
+    'Learning': Icons.school_outlined,
+    'Health': Icons.favorite_outline,
+    'Social': Icons.people_outline,
+    'Creativity': Icons.palette_outlined,
+    'Maintenance': Icons.home_repair_service_outlined,
+  };
+
   @override
   void initState() {
     super.initState();
     _dueDate = widget.initialDate ?? DateTime.now();
-    _scheduledTime = widget.initialTime ?? TimeOfDay.now();
+    _scheduledTime = widget.initialTime;
+    
+    _setupAnimations();
     _updateEstimatedXp();
+    
+    // Auto-focus title field after animation
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        FocusScope.of(context).requestFocus(_titleFocusNode);
+      }
+    });
+  }
+
+  void _setupAnimations() {
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    
+    _xpAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+    ));
+    
+    _xpScaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _xpAnimationController,
+      curve: Curves.elasticOut,
+    ));
+    
+    _slideController.forward();
+  }
+
+  void _updateEstimatedXp() {
+    final tempTask = Task(
+      id: 'temp_xp_id',
+      title: _titleController.text,
+      description: _descriptionController.text,
+      category: _category,
+      difficulty: _difficulty,
+      timeCostMinutes: _timeInvestmentMinutes,
+    );
+    
+    final newXp = IntelligentXPEngine.calculateBaseXP(tempTask);
+    if (newXp != _estimatedXp) {
+      setState(() {
+        _estimatedXp = newXp;
+      });
+      if (mounted) {
+        _xpAnimationController.safeForward(from: 0.0);
+      }
+    }
+  }
+
+  void _createTask() {
+    if (_formKey.currentState!.validate()) {
+      final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+      final task = Task(
+        id: const Uuid().v4(),
+        title: _titleController.text,
+        description: _descriptionController.text,
+        category: _category,
+        difficulty: _difficulty,
+        xpReward: _estimatedXp,
+        dueDate: _dueDate,
+        scheduledTime: _showTimePicker ? _scheduledTime : null,
+        recurrencePattern: _recurrencePattern == 'None' ? null : _recurrencePattern?.toLowerCase(),
+        weeklyDays: _weeklyDays,
+        repeatInterval: _repeatInterval,
+        endDate: _endDate,
+        timeCostMinutes: _timeInvestmentMinutes,
+      );
+      
+      taskProvider.createTask(task);
+      Navigator.of(context).pop();
+    }
   }
 
   @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 700),
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.colorScheme.surface,
+                  theme.colorScheme.surface.withOpacity(0.95),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 40,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildHeader(theme),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildTitleField(theme),
+                            const SizedBox(height: 20),
+                            _buildDescriptionField(theme),
+                            const SizedBox(height: 24),
+                            _buildDateTimeSection(theme),
+                            const SizedBox(height: 24),
+                            _buildRecurrenceSection(theme),
+                            const SizedBox(height: 24),
+                            _buildCategorySection(theme),
+                            const SizedBox(height: 24),
+                            _buildDifficultySection(theme),
+                            const SizedBox(height: 24),
+                            _buildTimeInvestmentSection(theme),
+                            const SizedBox(height: 32),
+                            _buildActionButtons(theme),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withOpacity(0.8),
+          ],
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.add_task,
+            color: Colors.white,
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Create New Task',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          AnimatedBuilder(
+            animation: _xpScaleAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _xpScaleAnimation.value,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$_estimatedXp',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        'XP',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTitleField(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: _titleController,
+        focusNode: _titleFocusNode,
+        maxLength: 100,
+        onChanged: (_) => _updateEstimatedXp(),
+        decoration: InputDecoration(
+          labelText: 'Task Title',
+          hintText: 'What do you want to accomplish?',
+          prefixIcon: Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: theme.colorScheme.surface,
+          counterText: '',
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please enter a task title';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildDescriptionField(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: _descriptionController,
+        onChanged: (_) => _updateEstimatedXp(),
+        maxLines: 3,
+        decoration: InputDecoration(
+          labelText: 'Description (Optional)',
+          hintText: 'Add more details...',
+          prefixIcon: Icon(Icons.notes_outlined, color: theme.colorScheme.primary),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: theme.colorScheme.surface,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateTimeSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Schedule',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildDateCard(theme),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTimeToggleCard(theme),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateCard(ThemeData theme) {
+    return InkWell(
+      onTap: () => _selectDate(context),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.primary.withOpacity(0.3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.calendar_today,
+              color: theme.colorScheme.primary,
+              size: 20,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Due Date',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _dueDate != null
+                  ? DateFormat('MMM d, yyyy').format(_dueDate!)
+                  : 'Select date',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeToggleCard(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _showTimePicker
+            ? theme.colorScheme.primary.withOpacity(0.1)
+            : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _showTimePicker
+              ? theme.colorScheme.primary
+              : theme.colorScheme.outline.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(
+                Icons.access_time,
+                color: _showTimePicker
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface.withOpacity(0.7),
+                size: 20,
+              ),
+              Switch(
+                value: _showTimePicker,
+                onChanged: (value) {
+                  setState(() {
+                    _showTimePicker = value;
+                    if (value && _scheduledTime == null) {
+                      _scheduledTime = TimeOfDay.now();
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add Time',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 4),
+          GestureDetector(
+            onTap: _showTimePicker ? () => _selectTime(context) : null,
+            child: Text(
+              _showTimePicker && _scheduledTime != null
+                  ? _scheduledTime!.format(context)
+                  : 'All day',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: _showTimePicker
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecurrenceSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Repeat',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: _recurrencePattern ?? 'None',
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.repeat, color: theme.colorScheme.primary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: theme.colorScheme.surface,
+            ),
+            items: _recurrenceOptions.map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _recurrencePattern = newValue == 'None' ? null : newValue;
+                _weeklyDays = null;
+                _repeatInterval = null;
+                _endDate = null;
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategorySection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Category',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: _category,
+            decoration: InputDecoration(
+              prefixIcon: Icon(
+                _categoryIcons[_category] ?? Icons.category,
+                color: theme.colorScheme.primary,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: theme.colorScheme.surface,
+            ),
+            items: _categoryOptions.map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Row(
+                  children: [
+                    Icon(
+                      _categoryIcons[value] ?? Icons.category,
+                      size: 20,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(value),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _category = newValue!;
+                _updateEstimatedXp();
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDifficultySection(ThemeData theme) {
+    final difficultyColors = {
+      'easy': Colors.green,
+      'medium': Colors.orange,
+      'hard': Colors.red,
+      'epic': Colors.purple,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Difficulty',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: difficultyColors[_difficulty]?.withOpacity(0.3) ??
+                  theme.colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: _difficulty,
+            decoration: InputDecoration(
+              prefixIcon: Icon(
+                Icons.trending_up,
+                color: difficultyColors[_difficulty] ?? theme.colorScheme.primary,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: theme.colorScheme.surface,
+            ),
+            items: ['easy', 'medium', 'hard', 'epic'].map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: difficultyColors[value],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(value.substring(0, 1).toUpperCase() + value.substring(1)),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _difficulty = newValue!;
+                _updateEstimatedXp();
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeInvestmentSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Time Investment',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_timeInvestmentMinutes}m',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 6,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                ),
+                child: Slider(
+                  value: _timeInvestmentMinutes.toDouble(),
+                  min: 5,
+                  max: 180,
+                  divisions: 35,
+                  onChanged: (double value) {
+                    setState(() {
+                      _timeInvestmentMinutes = value.round();
+                      _updateEstimatedXp();
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'How long do you expect this task to take?',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(ThemeData theme) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text('Cancel'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          flex: 2,
+          child: ElevatedButton(
+            onPressed: _createTask,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 4,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add_task),
+                const SizedBox(width: 8),
+                const Text('Create Task'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -92,457 +847,22 @@ class _TaskCreationDialogState extends State<TaskCreationDialog> {
     }
   }
 
-  Future<void> _selectEndDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _endDate ?? DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null && picked != _endDate) {
-      setState(() {
-        _endDate = picked;
-        _updateEstimatedXp();
-      });
-    }
-  }
-
-  void _createTask() {
-    if (_formKey.currentState!.validate()) {
-      final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
-      final task = Task(
-        id: const Uuid().v4(),
-        title: _titleController.text,
-        description: _descriptionController.text,
-        category: _category,
-        difficulty: _difficulty,
-        xpReward: _estimatedXp, // Use estimated XP
-        dueDate: _dueDate,
-        scheduledTime: _showTimePicker ? _startTime : null,
-        recurrencePattern: _recurrencePattern == 'None' ? null : _recurrencePattern?.toLowerCase(),
-        weeklyDays: _weeklyDays,
-        repeatInterval: _repeatInterval,
-        endDate: _endDate,
-        timeCostMinutes: _timeCostMinutes,
-      );
-      taskProvider.createTask(task);
-      Navigator.of(context).pop();
-    }
-  }
-
-  void _updateEstimatedXp() {
-    final xp = EnhancedTaskCompletionService.calculateEstimatedXP(
-      timeCostMinutes: _timeCostMinutes,
-      category: _category,
-      difficulty: _difficulty,
-    );
-    setState(() {
-      _estimatedXp = xp;
-    });
-  }
-
-  void _updateTimeCost() {
-    if (_showTimePicker && _startTime != null && _endTime != null) {
-      final startMinutes = _startTime!.hour * 60 + _startTime!.minute;
-      final endMinutes = _endTime!.hour * 60 + _endTime!.minute;
-      final diff = endMinutes - startMinutes;
-      _timeCostMinutes = diff >= 5 ? diff : 5;
-      _updateEstimatedXp();
-    }
-  }
-
-  TimeOfDay _roundToNearest5(TimeOfDay t) {
-    int minute = (t.minute / 5).round() * 5;
-    int hour = t.hour;
-    if (minute == 60) {
-      minute = 0;
-      hour = (hour + 1) % 24;
-    }
-    return TimeOfDay(hour: hour, minute: minute);
-  }
-
-  String _formatTime(TimeOfDay t) {
-    final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
-    final minute = t.minute.toString().padLeft(2, '0');
-    final period = t.period == DayPeriod.am ? 'AM' : 'PM';
-    return '$hour:$minute $period';
-  }
-
   @override
-  Widget build(BuildContext context) {
-    // Request focus after build
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        FocusScope.of(context).requestFocus(_titleFocusNode);
-      }
-    });
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Create New Task',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _titleController,
-                focusNode: _titleFocusNode,
-                maxLength: 100,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
-                  counterText: '',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  if (value.length > 100) {
-                    return 'Title cannot exceed 100 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              // Date picker row
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _selectDate(context),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Due Date',
-                          border: OutlineInputBorder(),
-                        ),
-                        child: Text(
-                          _dueDate != null
-                              ? '${_dueDate!.month}/${_dueDate!.day}/${_dueDate!.year}'
-                              : 'No Date',
-                          style: TextStyle(
-                            color: _dueDate != null
-                                ? Theme.of(context).textTheme.bodyLarge?.color
-                                : Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (_dueDate != null)
-                    IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        setState(() {
-                          _dueDate = null;
-                        });
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Add Time switch
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Add Time'),
-                  Switch(
-                    value: _showTimePicker,
-                    onChanged: (value) {
-                      setState(() {
-                        _showTimePicker = value;
-                        if (value) {
-                          _startTime = _roundToNearest5(TimeOfDay.now());
-                          _endTime = _roundToNearest5(
-                              TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 30))));
-                          _updateTimeCost();
-                        } else {
-                          _updateEstimatedXp();
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ),
-              if (_showTimePicker) _buildTimeRangePicker(context),
-              const SizedBox(height: 16),
-              // Recurrence dropdown
-              _buildRecurrenceDropdown(),
-              const SizedBox(height: 16),
-              // Category dropdown
-              DropdownButtonFormField<String>(
-                value: _category,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
-                ),
-                items: _categoryOptions.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _category = newValue!;
-                    _updateEstimatedXp();
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              // Difficulty dropdown
-              DropdownButtonFormField<String>(
-                value: _difficulty,
-                decoration: const InputDecoration(
-                  labelText: 'Difficulty',
-                  border: OutlineInputBorder(),
-                ),
-                items: ['easy', 'medium', 'hard', 'epic'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value.substring(0, 1).toUpperCase() + value.substring(1)),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _difficulty = newValue!;
-                    _updateEstimatedXp();
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              // Time Cost and Estimated XP
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Time Cost'),
-                        Slider(
-                          value: _timeCostMinutes.toDouble(),
-                          min: 5,
-                          max: 180,
-                          divisions: 35,
-                          label: '${_timeCostMinutes}m',
-                          onChanged: (double value) {
-                            setState(() {
-                              _timeCostMinutes = value.round();
-                              _updateEstimatedXp();
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    children: [
-                      Text(
-                        '$_estimatedXp',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const Text('XP'),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _createTask,
-                    child: const Text('Create Task'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _titleFocusNode.dispose();
+    _slideController.dispose();
+    _xpAnimationController.dispose();
+    super.dispose();
   }
+}
 
-  Widget _buildTimeRangePicker(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildTimePickerButton(context, _startTime!, (t) {
-              setState(() {
-                _startTime = t;
-                if (_endTime!.hour * 60 + _endTime!.minute < _startTime!.hour * 60 + _startTime!.minute) {
-                  _endTime = _startTime;
-                }
-                _updateTimeCost();
-              });
-            }),
-            const Text('to'),
-            _buildTimePickerButton(context, _endTime!, (t) {
-              setState(() {
-                _endTime = t;
-                if (_endTime!.hour * 60 + _endTime!.minute < _startTime!.hour * 60 + _startTime!.minute) {
-                  _startTime = _endTime;
-                }
-                _updateTimeCost();
-              });
-            }),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Duration: ${_timeCostMinutes} minutes',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimePickerButton(
-      BuildContext context, TimeOfDay initialTime, Function(TimeOfDay) onTimeChanged) {
-    return TextButton(
-        onPressed: () async {
-          final TimeOfDay? picked = await showTimePicker(
-            context: context,
-            initialTime: initialTime,
-            builder: (context, child) {
-              return MediaQuery(
-                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-                child: child!,
-              );
-            },
-          );
-          if (picked != null) {
-            onTimeChanged(_roundToNearest5(picked));
-          }
-        },
-        child: Text(_formatTime(initialTime)));
-  }
-
-  Widget _buildRecurrenceDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DropdownButtonFormField<String>(
-          value: _recurrencePattern ?? 'None',
-          decoration: const InputDecoration(
-            labelText: 'Repeat',
-            border: OutlineInputBorder(),
-          ),
-          items: _recurrenceOptions.map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            setState(() {
-              _recurrencePattern = newValue == 'None' ? null : newValue;
-              // Reset other recurrence fields when changing pattern
-              _weeklyDays = null;
-              _repeatInterval = null;
-              _endDate = null;
-            });
-          },
-        ),
-        if (_recurrencePattern != null && _recurrencePattern != 'None')
-          _buildRecurrenceOptions(),
-      ],
-    );
-  }
-
-  Widget _buildRecurrenceOptions() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_recurrencePattern == 'Daily') ...[
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Repeat every (days)',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              initialValue: '1',
-              onChanged: (value) {
-                _repeatInterval = int.tryParse(value) ?? 1;
-              },
-            ),
-          ],
-          if (_recurrencePattern == 'Weekly') ...[
-            const Text('Repeat on:'),
-            Wrap(
-              spacing: 8.0,
-              children: List.generate(7, (index) {
-                final day = index + 1;
-                final dayName = DateFormat.E().format(DateTime(2023, 1, day + 1));
-                return ChoiceChip(
-                  label: Text(dayName),
-                  selected: _weeklyDays?.contains(day) ?? false,
-                  onSelected: (selected) {
-                    setState(() {
-                      _weeklyDays ??= [];
-                      if (selected) {
-                        _weeklyDays!.add(day);
-                      } else {
-                        _weeklyDays!.remove(day);
-                      }
-                      _weeklyDays!.sort();
-                    });
-                  },
-                );
-              }),
-            ),
-          ],
-          const SizedBox(height: 16),
-          InkWell(
-            onTap: () => _selectEndDate(context),
-            child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'End Date (optional)',
-                border: OutlineInputBorder(),
-              ),
-              child: Text(
-                _endDate != null
-                    ? '${_endDate!.month}/${_endDate!.day}/${_endDate!.year}'
-                    : 'No end date',
-                style: TextStyle(
-                  color: _endDate != null
-                      ? Theme.of(context).textTheme.bodyLarge?.color
-                      : Colors.grey,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+// Keep the old class name for backwards compatibility
+class TaskCreationDialog extends EnhancedTaskCreationDialog {
+  const TaskCreationDialog({
+    Key? key,
+    DateTime? initialDate,
+    TimeOfDay? initialTime,
+  }) : super(key: key, initialDate: initialDate, initialTime: initialTime);
 }
