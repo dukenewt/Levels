@@ -12,6 +12,7 @@ import 'core/global_error_handler.dart';
 import 'core/offline_manager.dart';
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
+import 'services/task_notification_service.dart';
 
 const bool USE_ENHANCED_ARCHITECTURE = true; // Toggle this for testing
 
@@ -22,6 +23,9 @@ void main() async {
   AppLogger.instance.initialize();
   GlobalErrorHandler.instance.initialize(AppLogger.instance);
   OfflineManager.instance.initialize();
+  
+  // Initialize notification service
+  await TaskNotificationService.instance.initialize();
   
   try {
     final prefs = await SharedPreferences.getInstance();

@@ -398,18 +398,20 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
   }
 
   Widget _buildTaskTile(Task task) {
-    final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: TaskTile(
+        key: ValueKey(task.id),
         task: task,
-        onEdit: () {
-          showDialog(
-            context: context,
-            builder: (context) => TaskEditingDialog(task: task),
-          );
-        },
+        onEdit: () => _showEditTaskDialog(context, task: task),
       ),
+    );
+  }
+
+  void _showEditTaskDialog(BuildContext context, {required Task task}) {
+    showDialog(
+      context: context,
+      builder: (context) => TaskEditingDialog(task: task),
     );
   }
 

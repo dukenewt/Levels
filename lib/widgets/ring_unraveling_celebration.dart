@@ -90,23 +90,37 @@ class _RingUnravelingCelebrationState extends State<RingUnravelingCelebration>
   }
   
   void _startCelebration() async {
-    // Phase 1: Unravel the ring
-    setState(() => _currentPhase = AnimationPhase.unraveling);
-    await _unravelController.forward();
-    
-    // Phase 2: Expand and celebrate
-    setState(() => _currentPhase = AnimationPhase.expanding);
-    await _expansionController.forward();
-    
-    // Wait a moment for the user to enjoy the celebration
-    await Future.delayed(const Duration(milliseconds: 2000));
-    
-    // Phase 3: Reform the ring for the new level
-    setState(() => _currentPhase = AnimationPhase.reforming);
-    await _reformController.forward();
-    
-    // Celebration complete
-    widget.onComplete();
+    try {
+      // Phase 1: Unravel the ring
+      if (!mounted) return;
+      setState(() => _currentPhase = AnimationPhase.unraveling);
+      await _unravelController.forward();
+      
+      // Phase 2: Expand and celebrate
+      if (!mounted) return;
+      setState(() => _currentPhase = AnimationPhase.expanding);
+      await _expansionController.forward();
+      
+      // Wait a moment for the user to enjoy the celebration
+      if (!mounted) return;
+      await Future.delayed(const Duration(milliseconds: 2000));
+      
+      // Phase 3: Reform the ring for the new level
+      if (!mounted) return;
+      setState(() => _currentPhase = AnimationPhase.reforming);
+      await _reformController.forward();
+      
+      // Celebration complete - ensure widget is still mounted
+      if (mounted) {
+        widget.onComplete();
+      }
+    } catch (e) {
+      debugPrint('Error in ring celebration animation: $e');
+      // Ensure cleanup happens even if there's an error
+      if (mounted) {
+        widget.onComplete();
+      }
+    }
   }
   
   @override

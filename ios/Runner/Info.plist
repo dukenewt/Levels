@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -24,6 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -41,9 +45,20 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+	<!-- Photo Library Access -->
+<key>NSPhotoLibraryUsageDescription</key>
+<string>TaskBound may need to access your photo library to allow you to attach images to your tasks or export task data with visual elements.</string>
+
+<!-- Camera Access -->
+<key>NSCameraUsageDescription</key>
+<string>TaskBound may need camera access to allow you to capture images for your tasks or documentation.</string>
+
+<!-- Microphone Access -->
+<key>NSMicrophoneUsageDescription</key>
+<string>TaskBound may need microphone access for voice notes or audio reminders related to your tasks.</string>
+
+<!-- Location Access -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>TaskBound may use your location to provide location-based task reminders or context.</string>
 </dict>
 </plist>

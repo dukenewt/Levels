@@ -16,6 +16,15 @@ class SettingsProvider with ChangeNotifier {
   bool _showExerciseTasks = true;
   bool _isDarkMode = false;
   
+  // Notification settings
+  bool _enableTaskReminders = true;
+  bool _enableDueDateNotifications = true;
+  bool _enableOverdueNotifications = true;
+  bool _enableCompletionCelebrations = true;
+  bool _enableStreakReminders = true;
+  bool _enableReEngagementNotifications = true;
+  int _reminderMinutesBefore = 30; // Default 30 minutes before due time
+  
   // Getters
   bool get showTodayTasks => _showTodayTasks;
   bool get showTomorrowTasks => _showTomorrowTasks;
@@ -26,6 +35,15 @@ class SettingsProvider with ChangeNotifier {
   bool get showSchoolTasks => _showSchoolTasks;
   bool get showExerciseTasks => _showExerciseTasks;
   bool get isDarkMode => _isDarkMode;
+  
+  // Notification getters
+  bool get enableTaskReminders => _enableTaskReminders;
+  bool get enableDueDateNotifications => _enableDueDateNotifications;
+  bool get enableOverdueNotifications => _enableOverdueNotifications;
+  bool get enableCompletionCelebrations => _enableCompletionCelebrations;
+  bool get enableStreakReminders => _enableStreakReminders;
+  bool get enableReEngagementNotifications => _enableReEngagementNotifications;
+  int get reminderMinutesBefore => _reminderMinutesBefore;
   
   // Initialize settings from SharedPreferences
   Future<void> loadSettings() async {
@@ -44,6 +62,14 @@ class SettingsProvider with ChangeNotifier {
       _showSchoolTasks = _prefs?.getBool('showSchoolTasks') ?? true;
       _showExerciseTasks = _prefs?.getBool('showExerciseTasks') ?? true;
       _isDarkMode = _prefs?.getBool('isDarkMode') ?? false;
+      
+      _enableTaskReminders = _prefs?.getBool('enableTaskReminders') ?? true;
+      _enableDueDateNotifications = _prefs?.getBool('enableDueDateNotifications') ?? true;
+      _enableOverdueNotifications = _prefs?.getBool('enableOverdueNotifications') ?? true;
+      _enableCompletionCelebrations = _prefs?.getBool('enableCompletionCelebrations') ?? true;
+      _enableStreakReminders = _prefs?.getBool('enableStreakReminders') ?? true;
+      _enableReEngagementNotifications = _prefs?.getBool('enableReEngagementNotifications') ?? true;
+      _reminderMinutesBefore = _prefs?.getInt('reminderMinutesBefore') ?? 30;
       
       _isInitialized = true;
     } catch (e) {
@@ -158,6 +184,105 @@ class SettingsProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving isDarkMode setting: $e');
+    }
+  }
+  
+  // Notification setting methods
+  Future<void> setEnableTaskReminders(bool value) async {
+    await _ensureInitialized();
+    _enableTaskReminders = value;
+    try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      await _prefs?.setBool('enableTaskReminders', value);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving enableTaskReminders setting: $e');
+    }
+  }
+  
+  Future<void> setEnableDueDateNotifications(bool value) async {
+    await _ensureInitialized();
+    _enableDueDateNotifications = value;
+    try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      await _prefs?.setBool('enableDueDateNotifications', value);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving enableDueDateNotifications setting: $e');
+    }
+  }
+  
+  Future<void> setEnableOverdueNotifications(bool value) async {
+    await _ensureInitialized();
+    _enableOverdueNotifications = value;
+    try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      await _prefs?.setBool('enableOverdueNotifications', value);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving enableOverdueNotifications setting: $e');
+    }
+  }
+  
+  Future<void> setEnableCompletionCelebrations(bool value) async {
+    await _ensureInitialized();
+    _enableCompletionCelebrations = value;
+    try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      await _prefs?.setBool('enableCompletionCelebrations', value);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving enableCompletionCelebrations setting: $e');
+    }
+  }
+  
+  Future<void> setEnableStreakReminders(bool value) async {
+    await _ensureInitialized();
+    _enableStreakReminders = value;
+    try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      await _prefs?.setBool('enableStreakReminders', value);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving enableStreakReminders setting: $e');
+    }
+  }
+  
+  Future<void> setEnableReEngagementNotifications(bool value) async {
+    await _ensureInitialized();
+    _enableReEngagementNotifications = value;
+    try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      await _prefs?.setBool('enableReEngagementNotifications', value);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving enableReEngagementNotifications setting: $e');
+    }
+  }
+  
+  Future<void> setReminderMinutesBefore(int value) async {
+    await _ensureInitialized();
+    _reminderMinutesBefore = value;
+    try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      await _prefs?.setInt('reminderMinutesBefore', value);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving reminderMinutesBefore setting: $e');
     }
   }
 } 
