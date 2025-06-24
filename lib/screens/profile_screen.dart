@@ -4,6 +4,8 @@ import '../providers/secure_user_provider.dart';
 import '../providers/theme_provider.dart';
 import 'settings_screen.dart';
 import 'theme_selection_screen.dart';
+import 'support_screen.dart';
+import 'notification_preferences_screen.dart';
 import '../models/user_rank.dart';
 import '../widgets/professional_progress_card.dart';
 
@@ -175,6 +177,12 @@ class ProfileScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               // TODO: Implement edit profile
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Profile editing coming soon!'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
             },
           ),
           const Divider(height: 1),
@@ -183,7 +191,10 @@ class ProfileScreen extends StatelessWidget {
             title: const Text('Notifications'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // TODO: Implement notifications settings
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationPreferencesScreen()),
+              );
             },
           ),
           const Divider(height: 1),
@@ -193,15 +204,36 @@ class ProfileScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               // TODO: Implement privacy settings
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Privacy settings coming soon!'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
             },
           ),
           const Divider(height: 1),
           ListTile(
-            leading: const Icon(Icons.help),
+            leading: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                Icons.help,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
+            ),
             title: const Text('Help & Support'),
+            subtitle: const Text('Get help and send feedback'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // TODO: Implement help & support
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SupportScreen()),
+              );
             },
           ),
         ],

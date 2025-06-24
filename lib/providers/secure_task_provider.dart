@@ -277,7 +277,7 @@ class SecureTaskProvider with ChangeNotifier {
 
     try {
       final completionService =
-          TaskCompletionService(_userProvider, this);
+          TaskCompletionService(_userProvider, this, context);
       final result =
           await completionService.completeTask(task, isEnhanced: isEnhanced);
 
@@ -304,15 +304,8 @@ class SecureTaskProvider with ChangeNotifier {
           return Result.failure(saveResult.error!);
         }
 
-        final xpResult = await _userProvider.addXp(xpGained);
-        if (!xpResult.isSuccess) {
-          // Rollback task completion
-          _tasks[taskIndex] = task; // Revert to original task
-          await _storage.taskRepository.updateTask(task); // Save original task state
-          _updateTasksByCategory();
-          notifyListeners();
-          return Result.failure(xpResult.error as AppException);
-        }
+        // XP is already added by the completion service, so we don't add it again here
+        // This prevents double counting of XP
 
         // Notify UI
         if (context.mounted) {

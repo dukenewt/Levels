@@ -65,20 +65,24 @@ class EnhancedCelebrationController {
 
     _isShowingCelebration = true;
     
-    // For XP gain celebrations, we could show a mini version
-    // This could be a separate, simpler animation
-    debugPrint('💫 XP gain celebration: +$xpGained XP');
-    debugPrint('   Current progress: ${(currentProgress * 100).toStringAsFixed(1)}%');
-    debugPrint('   Ring color: ${ringColor.toString()}');
-    
-    // You could implement a simpler ring animation here for non-level-up XP gains
-    // For now, we'll show a brief pulse effect or mini celebration
-    
-    // For now, just dismiss after the specified duration
-    final celebrationDuration = duration ?? const Duration(milliseconds: 1500);
-    Future.delayed(celebrationDuration, () {
+    try {
+      // For XP gain celebrations, we could show a mini version
+      // This could be a separate, simpler animation
+      debugPrint('💫 XP gain celebration: +$xpGained XP');
+      debugPrint('   Current progress: ${(currentProgress * 100).toStringAsFixed(1)}%');
+      debugPrint('   Ring color: ${ringColor.toString()}');
+      
+      // You could implement a simpler ring animation here for non-level-up XP gains
+      // For now, we'll show a brief pulse effect or mini celebration
+      
+      // For now, just dismiss after the specified duration
+      final celebrationDuration = duration ?? const Duration(milliseconds: 1500);
+      await Future.delayed(celebrationDuration);
+    } catch (e) {
+      debugPrint('Error in XP gain celebration: $e');
+    } finally {
       _isShowingCelebration = false;
-    });
+    }
   }
 
   /// Show a preview of the unraveling animation for testing
