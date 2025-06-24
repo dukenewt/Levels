@@ -8,6 +8,7 @@ import '../models/task_results.dart';
 import 'task_editing_dialog.dart';
 import '../core/error_handling.dart';
 import '../core/theme/app_design_tokens.dart';
+import '../core/utils/date_helpers.dart';
 
 class TaskTile extends StatefulWidget {
   final Task task;
@@ -155,8 +156,9 @@ class _TaskTileState extends State<TaskTile>
         _isCompleting = true;
       });
       
-      // Stop idle animations
-      _pulseController.stop();
+      // Stop all animations cleanly using safe methods
+      _pulseController.safeStop();
+      _hoverController.safeStop();
       
       // Start completion animation
       _completionController.forward();
@@ -169,12 +171,16 @@ class _TaskTileState extends State<TaskTile>
           if (result.isSuccess) {
             // Let completion animation finish before showing success
             await Future.delayed(const Duration(milliseconds: 400));
+            
+            // Ensure all animations are in their final completed state
             if (mounted) {
-              _showSuccessMessage(result);
+              _ensureAnimationsInCompletedState();
+              // Note: XP reward snackbar is shown by the task provider, 
+              // so we don't need to show another success message here
             }
           } else {
             // Revert animation on error
-            _completionController.reverse();
+            await _revertCompletionAnimation();
             _handleCompletionError(result);
             _startIdleAnimations(); // Restart idle animations
           }
@@ -182,7 +188,7 @@ class _TaskTileState extends State<TaskTile>
       } catch (e) {
         debugPrint('Unexpected error in task completion: $e');
         if (mounted) {
-          _completionController.reverse();
+          await _revertCompletionAnimation();
           _showUnexpectedErrorMessage();
           _startIdleAnimations();
         }
@@ -194,16 +200,42 @@ class _TaskTileState extends State<TaskTile>
     }
   }
 
+  /// Ensure all animations are in their proper completed state
+  void _ensureAnimationsInCompletedState() {
+    // Stop any lingering animations
+    _pulseController.safeStop();
+    _hoverController.safeReset();
+    
+    // Reset hover state
+    setState(() => _isHovered = false);
+  }
+
+  /// Safely revert completion animation with proper cleanup
+  Future<void> _revertCompletionAnimation() async {
+    await _completionController.safeReverse();
+    
+    // Reset hover state
+    if (mounted) {
+      setState(() => _isHovered = false);
+    }
+  }
+
   void _handleTapDown(TapDownDetails details) {
-    _hoverController.forward();
+    if (!_isCompleting && !widget.task.isCompleted) {
+      _hoverController.forward();
+    }
   }
 
   void _handleTapUp(TapUpDetails details) {
-    _hoverController.reverse();
+    if (!_isCompleting) {
+      _hoverController.reverse();
+    }
   }
 
   void _handleTapCancel() {
-    _hoverController.reverse();
+    if (!_isCompleting) {
+      _hoverController.reverse();
+    }
   }
 
   void _showSuccessMessage(Result<TaskCompletionResult> result) {
@@ -292,6 +324,28 @@ class _TaskTileState extends State<TaskTile>
     );
   }
 
+  @override
+  void didUpdateWidget(TaskTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Check if task completion state changed
+    if (oldWidget.task.isCompleted != widget.task.isCompleted) {
+      if (widget.task.isCompleted) {
+        // Task was just completed - ensure animations are in completed state
+        _ensureAnimationsInCompletedState();
+        // Force immediate rebuild to reflect completion state
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+      } else if (!widget.task.isCompleted && !_isCompleting) {
+        // Task was uncompleted - restart idle animations
+        _startIdleAnimations();
+      }
+    }
+  }
+
   Widget _buildTaskCard(ThemeData theme) {
     Widget taskWidget = GestureDetector(
       onTapDown: _handleTapDown,
@@ -346,6 +400,7 @@ class _TaskTileState extends State<TaskTile>
     return GestureDetector(
       onTap: widget.task.isCompleted ? null : _handleComplete,
       child: TweenAnimationBuilder<double>(
+        key: ValueKey('completion_${widget.task.id}_${widget.task.isCompleted}'),
         duration: const Duration(milliseconds: 300),
         tween: Tween<double>(
           begin: 0.0,
@@ -402,6 +457,7 @@ class _TaskTileState extends State<TaskTile>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AnimatedDefaultTextStyle(
+          key: ValueKey('title_${widget.task.id}_${widget.task.isCompleted}'),
           duration: const Duration(milliseconds: 300),
           style: theme.textTheme.titleMedium!.copyWith(
             decoration: widget.task.isCompleted 
@@ -416,6 +472,7 @@ class _TaskTileState extends State<TaskTile>
         if (widget.task.description.isNotEmpty) ...[
           const SizedBox(height: 4),
           AnimatedDefaultTextStyle(
+            key: ValueKey('description_${widget.task.id}_${widget.task.isCompleted}'),
             duration: const Duration(milliseconds: 300),
             style: theme.textTheme.bodyMedium!.copyWith(
               color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -439,8 +496,8 @@ class _TaskTileState extends State<TaskTile>
   }
 
   Widget _buildTimeChip(ThemeData theme) {
-    final timeText = _formatTime(widget.task.dueDate!);
-    final isOverdue = widget.task.dueDate!.isBefore(DateTime.now());
+    final isOverdue = DateHelpers.isOverdue(widget.task.dueDate!);
+    final timeText = DateHelpers.formatDueDate(context, widget.task.dueDate!);
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -465,6 +522,7 @@ class _TaskTileState extends State<TaskTile>
 
   Widget _buildXpBadge(ThemeData theme) {
     return TweenAnimationBuilder<double>(
+      key: ValueKey('xp_badge_${widget.task.id}_${widget.task.isCompleted}'),
       duration: const Duration(milliseconds: 300),
       tween: Tween<double>(
         begin: 1.0,
@@ -594,16 +652,6 @@ class _TaskTileState extends State<TaskTile>
         ],
       ),
     );
-  }
-  
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = dateTime.difference(now);
-    if (difference.isNegative) return 'Overdue';
-    if (difference.inDays == 0) return 'Today';
-    if (difference.inDays == 1) return 'Tomorrow';
-    if (difference.inDays < 7) return '${difference.inDays}d';
-    return '${dateTime.day}/${dateTime.month}';
   }
 
   @override

@@ -83,7 +83,7 @@ class AppTheme {
     name: 'Midnight Glow',
     description: 'Comfortable dark theme with warm sunset undertones',
     isPremium: false,
-    primaryColor: Color(0xFF6366F1), // Lighter indigo for dark theme
+    primaryColor: Color(0xFF9597d8), // Lighter indigo for dark theme
     secondaryColor: Color(0xFFEC4899), // Pink
     backgroundColor: Color(0xFF0F172A), // Very dark slate
     surfaceColor: Color(0xFF1E293B), // Dark slate
