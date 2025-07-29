@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
-import '../providers/secure_task_provider.dart';
+import '../providers/task_provider.dart';
 import '../services/intelligent_xp_engine.dart';
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
@@ -146,7 +146,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
 
   void _createTask() {
     if (_formKey.currentState!.validate()) {
-      final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
       final task = Task(
         id: const Uuid().v4(),
         title: _titleController.text,

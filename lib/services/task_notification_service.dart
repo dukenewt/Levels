@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../providers/settings_provider.dart';
-import '../providers/secure_task_provider.dart';
-import '../providers/secure_user_provider.dart';
+import '../providers/task_provider.dart';
 
 /// Service for handling all task-related notifications
 class TaskNotificationService {
@@ -66,7 +65,7 @@ class TaskNotificationService {
   /// Check for and notify about due tasks
   Future<void> checkDueTasks(BuildContext context) async {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
-    final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     
     if (!settings.enableDueDateNotifications) return;
     
@@ -98,7 +97,7 @@ class TaskNotificationService {
   /// Check for and notify about overdue tasks
   Future<void> checkOverdueTasks(BuildContext context) async {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
-    final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     
     if (!settings.enableOverdueNotifications) return;
     
@@ -197,7 +196,7 @@ class TaskNotificationService {
   
   /// Schedule notifications for all active tasks
   Future<void> scheduleAllTaskNotifications(BuildContext context) async {
-    final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     
     // Clear existing scheduled notifications
     await _clearAllScheduledNotifications();

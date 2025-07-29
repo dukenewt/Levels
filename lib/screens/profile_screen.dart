@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dailyxp/services/image_upload_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/secure_user_provider.dart';
+import '../providers/user_provider.dart';
 import '../providers/theme_provider.dart';
 import 'settings_screen.dart';
 import 'theme_selection_screen.dart';
@@ -14,9 +16,11 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<SecureUserProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
-    if (user == null) return const SizedBox.shrink();
+    if (user == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -38,9 +42,38 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             // Profile header
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: const AssetImage('assets/images/avatar.png'),
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: user.profilePictureUrl != null
+                      ? CachedNetworkImageProvider(user.profilePictureUrl!)
+                      : null,
+                  child: user.profilePictureUrl == null
+                      ? Icon(Icons.person, size: 50, color: Colors.grey[600])
+                      : null,
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: -10,
+                  child: IconButton(
+                    icon: const Icon(Icons.camera_alt, color: Colors.blueAccent),
+                    onPressed: () async {
+                      final imageUploadService = ImageUploadService();
+                      final String? imageUrl =
+                          await imageUploadService.pickAndUploadImage(user.id);
+                      if (imageUrl != null && context.mounted) {
+                        await userProvider.updateProfilePicture(imageUrl);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Profile picture updated!')),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Text(
@@ -67,18 +100,13 @@ class ProfileScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Consumer<SecureUserProvider>(
-                    builder: (context, userProvider, child) {
-                      final currentRank = userProvider.currentRank;
-                      return _buildStatCard(
-                        context,
-                        'Level',
-                        user.level.toString(),
-                        Icons.trending_up,
-                        currentRank.color,
-                        subtitle: currentRank.name,
-                      );
-                    },
+                  child: _buildStatCard(
+                    context,
+                    'Level',
+                    user.level.toString(),
+                    Icons.trending_up,
+                    Colors.blue,
+                    subtitle: user.rank,
                   ),
                 ),
                 const SizedBox(width: 16),

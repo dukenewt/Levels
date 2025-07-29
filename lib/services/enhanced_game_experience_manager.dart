@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/secure_user_provider.dart';
+import '../providers/user_provider.dart';
+import '../models/user_rank.dart';
 import '../models/celebration_data.dart';
 import 'enhanced_celebration_controller.dart';
 
@@ -19,28 +20,30 @@ class EnhancedGameExperienceManager {
   void initialize(BuildContext context) {
     _currentContext = context;
     
-    final userProvider = Provider.of<SecureUserProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     
     // Initialize tracking values
-    _lastLevel = userProvider.level;
+    if (userProvider.user != null) {
+      _lastLevel = userProvider.user!.level;
+    }
     _updateXPProgress(userProvider);
     
     // Set up level up callback
-    userProvider.setLevelUpCallback(_handleLevelUp);
+    userProvider.onLevelUp = _handleLevelUp;
     
     debugPrint('🎮 Enhanced GameExperienceManager: Successfully initialized at level $_lastLevel');
   }
   
   /// Call this whenever XP changes but before level up processing
-  void trackXPProgress(SecureUserProvider userProvider) {
-    if (userProvider.level == _lastLevel) {
+  void trackXPProgress(UserProvider userProvider) {
+    if (userProvider.user != null && userProvider.user!.level == _lastLevel) {
       _updateXPProgress(userProvider);
     }
   }
   
-  void _updateXPProgress(SecureUserProvider userProvider) {
-    if (userProvider.nextLevelXp > 0) {
-      _lastXPProgress = userProvider.currentXp / userProvider.nextLevelXp;
+  void _updateXPProgress(UserProvider userProvider) {
+    if (userProvider.user != null && userProvider.nextLevelXp > 0) {
+      _lastXPProgress = userProvider.user!.currentXp / userProvider.nextLevelXp;
     }
   }
   
@@ -54,8 +57,15 @@ class EnhancedGameExperienceManager {
     _isProcessingLevelUp = true;
     
     final context = _currentContext!;
-    final userProvider = Provider.of<SecureUserProvider>(context, listen: false);
-    final currentRank = userProvider.currentRank;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+
+    if (user == null) {
+      _isProcessingLevelUp = false;
+      return;
+    }
+
+    final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first);
     
     // Use the XP progress from just before the level up
     // This should be close to 1.0 (the completed ring)
@@ -95,17 +105,22 @@ class EnhancedGameExperienceManager {
     if (_currentContext == null) return;
     
     final context = _currentContext!;
-    final userProvider = Provider.of<SecureUserProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     
     // Update progress tracking
     trackXPProgress(userProvider);
     
+    final user = userProvider.user;
+    if (user == null) return;
+
+    final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first);
+
     // For significant XP gains, you might want to show a mini celebration
     if (xpGained >= 50) { // Threshold for celebration
       EnhancedCelebrationController.instance.showXPGainCelebration(
         context: context,
         currentProgress: _lastXPProgress,
-        ringColor: userProvider.currentRank.color,
+        ringColor: currentRank.color,
         xpGained: xpGained,
       );
     }

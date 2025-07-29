@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/secure_user_provider.dart';
-import '../providers/secure_task_provider.dart';
+import '../providers/user_provider.dart';
+import '../providers/task_provider.dart';
 import '../services/smart_suggestions_service.dart';
 import '../models/task.dart';
 
@@ -10,11 +10,11 @@ class SmartSuggestionsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<SecureUserProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context);
     if (!userProvider.hasPerk('smart_suggestions')) {
       return const SizedBox.shrink();
     }
-    return Consumer<SecureTaskProvider>(
+    return Consumer<TaskProvider>(
       builder: (context, taskProvider, child) {
         final suggestionsService = SmartSuggestionsService(
           userTasks: taskProvider.tasks,
@@ -87,7 +87,7 @@ class SmartSuggestionsWidget extends StatelessWidget {
   Widget _buildSuggestionCard(
     BuildContext context,
     TaskSuggestion suggestion,
-    SecureTaskProvider taskProvider,
+    TaskProvider taskProvider,
   ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -156,7 +156,7 @@ class SmartSuggestionsWidget extends StatelessWidget {
   void _acceptSuggestion(
     BuildContext context,
     TaskSuggestion suggestion,
-    SecureTaskProvider taskProvider,
+    TaskProvider taskProvider,
   ) async {
     final newTask = Task(
       id: UniqueKey().toString(),

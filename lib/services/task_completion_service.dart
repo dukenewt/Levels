@@ -4,8 +4,8 @@ import '../core/error_handling.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-import '../providers/secure_task_provider.dart';
-import '../providers/secure_user_provider.dart';
+import '../providers/task_provider.dart';
+import '../providers/user_provider.dart';
 import 'smooth_xp_animation_service.dart';
 import 'task_notification_service.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +13,8 @@ import 'package:flutter/material.dart';
 /// Enhanced task completion service that integrates intelligent XP calculation
 /// This bridges your existing task completion with the new XP engine
 class TaskCompletionService {
-  final SecureUserProvider _userProvider;
-  final SecureTaskProvider _taskProvider;
+  final UserProvider _userProvider;
+  final TaskProvider _taskProvider;
   final BuildContext? _context;
 
   TaskCompletionService(this._userProvider, this._taskProvider, [this._context]);

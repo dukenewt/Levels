@@ -374,7 +374,7 @@ Feedback: $feedback
   void _launchEmail() async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'support@dailyxp.app',
+      path: 'support@taskbound.app',
       query: 'subject=Daily XP Support Request',
     );
     
@@ -384,7 +384,7 @@ Feedback: $feedback
   }
 
   void _launchWebsite() async {
-    final Uri websiteUri = Uri.parse('https://dailyxp.app');
+    final Uri websiteUri = Uri.parse('https://taskbound.app');
     
     if (await canLaunchUrl(websiteUri)) {
       await launchUrl(websiteUri);

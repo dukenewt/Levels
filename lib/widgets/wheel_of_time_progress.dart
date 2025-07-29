@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
-import '../providers/secure_user_provider.dart';
-import '../providers/secure_task_provider.dart';
+import '../providers/user_provider.dart';
+import '../providers/task_provider.dart';
 import '../models/user_rank.dart';
+import '../models/user.dart' as app;
 import '../services/smooth_xp_animation_service.dart';
 
 class WheelOfTimeProgress extends StatefulWidget {
@@ -48,13 +49,15 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
     // Initialize XP tracking
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final userProvider = Provider.of<SecureUserProvider>(context, listen: false);
-        _previousXP = userProvider.currentXp;
-        _previousNextLevelXP = userProvider.nextLevelXp;
-        _previousXPProgress = userProvider.nextLevelXp > 0 
-            ? userProvider.currentXp / userProvider.nextLevelXp
-            : 0.0;
-        _currentDisplayedXPProgress = _previousXPProgress;
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        if (userProvider.user != null) {
+          _previousXP = userProvider.user!.currentXp;
+          _previousNextLevelXP = userProvider.nextLevelXp;
+          _previousXPProgress = userProvider.nextLevelXp > 0 
+              ? userProvider.user!.currentXp / userProvider.nextLevelXp
+              : 0.0;
+          _currentDisplayedXPProgress = _previousXPProgress;
+        }
       }
     });
     
@@ -190,32 +193,37 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<SecureUserProvider>(context);
-    final taskProvider = Provider.of<SecureTaskProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context);
+    final taskProvider = Provider.of<TaskProvider>(context);
     final theme = Theme.of(context);
+    final user = userProvider.user;
+
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
 
     // Calculate the current XP progress
     final currentXPProgress = userProvider.nextLevelXp > 0 
-        ? userProvider.currentXp / userProvider.nextLevelXp 
+        ? user.currentXp / userProvider.nextLevelXp 
         : 0.0;
     
     // Check if XP has changed and animate if needed
-    if (_isInitialized && (userProvider.currentXp != _previousXP || userProvider.nextLevelXp != _previousNextLevelXP)) {
+    if (_isInitialized && (user.currentXp != _previousXP || userProvider.nextLevelXp != _previousNextLevelXP)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _isInitialized) {
-          debugPrint('🎯 XP changed: ${_previousXP} -> ${userProvider.currentXp}, animating from $_currentDisplayedXPProgress to $currentXPProgress');
+          debugPrint('🎯 XP changed: ${_previousXP} -> ${user.currentXp}, animating from $_currentDisplayedXPProgress to $currentXPProgress');
           _animateXPProgress(currentXPProgress);
-          _previousXP = userProvider.currentXp;
+          _previousXP = user.currentXp;
           _previousNextLevelXP = userProvider.nextLevelXp;
           _previousXPProgress = currentXPProgress;
         }
       });
     }
     
-    final currentRank = userProvider.currentRank;
-    final nextRank = UserRank.getNextRank(userProvider.level);
+    final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first);
+    final nextRank = UserRank.getNextRank(user.level);
     final rankProgress = nextRank != null 
-        ? (userProvider.level - currentRank.requiredLevel) / 
+        ? (user.level - currentRank.requiredLevel) / 
           (nextRank.requiredLevel - currentRank.requiredLevel)
         : 1.0;
 
@@ -288,7 +296,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
             const SizedBox(height: 24),
             
             // Legend
-            _buildLegend(context, userProvider, completedTasks, totalTasks),
+            _buildLegend(context, user, userProvider, completedTasks, totalTasks),
           ],
         ),
       ),
@@ -297,13 +305,13 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
 
   // Debug method to test XP animation
   void _testXPAnimation(BuildContext context) {
-    final userProvider = Provider.of<SecureUserProvider>(context, listen: false);
-    SmoothXPAnimationService.instance.testXPAnimation(userProvider, amount: 25);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.user == null) return;
+    SmoothXPAnimationService.instance.testXPAnimation(userProvider);
   }
 
-  Widget _buildLegend(BuildContext context, SecureUserProvider userProvider, int completedTasks, int totalTasks) {
+  Widget _buildLegend(BuildContext context, app.User user, UserProvider userProvider, int completedTasks, int totalTasks) {
     final theme = Theme.of(context);
-    final currentRank = userProvider.currentRank;
     
     return Column(
       children: [
@@ -315,7 +323,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
               context,
               color: theme.colorScheme.primary,
               label: 'XP Progress',
-              current: userProvider.currentXp,
+              current: user.currentXp,
               max: userProvider.nextLevelXp,
                              isAnimating: _xpProgressController.isAnimating,
             );
@@ -324,10 +332,10 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
         const SizedBox(height: 8),
         _buildLegendItem(
           context,
-          color: currentRank.color,
+          color: UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first).color,
           label: 'Rank Progress',
-          current: userProvider.level,
-          max: UserRank.getNextRank(userProvider.level)?.requiredLevel ?? userProvider.level,
+          current: user.level,
+          max: UserRank.getNextRank(user.level)?.requiredLevel ?? user.level,
         ),
         const SizedBox(height: 8),
         _buildLegendItem(
