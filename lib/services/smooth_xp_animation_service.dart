@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../providers/secure_user_provider.dart';
+import '../providers/user_provider.dart';
 import '../services/enhanced_game_experience_manager.dart';
 
 /// Service to handle smooth XP animations
@@ -14,7 +14,7 @@ class SmoothXPAnimationService {
   /// Add XP with smooth animation
   /// This is the preferred method for adding XP that should animate smoothly
   Future<void> addXPWithAnimation({
-    required SecureUserProvider userProvider,
+    required UserProvider userProvider,
     required int xpAmount,
     Duration? animationDelay,
   }) async {
@@ -35,20 +35,16 @@ class SmoothXPAnimationService {
       debugPrint('💫 Starting smooth XP animation: +$xpAmount XP');
       
       // Track XP progress BEFORE adding XP
-      EnhancedGameExperienceManager.instance.trackXPProgress(userProvider);
+      // EnhancedGameExperienceManager.instance.trackXPProgress(userProvider);
       
       // Add the XP (this will trigger the ring animation)
-      final result = await userProvider.addXp(xpAmount);
+      await userProvider.addXp(xpAmount);
       
-      if (result.isSuccess) {
-        debugPrint('💫 XP added successfully, animation should be visible');
-        
-        // Optional delay for visual effect
-        if (animationDelay != null) {
-          await Future.delayed(animationDelay);
-        }
-      } else {
-        debugPrint('💫 Failed to add XP: ${result.error}');
+      debugPrint('💫 XP added successfully, animation should be visible');
+      
+      // Optional delay for visual effect
+      if (animationDelay != null) {
+        await Future.delayed(animationDelay);
       }
       
     } catch (e) {
@@ -61,7 +57,7 @@ class SmoothXPAnimationService {
   /// Add multiple XP amounts with staggered animations
   /// Useful for when multiple tasks are completed at once
   Future<void> addMultipleXPWithStaggeredAnimation({
-    required SecureUserProvider userProvider,
+    required UserProvider userProvider,
     required List<int> xpAmounts,
     Duration staggerDelay = const Duration(milliseconds: 300),
   }) async {
@@ -79,7 +75,7 @@ class SmoothXPAnimationService {
   }
 
   /// Quick method to test XP animation (for debugging)
-  Future<void> testXPAnimation(SecureUserProvider userProvider, {int amount = 25}) async {
+  Future<void> testXPAnimation(UserProvider userProvider, {int amount = 25}) async {
     debugPrint('🧪 Testing XP animation with $amount XP');
     await addXPWithAnimation(
       userProvider: userProvider,

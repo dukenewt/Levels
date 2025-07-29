@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/task.dart';
-import '../../providers/secure_task_provider.dart';
+import '../../providers/task_provider.dart';
 import '../task_tile.dart';
 
 class MonthCalendarView extends StatelessWidget {
@@ -12,29 +12,27 @@ class MonthCalendarView extends StatelessWidget {
 
   const MonthCalendarView({Key? key, required this.focusedDay}) : super(key: key);
 
-  Future<Map<String, List<Task>>> _loadMonthTasks(SecureTaskProvider taskProvider, DateTime focusedDay) async {
+  Future<Map<String, List<Task>>> _loadMonthTasks(TaskProvider taskProvider, DateTime focusedDay) async {
     final firstDayOfMonth = DateTime(focusedDay.year, focusedDay.month, 1);
     final lastDayOfMonth = DateTime(focusedDay.year, focusedDay.month + 1, 0);
-    final allMonthTasks = <Task>[];
-    for (int i = 0; i < lastDayOfMonth.day; i++) {
-      final day = firstDayOfMonth.add(Duration(days: i));
-      final tasksForDay = await taskProvider.getTasksForDate(day);
-      allMonthTasks.addAll(tasksForDay.where((task) => !task.isCompleted));
-    }
-    // Group tasks by date
+
+    final tasks = taskProvider.tasks.where((task) {
+      if (task.dueDate == null) return false;
+      return !task.dueDate!.isBefore(firstDayOfMonth) &&
+          !task.dueDate!.isAfter(lastDayOfMonth);
+    }).toList();
+
     final Map<String, List<Task>> tasksByDate = {};
-    for (final task in allMonthTasks) {
-      if (task.dueDate != null) {
-        final dateKey = DateFormat('yyyy-MM-dd').format(task.dueDate!);
-        tasksByDate.putIfAbsent(dateKey, () => []).add(task);
-      }
+    for (final task in tasks) {
+      final dateKey = DateFormat('yyyy-MM-dd').format(task.dueDate!);
+      tasksByDate.putIfAbsent(dateKey, () => []).add(task);
     }
     return tasksByDate;
   }
 
   @override
   Widget build(BuildContext context) {
-    final taskProvider = Provider.of<SecureTaskProvider>(context);
+    final taskProvider = Provider.of<TaskProvider>(context);
     return FutureBuilder<Map<String, List<Task>>>(
       future: _loadMonthTasks(taskProvider, focusedDay),
       builder: (context, snapshot) {

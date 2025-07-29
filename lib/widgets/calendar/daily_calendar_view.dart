@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/task.dart';
-import '../../providers/secure_task_provider.dart';
+import '../../providers/task_provider.dart';
 import '../task_tile.dart';
 
 class DailyCalendarView extends StatelessWidget {
@@ -19,7 +19,8 @@ class DailyCalendarView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final taskProvider = Provider.of<SecureTaskProvider>(context);
+    final taskProvider = Provider.of<TaskProvider>(context);
+    final theme = Theme.of(context);
     final now = DateTime.now();
     final nextWeek = now.add(const Duration(days: 7));
     final floatingTasks = taskProvider.tasks

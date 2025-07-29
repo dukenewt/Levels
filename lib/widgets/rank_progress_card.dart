@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/secure_user_provider.dart';
+import '../providers/user_provider.dart';
 import '../models/user_rank.dart';
 
 class RankProgressCard extends StatelessWidget {
@@ -8,10 +8,15 @@ class RankProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SecureUserProvider>(
+    return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
-        final currentRank = userProvider.currentRank;
-        final nextRank = userProvider.nextRank;
+        final user = userProvider.user;
+        if (user == null) {
+          return const SizedBox.shrink();
+        }
+
+        final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first);
+        final nextRank = UserRank.getNextRank(user.level);
         final theme = Theme.of(context);
 
         return Card(
@@ -60,13 +65,13 @@ class RankProgressCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
-                    value: userProvider.level / nextRank.requiredLevel,
+                    value: user.level / nextRank.requiredLevel,
                     backgroundColor: Colors.grey[200],
                     valueColor: AlwaysStoppedAnimation<Color>(nextRank.color),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Level ${userProvider.level} / ${nextRank.requiredLevel}',
+                    'Level ${user.level} / ${nextRank.requiredLevel}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: Colors.grey[600],
                     ),

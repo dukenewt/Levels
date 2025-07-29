@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/secure_user_provider.dart';
+import '../providers/user_provider.dart';
 
 class LevelIndicator extends StatelessWidget {
   const LevelIndicator({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SecureUserProvider>(
+    return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
-        final currentXP = userProvider.currentXp;
-        final currentLevel = userProvider.level;
+        final user = userProvider.user;
+        if (user == null) {
+          return const SizedBox.shrink();
+        }
+        final currentXP = user.currentXp;
+        final currentLevel = user.level;
         final nextLevelXp = userProvider.nextLevelXp;
-        final progress = currentXP / nextLevelXp;
+        final progress = (nextLevelXp > 0) ? currentXP / nextLevelXp : 0.0;
 
         return Card(
           elevation: 2,

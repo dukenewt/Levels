@@ -11,6 +11,8 @@ class User {
   final int level;
   final int currentXp;
   final String rank;
+  final String? profilePictureUrl;
+  final List<String> perks;
 
   User({
     required this.id,
@@ -21,6 +23,8 @@ class User {
     this.level = 1,
     this.currentXp = 0,
     String? rank,
+    this.profilePictureUrl,
+    this.perks = const [],
   }) : rank = rank ?? UserRank.getRankForLevel(level).name;
 
   User copyWith({
@@ -32,6 +36,8 @@ class User {
     int? level,
     int? currentXp,
     String? rank,
+    String? profilePictureUrl,
+    List<String>? perks,
   }) {
     return User(
       id: id ?? this.id,
@@ -42,6 +48,8 @@ class User {
       level: level ?? this.level,
       currentXp: currentXp ?? this.currentXp,
       rank: rank ?? UserRank.getRankForLevel(level ?? this.level).name,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+      perks: perks ?? this.perks,
     );
   }
 
@@ -55,6 +63,8 @@ class User {
       'level': level,
       'currentXp': currentXp,
       'rank': rank,
+      'profilePictureUrl': profilePictureUrl,
+      'perks': perks,
     };
   }
 
@@ -68,6 +78,8 @@ class User {
       level: json['level'] as int,
       currentXp: json['currentXp'] as int,
       rank: json['rank'] as String?,
+      profilePictureUrl: json['profilePictureUrl'] as String?,
+      perks: json['perks'] != null ? List<String>.from(json['perks']) : [],
     );
   }
 } 

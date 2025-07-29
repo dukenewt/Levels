@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/secure_user_provider.dart';
+import '../providers/user_provider.dart';
+import '../models/user_rank.dart';
 import 'unified_progress_bar.dart';
 
 class LevelProgressCard extends StatefulWidget {
@@ -103,8 +104,14 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final userProvider = Provider.of<SecureUserProvider>(context);
-    final currentRank = userProvider.currentRank;
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.user;
+
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
+    
+    final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first);
     final xpBarColor = theme.colorScheme.primary;
     
     return ScaleTransition(

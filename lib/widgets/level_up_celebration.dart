@@ -6,7 +6,7 @@ import '../core/theme/app_design_tokens.dart';
 
 /// Enhanced level up celebration widget with beautiful animations and confetti
 /// This widget is purely presentational - it only handles the visual appearance
-/// The logic for when and how to show celebrations is handled by CelebrationController
+/// The logic for when and how to show celebrations is handled by EnhancedCelebrationController
 class LevelUpCelebration extends StatefulWidget {
   final CelebrationData celebrationData;
   final VoidCallback onDismiss;

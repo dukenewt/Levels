@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
-import '../providers/secure_task_provider.dart';
-import '../providers/secure_user_provider.dart';
+import '../providers/task_provider.dart';
 
 class AddTaskBottomSheet extends StatefulWidget {
   const AddTaskBottomSheet({Key? key}) : super(key: key);
@@ -37,8 +36,7 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
-    final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
-    final userProvider = Provider.of<SecureUserProvider>(context, listen: false);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
     final task = Task(
       id: DateTime.now().millisecondsSinceEpoch.toString(),

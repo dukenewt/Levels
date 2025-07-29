@@ -3,12 +3,14 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 
 import '../models/task.dart';
-import '../providers/secure_task_provider.dart';
+import '../providers/task_provider.dart';
 import '../models/task_results.dart';
 import 'task_editing_dialog.dart';
 import '../core/error_handling.dart';
 import '../core/theme/app_design_tokens.dart';
 import '../core/utils/date_helpers.dart';
+import '../services/task_completion_service.dart';
+import '../providers/user_provider.dart';
 
 class TaskTile extends StatefulWidget {
   final Task task;
@@ -164,8 +166,12 @@ class _TaskTileState extends State<TaskTile>
       _completionController.forward();
       
       try {
-        final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
-        final result = await taskProvider.completeTask(context, widget.task, isEnhanced: true);
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        final result = await TaskCompletionService(
+          Provider.of<UserProvider>(context, listen: false),
+          taskProvider,
+          context
+        ).completeTask(widget.task);
         
         if (mounted) {
           if (result.isSuccess) {
@@ -643,11 +649,37 @@ class _TaskTileState extends State<TaskTile>
             child: const Text('Cancel'),
           ),
           TextButton(
+            child: const Text('Delete'),
             onPressed: () {
-              Navigator.pop(context);
-              Provider.of<SecureTaskProvider>(context, listen: false).deleteTask(widget.task.id);
+              final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+              taskProvider.deleteTask(widget.task.id);
+              Navigator.of(context).pop();
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMarkAsCompletedDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark Task as Completed'),
+        content: const Text('Are you sure you want to mark this task as completed?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            child: const Text('Complete'),
+            onPressed: () {
+              final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+              final userProvider = Provider.of<UserProvider>(context, listen: false);
+              TaskCompletionService(userProvider, taskProvider, context).completeTask(widget.task);
+              Navigator.of(context).pop();
+            },
           ),
         ],
       ),

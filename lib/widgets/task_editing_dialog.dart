@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
-import '../providers/secure_task_provider.dart';
+import '../providers/task_provider.dart';
 import '../services/intelligent_xp_engine.dart';
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
@@ -140,28 +140,28 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
     super.dispose();
   }
 
-  void _updateTask() {
-    if (_formKey.currentState!.validate()) {
-      final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
-      
-      final updatedTask = widget.task.copyWith(
-        title: _titleController.text,
-        description: _descriptionController.text,
-        difficulty: _difficulty,
-        category: _category,
-        xpReward: _xpReward,
-        dueDate: _dueDate,
-        scheduledTime: _showTimePicker ? _scheduledTime : null,
-        recurrencePattern: _recurrencePattern == 'None' ? null : _recurrencePattern?.toLowerCase(),
-        weeklyDays: _weeklyDays,
-        repeatInterval: _repeatInterval,
-        endDate: _endDate,
-        timeCostMinutes: _timeCostMinutes,
-      );
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
 
-      taskProvider.updateTask(updatedTask);
-      Navigator.of(context).pop();
-    }
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+    final updatedTask = widget.task.copyWith(
+      title: _titleController.text,
+      description: _descriptionController.text,
+      difficulty: _difficulty,
+      category: _category,
+      xpReward: _xpReward,
+      dueDate: _dueDate,
+      scheduledTime: _showTimePicker ? _scheduledTime : null,
+      recurrencePattern: _recurrencePattern == 'None' ? null : _recurrencePattern?.toLowerCase(),
+      weeklyDays: _weeklyDays,
+      repeatInterval: _repeatInterval,
+      endDate: _endDate,
+      timeCostMinutes: _timeCostMinutes,
+    );
+
+    taskProvider.updateTask(updatedTask);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -866,7 +866,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
             Expanded(
               flex: 2,
               child: ElevatedButton(
-                onPressed: _updateTask,
+                onPressed: _submit,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -889,7 +889,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
         const SizedBox(height: 16),
         TextButton.icon(
           onPressed: () {
-            final taskProvider = Provider.of<SecureTaskProvider>(context, listen: false);
+            final taskProvider = Provider.of<TaskProvider>(context, listen: false);
             taskProvider.deleteTask(widget.task.id);
             Navigator.of(context).pop();
           },
