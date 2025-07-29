@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../models/user.dart';
-import 'secure_user_provider.dart';
+import 'user_provider.dart';
 import 'package:collection/collection.dart';
 
 import 'settings_provider.dart';
@@ -23,11 +23,11 @@ enum TaskOperationState {
   completing,
 }
 
-class SecureTaskProvider with ChangeNotifier {
+class TaskProvider with ChangeNotifier {
   List<Task> _tasks = [];
   final Map<String, List<Task>> _tasksByCategory = {};
   final SecureStorageService _storage;
-  final SecureUserProvider _userProvider;
+  final UserProvider _userProvider;
   
   // State management
   TaskOperationState _operationState = TaskOperationState.idle;
@@ -37,17 +37,23 @@ class SecureTaskProvider with ChangeNotifier {
   
   final _uuid = const Uuid();
 
-  SecureTaskProvider({
+  TaskProvider({
     required SecureStorageService storage,
-    required SecureUserProvider userProvider,
+    required UserProvider userProvider,
   }) : _storage = storage,
        _userProvider = userProvider {
     // Only initialize if dependencies are ready
-    if (userProvider.isInitialized) {
+    if (userProvider.user != null) {
       _initializeProvider();
     } else {
       _setupDependencyListeners();
     }
+  }
+
+  void updateUserProvider(UserProvider userProvider) {
+    _userProvider.removeListener(_checkDependenciesReady);
+    _setupDependencyListeners();
+    _initializeProvider();
   }
 
   // Getters with safety checks
@@ -104,7 +110,7 @@ class SecureTaskProvider with ChangeNotifier {
   }
 
   void _checkDependenciesReady() {
-    if (_userProvider.isInitialized && 
+    if (_userProvider.user != null && 
         !_isInitialized && 
         !_isInitializing) {
       debugPrint('🎉 TaskProvider: Dependencies ready, starting initialization');

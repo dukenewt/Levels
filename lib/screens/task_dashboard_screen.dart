@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../providers/secure_user_provider.dart';
-import '../providers/secure_task_provider.dart';
+import '../providers/task_provider.dart';
 import '../models/task.dart';
 import 'settings_screen.dart';
 import '../widgets/task_creation_dialog.dart';
@@ -12,7 +11,6 @@ import '../widgets/smart_suggestions_widget.dart';
 import '../widgets/task_editing_dialog.dart';
 import '../widgets/unified_progress_bar.dart';
 import '../widgets/wheel_of_time_progress.dart';
-import '../services/game_experience_manager.dart';
 import '../services/enhanced_game_experience_manager.dart';
 class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
@@ -103,8 +101,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<SecureUserProvider>(context);
-    final taskProvider = Provider.of<SecureTaskProvider>(context);
+    final taskProvider = Provider.of<TaskProvider>(context);
     final theme = Theme.of(context);
 
     return Scaffold(

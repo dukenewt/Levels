@@ -60,5 +60,20 @@
 <!-- Location Access -->
 <key>NSLocationWhenInUseUsageDescription</key>
 <string>TaskBound may use your location to provide location-based task reminders or context.</string>
+
+<!-- Google Sign-in Section -->
+<key>GIDClientID</key>
+<string>395832482505-19qchpi684ds9k8e24bg9ott8duv3u8h.apps.googleusercontent.com</string>
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleTypeRole</key>
+        <string>Editor</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>com.googleusercontent.apps.395832482505-19qchpi684ds9k8e24bg9ott8duv3u8h</string>
+        </array>
+    </dict>
+</array>
 </dict>
 </plist>

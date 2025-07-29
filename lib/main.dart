@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'core/enhanced_app_providers.dart';
-import 'core/offline_storage_service.dart';
-import 'services/secure_storage_service.dart';
-import 'screens/task_dashboard_screen.dart';
-import 'screens/stats_screen.dart';
-// import 'screens/achievements_screen.dart'; // MVP: Achievements shelved
-import 'screens/profile_screen.dart';
 import 'core/app_logger.dart';
 import 'core/global_error_handler.dart';
 import 'core/offline_manager.dart';
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/task_notification_service.dart';
-
-const bool USE_ENHANCED_ARCHITECTURE = true; // Toggle this for testing
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'services/auth_service.dart';
+import 'screens/auth/auth_wrapper.dart';
+import 'services/firestore_service.dart';
+import 'providers/user_provider.dart';
+import 'providers/task_provider.dart';
+import 'screens/profile_screen.dart';
+import 'screens/stats_screen.dart';
+import 'screens/task_dashboard_screen.dart';
+import 'services/secure_storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   
   // Initialize core systems first
   AppLogger.instance.initialize();
@@ -29,22 +35,62 @@ void main() async {
   
   try {
     final prefs = await SharedPreferences.getInstance();
-    final storageService = OfflineCapableStorageService(prefs);
     final secureStorageService = SecureStorageService(prefs);
 
     runApp(
-      ChangeNotifierProvider(
-        create: (_) => ThemeProvider()..init(),
-        child: AppWithEnhancedInitialization(
-          storageService: storageService,
-          secureStorageService: secureStorageService,
-          appContent: const MainTabScaffold(),
-        ),
+      MultiProvider(
+        providers: [
+          Provider<AuthService>(
+            create: (_) => AuthService(),
+          ),
+          Provider<FirestoreService>(
+            create: (_) => FirestoreService(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => ThemeProvider()..init(),
+          ),
+          ChangeNotifierProxyProvider2<AuthService, FirestoreService, UserProvider>(
+            create: (context) => UserProvider(
+              context.read<AuthService>(),
+              context.read<FirestoreService>(),
+            ),
+            update: (context, authService, firestoreService, previous) =>
+                UserProvider(authService, firestoreService)..updateDependencies(authService, firestoreService),
+          ),
+          ChangeNotifierProxyProvider<UserProvider, TaskProvider>(
+            create: (context) => TaskProvider(
+              storage: secureStorageService,
+              userProvider: context.read<UserProvider>(),
+            ),
+            update: (context, userProvider, previous) =>
+                previous!..updateUserProvider(userProvider),
+          ),
+        ],
+        child: const MyApp(),
       ),
     );
   } catch (error, stackTrace) {
     AppLogger.instance.error('Failed to initialize app', error, stackTrace);
     runApp(const ErrorApp());
+  }
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        return MaterialApp(
+          title: 'Daily XP',
+          theme: themeProvider.currentThemeData,
+          home: const AuthWrapper(
+            mainApp: MainTabScaffold(),
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -58,32 +104,30 @@ class ErrorApp extends StatelessWidget {
         return MaterialApp(
           title: 'Daily XP',
           theme: themeProvider.currentThemeData,
-          home: architectureBanner(
-            Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.red,
+          home: Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Failed to Start App',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Failed to Start App',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Could not initialize basic services.\nPlease restart the app.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Could not initialize basic services.\nPlease restart the app.',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
           ),
@@ -91,18 +135,6 @@ class ErrorApp extends StatelessWidget {
       },
     );
   }
-}
-
-Widget architectureBanner(Widget child) {
-  return Directionality(
-    textDirection: TextDirection.ltr,
-    child: Banner(
-      message: USE_ENHANCED_ARCHITECTURE ? "Enhanced" : "Legacy (Safe Mode)",
-      location: BannerLocation.topEnd,
-      color: USE_ENHANCED_ARCHITECTURE ? Colors.green : Colors.red,
-      child: child,
-    ),
-  );
 }
 
 class MainTabScaffold extends StatefulWidget {
@@ -118,7 +150,6 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
   static final List<Widget> _screens = <Widget>[
     TaskDashboardScreen(),
     StatsScreen(),
-    // AchievementsScreen(), // MVP: Achievements shelved
     ProfileScreen(),
   ];
 
@@ -148,10 +179,6 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
             icon: Icon(Icons.bar_chart),
             label: 'Stats',
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.emoji_events),
-          //   label: 'Achievements',
-          // ), // MVP: Achievements shelved
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import '../providers/secure_task_provider.dart';
+import '../providers/task_provider.dart';
 import '../models/task.dart';
 
 import '../widgets/enhanced_card.dart';
@@ -13,7 +13,7 @@ class StatsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = Provider.of<SecureTaskProvider>(context).tasks;
+    final tasks = Provider.of<TaskProvider>(context).tasks;
     final completedTasks = tasks.where((task) => task.isCompleted).toList();
     final tasksCompleted = completedTasks.length;
     final currentStreak = _calculateCurrentStreak(completedTasks);
@@ -182,7 +182,7 @@ class StatsScreen extends StatelessWidget {
   }
 
   Widget _buildCategoryChart(BuildContext context) {
-    final tasks = Provider.of<SecureTaskProvider>(context).tasks;
+    final tasks = Provider.of<TaskProvider>(context).tasks;
     final categoryData = _calculateCategoryData(tasks);
     
     if (categoryData.isEmpty) {
@@ -297,7 +297,7 @@ class StatsScreen extends StatelessWidget {
   }
 
   Widget _buildCategoryLegend(BuildContext context) {
-    final tasks = Provider.of<SecureTaskProvider>(context).tasks;
+    final tasks = Provider.of<TaskProvider>(context).tasks;
     final categoryData = _calculateCategoryData(tasks);
     
     if (categoryData.isEmpty) {
@@ -453,7 +453,7 @@ class _WeeklyTaskTrendsChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = Provider.of<SecureTaskProvider>(context).tasks;
+    final tasks = Provider.of<TaskProvider>(context).tasks;
     final counts = _getCompletedTasksPerDay(tasks);
     final maxCount = counts.isNotEmpty ? counts.reduce((a, b) => a > b ? a : b) : 1;
     final minCount = counts.isNotEmpty ? counts.reduce((a, b) => a < b ? a : b) : 0;
@@ -533,7 +533,7 @@ class _WeeklyTaskTrendsChart extends StatelessWidget {
 class _TaskDifficultyAnalysis extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final tasks = Provider.of<SecureTaskProvider>(context).tasks;
+    final tasks = Provider.of<TaskProvider>(context).tasks;
     final completedTasks = tasks.where((task) => task.isCompleted).toList();
     
     // Calculate difficulty distribution
@@ -788,7 +788,7 @@ class _StreaksAndConsistencySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = Provider.of<SecureTaskProvider>(context).tasks;
+    final tasks = Provider.of<TaskProvider>(context).tasks;
     final completionMap = _getCompletionMap(tasks);
     if (completionMap.isEmpty) {
       return EnhancedCard(
