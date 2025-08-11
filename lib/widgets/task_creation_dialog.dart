@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
-import '../services/intelligent_xp_engine.dart';
+import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
 
@@ -133,7 +133,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       timeCostMinutes: _timeInvestmentMinutes,
     );
     
-    final newXp = IntelligentXPEngine.calculateBaseXP(tempTask);
+    final newXp = IntelligentXPEngine().calculateBaseXP(tempTask);
     if (newXp != _estimatedXp) {
       setState(() {
         _estimatedXp = newXp;

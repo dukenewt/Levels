@@ -11,7 +11,8 @@ import 'package:uuid/uuid.dart';
 import '../services/secure_storage_service.dart';
 import '../core/error_handling.dart';
 import '../models/task_results.dart';
-import '../services/task_completion_service.dart';
+import '../features/task_management/application/task_completion_service.dart';
+import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../widgets/xp_reward_snackbar.dart';
 
 /// States for async operations to provide proper loading indicators
@@ -28,6 +29,7 @@ class TaskProvider with ChangeNotifier {
   final Map<String, List<Task>> _tasksByCategory = {};
   final SecureStorageService _storage;
   final UserProvider _userProvider;
+  final IntelligentXPEngine _xpEngine;
   
   // State management
   TaskOperationState _operationState = TaskOperationState.idle;
@@ -41,7 +43,8 @@ class TaskProvider with ChangeNotifier {
     required SecureStorageService storage,
     required UserProvider userProvider,
   }) : _storage = storage,
-       _userProvider = userProvider {
+       _userProvider = userProvider,
+       _xpEngine = IntelligentXPEngine() { // Instantiate the engine
     // Only initialize if dependencies are ready
     if (userProvider.user != null) {
       _initializeProvider();
@@ -282,16 +285,17 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final completionService =
-          TaskCompletionService(_userProvider, this, context);
-      final result =
-          await completionService.completeTask(task, isEnhanced: isEnhanced);
+      final completionService = TaskCompletionService(
+        userProvider: _userProvider,
+        xpEngine: _xpEngine,
+        context: context,
+      );
+
+      final result = await completionService.completeTask(task, isEnhanced: isEnhanced);
 
       if (result.isSuccess) {
-        // We can safely assume data is not null if isSuccess is true.
-        final TaskCompletionResult completionData = result.data!;
-        final Task updatedTask = completionData.updatedTask!;
-        final int xpGained = completionData.xpGained;
+        final completionData = result.data!;
+        final updatedTask = completionData.updatedTask!;
 
         // Optimistically update the task in the UI
         final taskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
@@ -304,20 +308,15 @@ class TaskProvider with ChangeNotifier {
         // Save the updated task to persistent storage
         final saveResult = await _storage.taskRepository.updateTask(updatedTask);
         if (!saveResult.isSuccess) {
-          // If saving fails, we may need to roll back the optimistic update
-          // For simplicity here, we log the error and proceed
           ErrorHandlingService().logError(saveResult.error!);
           return Result.failure(saveResult.error!);
         }
-
-        // XP is already added by the completion service, so we don't add it again here
-        // This prevents double counting of XP
 
         // Notify UI
         if (context.mounted) {
           XPRewardSnackbar.show(
             context,
-            xpGained,
+            completionData.xpGained,
             completionData.streakBonus,
           );
         }

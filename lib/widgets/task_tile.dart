@@ -9,7 +9,8 @@ import 'task_editing_dialog.dart';
 import '../core/error_handling.dart';
 import '../core/theme/app_design_tokens.dart';
 import '../core/utils/date_helpers.dart';
-import '../services/task_completion_service.dart';
+import '../features/task_management/application/task_completion_service.dart';
+import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../providers/user_provider.dart';
 
 class TaskTile extends StatefulWidget {
@@ -168,9 +169,9 @@ class _TaskTileState extends State<TaskTile>
       try {
         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
         final result = await TaskCompletionService(
-          Provider.of<UserProvider>(context, listen: false),
-          taskProvider,
-          context
+          userProvider: Provider.of<UserProvider>(context, listen: false),
+          xpEngine: IntelligentXPEngine(),
+          context: context,
         ).completeTask(widget.task);
         
         if (mounted) {
@@ -677,7 +678,11 @@ class _TaskTileState extends State<TaskTile>
             onPressed: () {
               final taskProvider = Provider.of<TaskProvider>(context, listen: false);
               final userProvider = Provider.of<UserProvider>(context, listen: false);
-              TaskCompletionService(userProvider, taskProvider, context).completeTask(widget.task);
+              TaskCompletionService(
+                userProvider: userProvider,
+                xpEngine: IntelligentXPEngine(),
+                context: context,
+              ).completeTask(widget.task);
               Navigator.of(context).pop();
             },
           ),

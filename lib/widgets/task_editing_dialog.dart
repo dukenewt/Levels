@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
-import '../services/intelligent_xp_engine.dart';
+import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
 
