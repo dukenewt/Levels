@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/intelligent_xp_engine.dart';
+import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../core/theme/app_design_tokens.dart';
 
 /// Enhanced snackbar that shows XP rewards with beautiful animations and breakdown
