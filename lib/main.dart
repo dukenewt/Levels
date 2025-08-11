@@ -13,6 +13,7 @@ import 'screens/auth/auth_wrapper.dart';
 import 'services/firestore_service.dart';
 import 'providers/user_provider.dart';
 import 'providers/task_provider.dart';
+import 'providers/settings_provider.dart';
 import 'screens/profile_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/task_dashboard_screen.dart';
@@ -65,6 +66,7 @@ void main() async {
             update: (context, userProvider, previous) =>
                 previous!..updateUserProvider(userProvider),
           ),
+          ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ],
         child: const MyApp(),
       ),
