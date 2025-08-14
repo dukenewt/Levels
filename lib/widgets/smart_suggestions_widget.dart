@@ -168,7 +168,7 @@ class SmartSuggestionsWidget extends StatelessWidget {
       isCompleted: false,
       // Add other required fields as needed
     );
-    await taskProvider.createTask(newTask);
+    await taskProvider.createTask(context, newTask);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Added "${suggestion.title}" to your tasks!'),
