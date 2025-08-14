@@ -58,7 +58,12 @@ class TaskCompletionService {
 
     // Trigger completion notification if context is available
     if (_context != null) {
-      TaskNotificationService.instance.onTaskCompleted(_context!, task, totalXp);
+      await TaskNotificationService.instance.cancelTaskNotification(task.id);
+      await TaskNotificationService.instance.showImmediateNotification(
+        title: 'Task Completed! 🎉',
+        body: '${task.title} completed! +$totalXp XP',
+        payload: 'completion_${task.id}',
+      );
     }
 
     return Result.success(

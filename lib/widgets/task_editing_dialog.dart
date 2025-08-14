@@ -160,7 +160,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
       timeCostMinutes: _timeCostMinutes,
     );
 
-    taskProvider.updateTask(updatedTask);
+    taskProvider.updateTask(context, updatedTask);
     Navigator.of(context).pop();
   }
 

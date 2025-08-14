@@ -189,6 +189,9 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
           // Task sections based on view mode
           ..._buildTaskSections(taskProvider.getFilteredActiveTasks(context)),
 
+          // Completed tasks section
+          _buildCompletedTasksSection(taskProvider.completedTasks),
+
           // Smart suggestions at the bottom so they don't block task view
           const SliverToBoxAdapter(
             child: Padding(
@@ -401,6 +404,27 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
         key: ValueKey(task.id),
         task: task,
         onEdit: () => _showEditTaskDialog(context, task: task),
+      ),
+    );
+  }
+
+  Widget _buildCompletedTasksSection(List<Task> completedTasks) {
+    if (completedTasks.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: ExpansionTile(
+          title: Text(
+            'Completed (${completedTasks.length})',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          children: completedTasks
+              .map((task) => _buildTaskTile(task))
+              .toList(),
+        ),
       ),
     );
   }
