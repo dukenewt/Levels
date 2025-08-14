@@ -163,7 +163,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         timeCostMinutes: _timeInvestmentMinutes,
       );
       
-      taskProvider.createTask(task);
+      taskProvider.createTask(context, task);
       Navigator.of(context).pop();
     }
   }

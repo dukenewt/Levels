@@ -77,8 +77,27 @@ void main() async {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _requestNotificationPermissions();
+  }
+
+  Future<void> _requestNotificationPermissions() async {
+    final service = TaskNotificationService.instance;
+    final hasPermission = await service.hasNotificationPermission();
+    if (!hasPermission) {
+      await service.requestNotificationPermission();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

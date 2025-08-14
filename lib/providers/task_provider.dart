@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../services/task_notification_service.dart';
 import '../models/task.dart';
 import '../models/user.dart';
 import 'user_provider.dart';
@@ -157,7 +158,7 @@ class TaskProvider with ChangeNotifier {
   }
 
   /// Create task with full validation and error handling
-  Future<Result<Task>> createTask(Task task) async {
+  Future<Result<Task>> createTask(BuildContext context, Task task) async {
     try {
       debugPrint('📝 TaskProvider: Creating new task: ${task.title}');
       
@@ -196,6 +197,9 @@ class TaskProvider with ChangeNotifier {
       if (saveResult.isSuccess) {
         debugPrint('✅ TaskProvider: Task created successfully');
         _lastError = null;
+        for (final newTask in tasksToAdd) {
+          TaskNotificationService.instance.scheduleTaskReminder(context, newTask);
+        }
         return Result.success(tasksToAdd.first);
       } else {
         debugPrint('❌ TaskProvider: Failed to save task, reverting changes');
@@ -220,7 +224,7 @@ class TaskProvider with ChangeNotifier {
   }
 
   /// Update task with optimistic updates and rollback capability
-  Future<Result<void>> updateTask(Task updatedTask) async {
+  Future<Result<void>> updateTask(BuildContext context, Task updatedTask) async {
     try {
       debugPrint('🔄 TaskProvider: Updating task: ${updatedTask.title}');
       
@@ -252,6 +256,8 @@ class TaskProvider with ChangeNotifier {
       if (saveResult.isSuccess) {
         debugPrint('✅ TaskProvider: Task updated successfully');
         _lastError = null;
+        await TaskNotificationService.instance.cancelTaskNotification(updatedTask.id);
+        await TaskNotificationService.instance.scheduleTaskReminder(context, updatedTask);
         return Result.success(null);
       } else {
         debugPrint('❌ TaskProvider: Failed to save updated task, reverting');
@@ -296,6 +302,8 @@ class TaskProvider with ChangeNotifier {
       if (result.isSuccess) {
         final completionData = result.data!;
         final updatedTask = completionData.updatedTask!;
+
+        await TaskNotificationService.instance.cancelTaskNotification(updatedTask.id);
 
         // Optimistically update the task in the UI
         final taskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
@@ -362,6 +370,7 @@ class TaskProvider with ChangeNotifier {
       if (deleteResult.isSuccess) {
         debugPrint('✅ TaskProvider: Task deleted successfully');
         _lastError = null;
+        await TaskNotificationService.instance.cancelTaskNotification(taskId);
         return Result.success(deletedTask);
       } else {
         debugPrint('❌ TaskProvider: Failed to delete task, restoring');
@@ -386,9 +395,9 @@ class TaskProvider with ChangeNotifier {
   }
 
   /// Undo task deletion (restore from recent deletion)
-  Future<Result<void>> undoTaskDeletion(Task task) async {
+  Future<Result<void>> undoTaskDeletion(BuildContext context, Task task) async {
     debugPrint('↶ TaskProvider: Undoing task deletion: ${task.title}');
-    return await createTask(task);
+    return await createTask(context, task);
   }
 
   /// Validate task data before operations
@@ -422,6 +431,7 @@ class TaskProvider with ChangeNotifier {
 
   // Public methods for getting filtered tasks (these are safe and don't need error handling)
   List<Task> get activeTasks => _tasks.where((task) => !task.isCompleted).toList();
+  List<Task> get completedTasks => _tasks.where((task) => task.isCompleted).toList();
   
   List<Task> getFilteredActiveTasks(BuildContext context) {
     final now = DateTime.now();
@@ -505,4 +515,4 @@ class TaskProvider with ChangeNotifier {
     _userProvider.removeListener(_checkDependenciesReady);
     super.dispose();
   }
-} 
+}

@@ -159,7 +159,7 @@ class _TaskTileState extends State<TaskTile>
         _isCompleting = true;
       });
       
-      // Stop all animations cleanly using safe methods
+      // Stop idle animations
       _pulseController.safeStop();
       _hoverController.safeStop();
       
@@ -168,39 +168,25 @@ class _TaskTileState extends State<TaskTile>
       
       try {
         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-        final result = await TaskCompletionService(
-          userProvider: Provider.of<UserProvider>(context, listen: false),
-          xpEngine: IntelligentXPEngine(),
-          context: context,
-        ).completeTask(widget.task);
+        // The provider now handles all completion logic
+        await taskProvider.completeTask(context, widget.task);
         
-        if (mounted) {
-          if (result.isSuccess) {
-            // Let completion animation finish before showing success
-            await Future.delayed(const Duration(milliseconds: 400));
-            
-            // Ensure all animations are in their final completed state
-            if (mounted) {
-              _ensureAnimationsInCompletedState();
-              // Note: XP reward snackbar is shown by the task provider, 
-              // so we don't need to show another success message here
-            }
-          } else {
-            // Revert animation on error
-            await _revertCompletionAnimation();
-            _handleCompletionError(result);
-            _startIdleAnimations(); // Restart idle animations
-          }
-        }
+        // The tile will be rebuilt by the provider's notification
+        // and the didUpdateWidget will handle the final animation state.
+
       } catch (e) {
-        debugPrint('Unexpected error in task completion: $e');
+        debugPrint('Error completing task: $e');
         if (mounted) {
+          // Revert animation on error
           await _revertCompletionAnimation();
           _showUnexpectedErrorMessage();
-          _startIdleAnimations();
+          _startIdleAnimations(); // Restart idle animations
         }
       } finally {
         if (mounted) {
+          // The provider will notify listeners, which will rebuild the widget
+          // and set _isCompleting to false via the task's state.
+          // However, as a safeguard:
           setState(() => _isCompleting = false);
         }
       }
