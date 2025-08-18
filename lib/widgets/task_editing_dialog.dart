@@ -5,14 +5,57 @@ import '../providers/task_provider.dart';
 import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
+import 'recurrence_pattern_dialog.dart';
+import 'recurring_task_edit_dialog.dart';
 
 class TaskEditingDialog extends StatefulWidget {
   final Task task;
+  final EditScope? editScope;
 
   const TaskEditingDialog({
     Key? key,
     required this.task,
+    this.editScope,
   }) : super(key: key);
+
+  static Future<void> showEditDialog(BuildContext context, Task task) async {
+    // Debug logging
+    print('🔍 Task Edit Debug:');
+    print('  - recurrencePattern: ${task.recurrencePattern}');
+    print('  - parentTaskId: ${task.parentTaskId}');
+    print('  - weeklyDays: ${task.weeklyDays}');
+    print('  - repeatInterval: ${task.repeatInterval}');
+    
+    // Check if this is a recurring task and show the appropriate dialog
+    // Include legacy 'workdays' pattern and weeklyDays-based patterns
+    final isRecurring = task.recurrencePattern != null || 
+                       task.parentTaskId != null ||
+                       (task.weeklyDays != null && task.weeklyDays!.isNotEmpty);
+    print('  - isRecurring: $isRecurring');
+    
+    if (isRecurring) {
+      final editScope = await showRecurringTaskEditDialog(context, task);
+      
+      if (editScope != null) {
+        if (!context.mounted) return;
+        
+        // Show the actual edit dialog with the chosen scope
+        await showDialog(
+          context: context,
+          builder: (context) => TaskEditingDialog(
+            task: task,
+            editScope: editScope,
+          ),
+        );
+      }
+    } else {
+      // Regular task editing
+      await showDialog(
+        context: context,
+        builder: (context) => TaskEditingDialog(task: task),
+      );
+    }
+  }
 
   @override
   State<TaskEditingDialog> createState() => _TaskEditingDialogState();
@@ -30,10 +73,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
   late String _category;
   late DateTime? _dueDate;
   late TimeOfDay? _scheduledTime;
-  late String? _recurrencePattern;
-  late List<int>? _weeklyDays;
-  late int? _repeatInterval;
-  late DateTime? _endDate;
+  late RecurrenceSettings _recurrenceSettings;
   late int _timeCostMinutes;
   bool _showTimePicker = false;
   
@@ -47,10 +87,6 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
   Animation<double>? _xpScaleAnimation;
   
   final FocusNode _titleFocusNode = FocusNode();
-
-  final List<String> _recurrenceOptions = [
-    'None', 'Daily', 'Weekly', 'Workdays', 'Monthly'
-  ];
 
   final List<String> _categoryOptions = [
     'Work', 'Learning', 'Health', 'Social', 'Creativity', 'Maintenance'
@@ -76,10 +112,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
     _dueDate = widget.task.dueDate;
     _scheduledTime = widget.task.scheduledTime;
     _showTimePicker = widget.task.scheduledTime != null;
-    _recurrencePattern = widget.task.recurrencePattern?.capitalize();
-    _weeklyDays = widget.task.weeklyDays;
-    _repeatInterval = widget.task.repeatInterval;
-    _endDate = widget.task.endDate;
+    _recurrenceSettings = _convertTaskToRecurrenceSettings(widget.task);
     _timeCostMinutes = widget.task.timeCostMinutes;
     
     _setupAnimations();
@@ -153,14 +186,26 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
       xpReward: _xpReward,
       dueDate: _dueDate,
       scheduledTime: _showTimePicker ? _scheduledTime : null,
-      recurrencePattern: _recurrencePattern == 'None' ? null : _recurrencePattern?.toLowerCase(),
-      weeklyDays: _weeklyDays,
-      repeatInterval: _repeatInterval,
-      endDate: _endDate,
+      recurrencePattern: _recurrenceSettings.type == RecurrenceType.none 
+          ? null 
+          : _recurrenceSettings.type.name,
+      weeklyDays: _recurrenceSettings.weeklyDays.isEmpty 
+          ? null 
+          : _recurrenceSettings.weeklyDays,
+      repeatInterval: _recurrenceSettings.interval == 1 
+          ? null 
+          : _recurrenceSettings.interval,
+      endDate: _recurrenceSettings.endDate,
       timeCostMinutes: _timeCostMinutes,
     );
 
-    taskProvider.updateTask(context, updatedTask);
+    // Handle different edit scopes for recurring tasks
+    if (widget.editScope != null) {
+      taskProvider.updateRecurringTask(context, updatedTask, widget.editScope!);
+    } else {
+      taskProvider.updateTask(context, updatedTask);
+    }
+    
     Navigator.of(context).pop();
   }
 
@@ -266,7 +311,9 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Edit Task',
+              widget.editScope != null 
+                  ? 'Edit ${widget.editScope == EditScope.thisTaskOnly ? 'This Task' : 'Series'}'
+                  : 'Edit Task',
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -562,83 +609,63 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
           ),
         ),
         const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.3),
-            ),
-          ),
-          child: DropdownButtonFormField<String>(
-            value: _recurrencePattern ?? 'None',
-            decoration: InputDecoration(
-              prefixIcon: Icon(
-                Icons.repeat,
-                color: theme.colorScheme.primary,
+        InkWell(
+          onTap: () => _showRecurrenceDialog(),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _recurrenceSettings.type != RecurrenceType.none
+                  ? theme.colorScheme.primary.withOpacity(0.1)
+                  : theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _recurrenceSettings.type != RecurrenceType.none
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outline.withOpacity(0.3),
               ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: theme.colorScheme.surface,
             ),
-            items: _recurrenceOptions.map((option) {
-              return DropdownMenuItem(
-                value: option,
-                child: Text(option),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _recurrencePattern = value;
-                if (value != 'Weekly') {
-                  _weeklyDays = null;
-                }
-                if (value == 'None') {
-                  _endDate = null;
-                  _repeatInterval = null;
-                }
-              });
-            },
-          ),
-        ),
-        if (_recurrencePattern != null && _recurrencePattern != 'None') ...[
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              if (_recurrencePattern == 'Daily') ...[
-                const Text('Every'),
-                const SizedBox(width: 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.repeat,
+                  color: _recurrenceSettings.type != RecurrenceType.none
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface.withOpacity(0.7),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: TextFormField(
-                    initialValue: _repeatInterval?.toString() ?? '1',
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                    ),
-                    onChanged: (value) {
-                      _repeatInterval = int.tryParse(value);
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Recurrence Pattern',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _recurrenceSettings.description,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: _recurrenceSettings.type != RecurrenceType.none
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Text('days'),
-              ],
-              const Spacer(),
-              TextButton.icon(
-                onPressed: () => _selectEndDate(context),
-                icon: const Icon(Icons.event),
-                label: Text(
-                  _endDate != null
-                      ? 'Ends ${DateFormat('MMM d, yyyy').format(_endDate!)}'
-                      : 'Set End Date',
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  size: 16,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ],
+        ),
       ],
     );
   }
@@ -929,23 +956,53 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
     }
   }
 
-  Future<void> _selectEndDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _showRecurrenceDialog() async {
+    final result = await showDialog<RecurrenceSettings>(
       context: context,
-      initialDate: _endDate ?? DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context) => RecurrencePatternDialog(
+        initialSettings: _recurrenceSettings,
+        baseDate: _dueDate,
+      ),
     );
-    if (picked != null && picked != _endDate) {
+    
+    if (result != null) {
       setState(() {
-        _endDate = picked;
+        _recurrenceSettings = result;
       });
     }
   }
-}
 
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
+  RecurrenceSettings _convertTaskToRecurrenceSettings(Task task) {
+    RecurrenceType type = RecurrenceType.none;
+    List<int> weeklyDays = task.weeklyDays ?? [];
+    
+    if (task.recurrencePattern != null) {
+      switch (task.recurrencePattern!.toLowerCase()) {
+        case 'daily':
+          type = RecurrenceType.daily;
+          break;
+        case 'weekly':
+          type = RecurrenceType.weekly;
+          break;
+        case 'monthly':
+          type = RecurrenceType.monthly;
+          break;
+        case 'yearly':
+          type = RecurrenceType.yearly;
+          break;
+        case 'workdays':
+          type = RecurrenceType.weekly;
+          // Convert legacy workdays to weekly with Mon-Fri
+          weeklyDays = [1, 2, 3, 4, 5]; // Monday through Friday
+          break;
+      }
+    }
+    
+    return RecurrenceSettings(
+      type: type,
+      interval: task.repeatInterval ?? 1,
+      weeklyDays: weeklyDays,
+      endDate: task.endDate,
+    );
   }
-} 
+}

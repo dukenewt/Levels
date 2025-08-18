@@ -430,10 +430,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
   }
 
   void _showEditTaskDialog(BuildContext context, {required Task task}) {
-    showDialog(
-      context: context,
-      builder: (context) => TaskEditingDialog(task: task),
-    );
+    TaskEditingDialog.showEditDialog(context, task);
   }
 
   // Helper methods for different view modes
