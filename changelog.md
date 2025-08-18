@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-08-18
+
+### Added
+- **Advanced Recurrence System**: Complete task recurrence capability with detailed pattern options
+  - Multi-step wizard dialog (`RecurrencePatternDialog`) with mobile-optimized UI
+  - Weekly pattern selection with visual day picker (Mon-Sun) and quick shortcuts (Weekdays, Weekends, All Days)
+  - Custom interval support (Every N days/weeks/months/years)
+  - Monthly patterns: day of month (15th) vs day of week (2nd Tuesday)
+  - End conditions: Never, specific date, or after X occurrences
+  - Smart pattern descriptions and real-time preview
+- **Recurring Task Edit Logic**: Intelligent editing system for recurring tasks
+  - "Edit this task only" - breaks individual task from series
+  - "Edit all future tasks" - modifies entire recurring series going forward
+  - Automatic recurring task detection with appropriate edit dialog
+- **Enhanced Task Provider**: New `updateRecurringTask()` method with scope-based editing
+- **Mobile-Responsive UI**: Dialog automatically adapts to screen size and prevents overflow
+- **Screenshots folder** for UI debugging and documentation
+
+### Fixed
+- UI overflow issues on iPhone 16 Pro (67px bottom, 25px right overflows resolved)
+- Dialog sizing now responsive (85% screen height, 90% screen width)
+- Day picker buttons dynamically size to prevent horizontal overflow
+- Syntax errors in recurrence dialog indentation
+- Task editing flow now properly handles recurring vs non-recurring tasks
+- Recurring task edit dialog not appearing for legacy "workdays" tasks
+- Task dashboard screen bypassing recurring task detection logic
+- Enhanced recurring task detection to include weeklyDays-based patterns
+
+### Changed
+- Task creation and editing now use enhanced recurrence pattern selection
+- Reduced dialog padding throughout for better mobile experience
+- Improved button layouts with wrapping and compact sizing
+- Task model integration with existing recurrence fields maintained for backward compatibility
+
+### Technical Details
+- Files added: `recurrence_pattern_dialog.dart`, `recurring_task_edit_dialog.dart`
+- Files modified: `task_creation_dialog.dart`, `task_editing_dialog.dart`, `task_provider.dart`, `task_tile.dart`
+- Backward compatible with existing task data structure
+- Ready for system-level timezone configuration
+
 ## [1.0.1] - 2025-08-14
 
 ### Added
