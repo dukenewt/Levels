@@ -6,6 +6,7 @@ import '../providers/task_provider.dart';
 import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
+import 'recurrence_pattern_dialog.dart';
 
 class EnhancedTaskCreationDialog extends StatefulWidget {
   final DateTime? initialDate;
@@ -33,10 +34,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   int _estimatedXp = 50;
   DateTime? _dueDate;
   TimeOfDay? _scheduledTime;
-  String? _recurrencePattern;
-  List<int>? _weeklyDays;
-  int? _repeatInterval;
-  DateTime? _endDate;
+  RecurrenceSettings _recurrenceSettings = const RecurrenceSettings();
   int _timeInvestmentMinutes = 30;
   bool _showTimePicker = false;
   
@@ -156,10 +154,16 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         xpReward: _estimatedXp,
         dueDate: _dueDate,
         scheduledTime: _showTimePicker ? _scheduledTime : null,
-        recurrencePattern: _recurrencePattern == 'None' ? null : _recurrencePattern?.toLowerCase(),
-        weeklyDays: _weeklyDays,
-        repeatInterval: _repeatInterval,
-        endDate: _endDate,
+        recurrencePattern: _recurrenceSettings.type == RecurrenceType.none 
+            ? null 
+            : _recurrenceSettings.type.name,
+        weeklyDays: _recurrenceSettings.weeklyDays.isEmpty 
+            ? null 
+            : _recurrenceSettings.weeklyDays,
+        repeatInterval: _recurrenceSettings.interval == 1 
+            ? null 
+            : _recurrenceSettings.interval,
+        endDate: _recurrenceSettings.endDate,
         timeCostMinutes: _timeInvestmentMinutes,
       );
       
@@ -536,38 +540,61 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
           ),
         ),
         const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.3),
-            ),
-          ),
-          child: DropdownButtonFormField<String>(
-            value: _recurrencePattern ?? 'None',
-            decoration: InputDecoration(
-              prefixIcon: Icon(Icons.repeat, color: theme.colorScheme.primary),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
+        InkWell(
+          onTap: () => _showRecurrenceDialog(),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _recurrenceSettings.type != RecurrenceType.none
+                  ? theme.colorScheme.primary.withOpacity(0.1)
+                  : theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _recurrenceSettings.type != RecurrenceType.none
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outline.withOpacity(0.3),
               ),
-              filled: true,
-              fillColor: theme.colorScheme.surface,
             ),
-            items: _recurrenceOptions.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              setState(() {
-                _recurrencePattern = newValue == 'None' ? null : newValue;
-                _weeklyDays = null;
-                _repeatInterval = null;
-                _endDate = null;
-              });
-            },
+            child: Row(
+              children: [
+                Icon(
+                  Icons.repeat,
+                  color: _recurrenceSettings.type != RecurrenceType.none
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface.withOpacity(0.7),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Recurrence Pattern',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _recurrenceSettings.description,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: _recurrenceSettings.type != RecurrenceType.none
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  size: 16,
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -843,6 +870,22 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
     if (picked != null && picked != _scheduledTime) {
       setState(() {
         _scheduledTime = picked;
+      });
+    }
+  }
+
+  Future<void> _showRecurrenceDialog() async {
+    final result = await showDialog<RecurrenceSettings>(
+      context: context,
+      builder: (context) => RecurrencePatternDialog(
+        initialSettings: _recurrenceSettings,
+        baseDate: _dueDate,
+      ),
+    );
+    
+    if (result != null) {
+      setState(() {
+        _recurrenceSettings = result;
       });
     }
   }

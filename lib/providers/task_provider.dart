@@ -15,6 +15,7 @@ import '../models/task_results.dart';
 import '../features/task_management/application/task_completion_service.dart';
 import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../widgets/xp_reward_snackbar.dart';
+import '../widgets/recurring_task_edit_dialog.dart';
 
 /// States for async operations to provide proper loading indicators
 enum TaskOperationState {
@@ -281,6 +282,127 @@ class TaskProvider with ChangeNotifier {
     } finally {
       _operationState = TaskOperationState.idle;
       notifyListeners();
+    }
+  }
+
+  /// Update recurring task based on the edit scope
+  Future<Result<void>> updateRecurringTask(
+    BuildContext context, 
+    Task updatedTask, 
+    EditScope editScope
+  ) async {
+    try {
+      debugPrint('🔄 TaskProvider: Updating recurring task: ${updatedTask.title}, scope: $editScope');
+      
+      // Validate updated task
+      final validationResult = _validateTask(updatedTask);
+      if (!validationResult.isSuccess) {
+        return Result.failure(validationResult.error!);
+      }
+      
+      _operationState = TaskOperationState.saving;
+      notifyListeners();
+
+      switch (editScope) {
+        case EditScope.thisTaskOnly:
+          // Edit only this specific occurrence
+          await _updateSingleOccurrence(context, updatedTask);
+          break;
+          
+        case EditScope.allFutureTasks:
+          // Edit this and all future occurrences
+          await _updateFutureOccurrences(context, updatedTask);
+          break;
+      }
+
+      _updateTasksByCategory();
+      notifyListeners();
+      
+      debugPrint('✅ TaskProvider: Recurring task updated successfully');
+      _lastError = null;
+      return Result.success(null);
+      
+    } catch (e, stackTrace) {
+      final appError = AppException(
+        'Failed to update recurring task',
+        code: 'RECURRING_TASK_UPDATE_ERROR',
+        originalError: e,
+      );
+      ErrorHandlingService().logError(appError, stackTrace: stackTrace);
+      return Result.failure(appError);
+      
+    } finally {
+      _operationState = TaskOperationState.idle;
+      notifyListeners();
+    }
+  }
+
+  /// Update only the specific occurrence of a recurring task
+  Future<void> _updateSingleOccurrence(BuildContext context, Task updatedTask) async {
+    // If this task is part of a recurring series, break it away from the series
+    final modifiedTask = updatedTask.copyWith(
+      parentTaskId: null, // Break connection to recurring series
+      recurrencePattern: null, // Make it a one-time task
+      weeklyDays: null,
+      repeatInterval: null,
+      endDate: null,
+    );
+
+    // Find and update the specific task
+    final taskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
+    if (taskIndex != -1) {
+      _tasks[taskIndex] = modifiedTask;
+      
+      // Save to storage
+      await _storage.taskRepository.updateTask(modifiedTask);
+      
+      // Update notifications
+      await TaskNotificationService.instance.cancelTaskNotification(modifiedTask.id);
+      await TaskNotificationService.instance.scheduleTaskReminder(context, modifiedTask);
+    }
+  }
+
+  /// Update this and all future occurrences of a recurring task
+  Future<void> _updateFutureOccurrences(BuildContext context, Task updatedTask) async {
+    final now = DateTime.now();
+    
+    // Find the original recurring task (parent) or use this task if it's the parent
+    String parentId = updatedTask.parentTaskId ?? updatedTask.id;
+    
+    // Update all future tasks in the series (including this one)
+    final tasksToUpdate = _tasks.where((task) {
+      return (task.id == parentId || task.parentTaskId == parentId) &&
+             !task.isCompleted &&
+             (task.dueDate == null || !task.dueDate!.isBefore(now));
+    }).toList();
+
+    for (final task in tasksToUpdate) {
+      final modifiedTask = task.copyWith(
+        title: updatedTask.title,
+        description: updatedTask.description,
+        category: updatedTask.category,
+        difficulty: updatedTask.difficulty,
+        xpReward: updatedTask.xpReward,
+        scheduledTime: updatedTask.scheduledTime,
+        recurrencePattern: updatedTask.recurrencePattern,
+        weeklyDays: updatedTask.weeklyDays,
+        repeatInterval: updatedTask.repeatInterval,
+        endDate: updatedTask.endDate,
+        timeCostMinutes: updatedTask.timeCostMinutes,
+      );
+
+      // Update in memory
+      final taskIndex = _tasks.indexWhere((t) => t.id == task.id);
+      if (taskIndex != -1) {
+        _tasks[taskIndex] = modifiedTask;
+        
+        // Save to storage
+        await _storage.taskRepository.updateTask(modifiedTask);
+        
+        // Update notifications
+        await TaskNotificationService.instance.cancelTaskNotification(modifiedTask.id);
+        await TaskNotificationService.instance.scheduleTaskReminder(context, modifiedTask);
+      }
     }
   }
 

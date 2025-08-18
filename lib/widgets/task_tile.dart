@@ -618,10 +618,7 @@ class _TaskTileState extends State<TaskTile>
   }
 
   void _showEditTaskDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => TaskEditingDialog(task: widget.task),
-    );
+    TaskEditingDialog.showEditDialog(context, widget.task);
   }
 
   void _showDeleteConfirmation(BuildContext context) {
