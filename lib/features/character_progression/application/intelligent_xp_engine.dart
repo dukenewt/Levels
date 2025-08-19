@@ -96,13 +96,12 @@ class IntelligentXPEngine {
   
   /// Difficulty reflects both effort and skill development
   /// Harder tasks should provide more growth and recognition
-  double _getDifficultyMultiplier(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'easy': return 0.8;    // Less challenging, less growth
-      case 'medium': return 1.0;  // Standard baseline
-      case 'hard': return 1.4;    // Requires significant effort
-      case 'epic': return 2.0;    // Major challenges deserve major rewards
-      default: return 1.0;
+  double _getDifficultyMultiplier(TaskDifficulty difficulty) {
+    switch (difficulty) {
+      case TaskDifficulty.easy: return 0.8;    // Less challenging, less growth
+      case TaskDifficulty.medium: return 1.0;  // Standard baseline
+      case TaskDifficulty.hard: return 1.4;    // Requires significant effort
+      case TaskDifficulty.epic: return 2.0;    // Major challenges deserve major rewards
     }
   }
   

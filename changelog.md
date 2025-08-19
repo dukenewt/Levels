@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-08-19
+
+### Fixed
+- **Swipe Gesture Stability**: Fixed critical dismissible widget error that occurred when completing tasks via swipe
+  - Replaced `onDismissed` with `confirmDismiss` to properly handle dismissal state
+  - Prevents "dismissed Dismissible widget still in tree" Flutter framework errors
+- **Delete Confirmation Flow**: Fixed delete swipe bypassing confirmation dialog
+  - Delete swipe now properly shows confirmation dialog before deletion
+  - Prevents accidental task deletion from swipe gestures
+  - Added proper async handling for deletion confirmation workflow
+
+### Changed
+- Enhanced swipe-to-complete responsiveness and error handling
+- Improved user experience for task deletion with proper confirmation flow
+- TaskTile widget now uses `confirmDismiss` callback instead of `onDismissed` for better control
+
+### Technical Details
+- Modified `TaskDashboardScreen._handleSwipeDismiss()` to return `Future<bool>` for proper dismissal control
+- Updated `TaskTile` widget to accept `confirmDismiss` parameter instead of `onDismissed`
+- Enhanced `_showDeleteConfirmation()` to return confirmation result and handle actual deletion
+
 ## [1.1.0] - 2025-08-18
 
 ### Added

@@ -404,8 +404,69 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
         key: ValueKey(task.id),
         task: task,
         onEdit: () => _showEditTaskDialog(context, task: task),
+        confirmDismiss: (direction) => _handleSwipeDismiss(context, task, direction),
       ),
     );
+  }
+
+  /// Handle swipe gestures on tasks
+  Future<bool> _handleSwipeDismiss(BuildContext context, Task task, DismissDirection direction) async {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    
+    if (direction == DismissDirection.startToEnd) {
+      // Swipe right to complete
+      if (!task.isCompleted) {
+        await taskProvider.completeTask(context, task);
+        return true; // Allow dismissal
+      }
+      return false; // Prevent dismissal if already completed
+    } else if (direction == DismissDirection.endToStart) {
+      // Swipe left to delete - show confirmation, but don't dismiss yet
+      _showDeleteConfirmation(context, task);
+      return false; // Prevent immediate dismissal
+    }
+    
+    return false; // Default: prevent dismissal
+  }
+
+  Future<void> _showDeleteConfirmation(BuildContext context, Task task) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Task'),
+        content: Text('Are you sure you want to delete "${task.title}"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      await taskProvider.deleteTask(task.id);
+      
+      // Show undo snackbar
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Deleted "${task.title}"'),
+            action: SnackBarAction(
+              label: 'UNDO',
+              onPressed: () => taskProvider.undoTaskDeletion(context, task),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildCompletedTasksSection(List<Task> completedTasks) {

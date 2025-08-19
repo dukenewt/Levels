@@ -1,11 +1,59 @@
-import 'dart:convert';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 enum TaskPriority {
   low,
-  // ... existing code ...
+  medium,
+  high,
+}
+
+enum TaskDifficulty {
+  easy,
+  medium,
+  hard,
+  epic;
+
+  // Helper methods for the enum
+  String get displayName {
+    switch (this) {
+      case TaskDifficulty.easy:
+        return 'Easy';
+      case TaskDifficulty.medium:
+        return 'Medium';
+      case TaskDifficulty.hard:
+        return 'Hard';
+      case TaskDifficulty.epic:
+        return 'Epic';
+    }
+  }
+
+  int get baseXP {
+    switch (this) {
+      case TaskDifficulty.easy:
+        return 25;
+      case TaskDifficulty.medium:
+        return 50;
+      case TaskDifficulty.hard:
+        return 100;
+      case TaskDifficulty.epic:
+        return 200;
+    }
+  }
+
+  static TaskDifficulty fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'easy':
+        return TaskDifficulty.easy;
+      case 'medium':
+        return TaskDifficulty.medium;
+      case 'hard':
+        return TaskDifficulty.hard;
+      case 'epic':
+        return TaskDifficulty.epic;
+      default:
+        return TaskDifficulty.medium;
+    }
+  }
 }
 
 class Task {
@@ -13,7 +61,7 @@ class Task {
   final String title;
   final String description;
   final String category;
-  final String difficulty; // 'easy', 'medium', 'hard', 'epic'
+  final TaskDifficulty difficulty;
   final int xpReward;
   final bool isCompleted;
   final DateTime? completedAt;
@@ -33,7 +81,7 @@ class Task {
     required this.title,
     required this.description,
     required this.category,
-    this.difficulty = 'medium',
+    this.difficulty = TaskDifficulty.medium,
     this.xpReward = 50,
     this.isCompleted = false,
     this.completedAt,
@@ -54,7 +102,7 @@ class Task {
     String? title,
     String? description,
     String? category,
-    String? difficulty,
+    TaskDifficulty? difficulty,
     int? xpReward,
     bool? isCompleted,
     DateTime? completedAt,
@@ -97,7 +145,7 @@ class Task {
       'title': title,
       'description': description,
       'category': category,
-      'difficulty': difficulty,
+      'difficulty': difficulty.name,
       'xpReward': xpReward,
       'createdAt': createdAt.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),
@@ -125,7 +173,7 @@ class Task {
       title: json['title'] as String,
       description: json['description'] as String,
       category: json['category'] as String,
-      difficulty: json['difficulty'] as String? ?? 'medium',
+      difficulty: TaskDifficulty.fromString(json['difficulty'] as String? ?? 'medium'),
       xpReward: json['xpReward'] as int? ?? 50,
       isCompleted: json['isCompleted'] as bool? ?? false,
       completedAt: json['completedAt'] != null 
@@ -211,8 +259,8 @@ class Task {
   }
 
   // Calculate XP reward based on difficulty
-  static int calculateXPReward(String difficulty) {
-    return 50;
+  static int calculateXPReward(TaskDifficulty difficulty) {
+    return difficulty.baseXP;
   }
 
   // Mark task as completed

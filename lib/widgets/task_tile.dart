@@ -15,14 +15,14 @@ import '../providers/user_provider.dart';
 
 class TaskTile extends StatefulWidget {
   final Task task;
-  final Function(DismissDirection)? onDismissed;
+  final Future<bool> Function(DismissDirection)? confirmDismiss;
   final bool showTime;
   final VoidCallback? onEdit;
 
   const TaskTile({
     super.key,
     required this.task,
-    this.onDismissed,
+    this.confirmDismiss,
     this.showTime = true,
     this.onEdit,
   });
@@ -372,10 +372,10 @@ class _TaskTileState extends State<TaskTile>
     );
 
     // Add dismissible functionality if callback provided
-    if (widget.onDismissed != null) {
+    if (widget.confirmDismiss != null) {
       return Dismissible(
         key: Key(widget.task.id),
-        onDismissed: widget.onDismissed,
+        confirmDismiss: widget.confirmDismiss,
         background: _buildSwipeBackground(Colors.green, Icons.check, Alignment.centerLeft),
         secondaryBackground: _buildSwipeBackground(Colors.red, Icons.delete, Alignment.centerRight),
         child: taskWidget,
