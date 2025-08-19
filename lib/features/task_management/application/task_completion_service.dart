@@ -39,12 +39,11 @@ class TaskCompletionService {
     final context = CompletionContext(
       completionTime: completionTime,
       currentStreak: streak,
-      // We can add more context here in the future
+      perfectWeeksThisMonth: 0, // TODO: Implement perfect week tracking
     );
 
-    final baseXp = _xpEngine.calculateBaseXP(task);
-    final bonusXp = _xpEngine.calculateBonusXP(task, context);
-    final totalXp = baseXp + bonusXp;
+    final breakdown = _xpEngine.calculateDetailedXP(task, context);
+    final totalXp = breakdown.totalXP;
 
     final updatedTask = task.complete();
 
@@ -73,7 +72,8 @@ class TaskCompletionService {
         xpGained: totalXp,
         leveledUp: false, // Level up detection handled by animation service
         newLevel: null,
-        streakBonus: bonusXp,
+        streakBonus: breakdown.totalBonusXP,
+        breakdown: breakdown, // Add breakdown data to result
       ),
     );
   }

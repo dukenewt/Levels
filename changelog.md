@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-08-19
+
+### Added
+- **🎁 Loot Box System**: Revolutionary random XP bonus system with difficulty-based probabilities
+  - **Smart Probability Design**: Easy (15%), Medium (10%), Hard (6%), Epic (3%) chances
+  - **Variable Multipliers**: 1.5x (60%), 2x (25%), 2.5x (11%), 3x (4%) bonus rates
+  - **Celebratory UI**: Beautiful golden cards with shimmer animations and tier-specific messages
+  - **Psychological Balance**: Easy tasks get higher chances to build momentum, harder tasks already rewarding
+- **🧮 Enhanced XP Calculation Engine**: Complete overhaul of intelligent XP system
+  - **Mathematical Time Formula**: Replaced bucketed system with smooth curve (10 × √minutes + 5)
+  - **Comprehensive Breakdown Dialog**: Professional UI showing every XP calculation factor
+  - **Educational Transparency**: Users can see and understand all multipliers and bonuses
+  - **Interactive Elements**: Expandable tips with optimization strategies and probability details
+- **✨ Advanced XP Breakdown Interface**: Complete redesign of XP explanation system
+  - **Card-Based Layout**: Modern, organized sections for time, multipliers, and bonuses
+  - **Smooth Animations**: Fade-in effects and elastic loot box reveal animations
+  - **Mathematical Formulas**: Shows actual calculations used (Base XP = 10 × √minutes + 5)
+  - **Optimization Guide**: Tips for maximizing XP with specific strategies
+
+### Enhanced
+- **Intelligent XP Engine**: Added `calculateDetailedXP()` method with comprehensive breakdown data
+- **Task Completion Flow**: Now shows both snackbar and detailed breakdown dialog
+- **Category Explanations**: Each category multiplier now includes reasoning (Health compounds over time, etc.)
+- **Difficulty Explanations**: Clear descriptions of why different difficulties have different multipliers
+
+### Technical Details
+- New `LootBoxResult` class to encapsulate random bonus data
+- Enhanced `XPCalculationBreakdown` class with loot box integration
+- `TaskCompletionResult` now includes full breakdown data for UI display
+- Probability system uses secure Random with balanced game design principles
+
 ## [1.1.1] - 2025-08-19
 
 ### Fixed

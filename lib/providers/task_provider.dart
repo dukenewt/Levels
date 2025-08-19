@@ -16,6 +16,7 @@ import '../features/task_management/application/task_completion_service.dart';
 import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../widgets/xp_reward_snackbar.dart';
 import '../widgets/recurring_task_edit_dialog.dart';
+import '../widgets/xp_breakdown_dialog.dart';
 
 /// States for async operations to provide proper loading indicators
 enum TaskOperationState {
@@ -444,11 +445,26 @@ class TaskProvider with ChangeNotifier {
 
         // Notify UI
         if (context.mounted) {
+          // Show the beautiful snackbar first
           XPRewardSnackbar.show(
             context,
             completionData.xpGained,
             completionData.streakBonus,
           );
+          
+          // Show comprehensive breakdown dialog if breakdown data is available
+          if (completionData.breakdown != null) {
+            // Delay dialog slightly to let snackbar appear first
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (context.mounted) {
+                XpBreakdownDialog.show(
+                  context,
+                  breakdown: completionData.breakdown!,
+                  task: task,
+                );
+              }
+            });
+          }
         }
         return Result.success(completionData);
       } else {
