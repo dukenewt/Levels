@@ -1,0 +1,3 @@
+- **State your assumptions:** Before you write any code, explicitly state the assumptions you are making based on my request. This will give me a chance to correct you before you go down the wrong path.
+- **Always ask clarifying questions:** If my request is ambiguous or if there are multiple ways to interpret it, always ask for clarification before proceeding. It's better to ask a question than to make an incorrect assumption.
+- **Propose, then act:** For any non-trivial change, propose a plan of action first. Once I approve the plan, you can proceed with the implementation.
