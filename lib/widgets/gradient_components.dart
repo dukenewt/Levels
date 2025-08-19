@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../models/theme_model.dart';
+import '../models/task.dart';
 import '../core/theme/app_design_tokens.dart';
 
 /// Enhanced gradient container that uses theme colors intelligently
@@ -228,14 +229,14 @@ class GradientTaskCard extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
   final bool isCompleted;
-  final String difficulty;
+  final TaskDifficulty difficulty;
 
   const GradientTaskCard({
     Key? key,
     required this.child,
     this.onTap,
     this.isCompleted = false,
-    this.difficulty = 'medium',
+    this.difficulty = TaskDifficulty.medium,
   }) : super(key: key);
 
   @override
@@ -246,20 +247,18 @@ class GradientTaskCard extends StatelessWidget {
     // Get difficulty color from gradient
     Color getDifficultyColor() {
       switch (difficulty) {
-        case 'easy':
+        case TaskDifficulty.easy:
           return theme.gradientColors.length > 2 
               ? theme.gradientColors[2] 
               : theme.gradientColors.last; // Usually the lighter color
-        case 'medium':
+        case TaskDifficulty.medium:
           return theme.primaryColor;
-        case 'hard':
+        case TaskDifficulty.hard:
           return theme.gradientColors.first;
-        case 'epic':
+        case TaskDifficulty.epic:
           return theme.gradientColors.length > 2 
               ? theme.gradientColors[1] 
               : theme.primaryColor;
-        default:
-          return theme.primaryColor;
       }
     }
 
