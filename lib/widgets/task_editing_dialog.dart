@@ -69,7 +69,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
   
   // Task properties
   late int _xpReward;
-  late String _difficulty;
+  late TaskDifficulty _difficulty;
   late String _category;
   late DateTime? _dueDate;
   late TimeOfDay? _scheduledTime;
@@ -749,7 +749,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
               color: theme.colorScheme.outline.withOpacity(0.3),
             ),
           ),
-          child: DropdownButtonFormField<String>(
+          child: DropdownButtonFormField<TaskDifficulty>(
             value: _difficulty,
             decoration: InputDecoration(
               prefixIcon: Icon(
@@ -763,12 +763,11 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
               filled: true,
               fillColor: theme.colorScheme.surface,
             ),
-            items: const [
-              DropdownMenuItem(value: 'easy', child: Text('Easy')),
-              DropdownMenuItem(value: 'medium', child: Text('Medium')),
-              DropdownMenuItem(value: 'hard', child: Text('Hard')),
-              DropdownMenuItem(value: 'epic', child: Text('Epic')),
-            ],
+            items: TaskDifficulty.values.map((difficulty) => 
+              DropdownMenuItem(
+                value: difficulty, 
+                child: Text(difficulty.displayName)
+              )).toList(),
             onChanged: (value) {
               setState(() {
                 _difficulty = value!;

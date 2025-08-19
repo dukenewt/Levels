@@ -29,7 +29,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   final _descriptionController = TextEditingController();
   
   // Task properties
-  String _difficulty = 'medium';
+  TaskDifficulty _difficulty = TaskDifficulty.medium;
   String _category = 'Work';
   int _estimatedXp = 50;
   DateTime? _dueDate;
@@ -664,10 +664,10 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
 
   Widget _buildDifficultySection(ThemeData theme) {
     final difficultyColors = {
-      'easy': Colors.green,
-      'medium': Colors.orange,
-      'hard': Colors.red,
-      'epic': Colors.purple,
+      TaskDifficulty.easy: Colors.green,
+      TaskDifficulty.medium: Colors.orange,
+      TaskDifficulty.hard: Colors.red,
+      TaskDifficulty.epic: Colors.purple,
     };
 
     return Column(
@@ -689,7 +689,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
                   theme.colorScheme.outline.withOpacity(0.3),
             ),
           ),
-          child: DropdownButtonFormField<String>(
+          child: DropdownButtonFormField<TaskDifficulty>(
             value: _difficulty,
             decoration: InputDecoration(
               prefixIcon: Icon(
@@ -703,8 +703,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
               filled: true,
               fillColor: theme.colorScheme.surface,
             ),
-            items: ['easy', 'medium', 'hard', 'epic'].map((String value) {
-              return DropdownMenuItem<String>(
+            items: TaskDifficulty.values.map((TaskDifficulty value) {
+              return DropdownMenuItem<TaskDifficulty>(
                 value: value,
                 child: Row(
                   children: [
@@ -717,12 +717,12 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(value.substring(0, 1).toUpperCase() + value.substring(1)),
+                    Text(value.displayName),
                   ],
                 ),
               );
             }).toList(),
-            onChanged: (String? newValue) {
+            onChanged: (TaskDifficulty? newValue) {
               setState(() {
                 _difficulty = newValue!;
                 _updateEstimatedXp();
