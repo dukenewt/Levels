@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:collection/collection.dart';
 import 'user_rank.dart';
+import 'user_talent.dart';
 
 class User {
   final String id;
@@ -13,6 +14,8 @@ class User {
   final String rank;
   final String? profilePictureUrl;
   final List<String> perks;
+  final List<String> talents; // List of unlocked talent IDs
+  final Map<int, String> talentChoices; // Level -> selected talent ID mapping
 
   User({
     required this.id,
@@ -25,6 +28,8 @@ class User {
     String? rank,
     this.profilePictureUrl,
     this.perks = const [],
+    this.talents = const [],
+    this.talentChoices = const {},
   }) : rank = rank ?? UserRank.getRankForLevel(level).name;
 
   User copyWith({
@@ -38,6 +43,8 @@ class User {
     String? rank,
     String? profilePictureUrl,
     List<String>? perks,
+    List<String>? talents,
+    Map<int, String>? talentChoices,
   }) {
     return User(
       id: id ?? this.id,
@@ -50,6 +57,8 @@ class User {
       rank: rank ?? UserRank.getRankForLevel(level ?? this.level).name,
       profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
       perks: perks ?? this.perks,
+      talents: talents ?? this.talents,
+      talentChoices: talentChoices ?? this.talentChoices,
     );
   }
 
@@ -65,10 +74,21 @@ class User {
       'rank': rank,
       'profilePictureUrl': profilePictureUrl,
       'perks': perks,
+      'talents': talents,
+      'talentChoices': talentChoices.map((key, value) => MapEntry(key.toString(), value)),
     };
   }
 
   factory User.fromJson(Map<String, dynamic> json) {
+    // Parse talent choices map
+    Map<int, String> parsedTalentChoices = {};
+    if (json['talentChoices'] != null) {
+      final talentChoicesMap = json['talentChoices'] as Map<String, dynamic>;
+      for (var entry in talentChoicesMap.entries) {
+        parsedTalentChoices[int.parse(entry.key)] = entry.value as String;
+      }
+    }
+
     return User(
       id: json['id'] as String,
       email: json['email'] as String,
@@ -80,6 +100,34 @@ class User {
       rank: json['rank'] as String?,
       profilePictureUrl: json['profilePictureUrl'] as String?,
       perks: json['perks'] != null ? List<String>.from(json['perks']) : [],
+      talents: json['talents'] != null ? List<String>.from(json['talents']) : [],
+      talentChoices: parsedTalentChoices,
     );
+  }
+
+  // Talent utility methods
+  bool hasTalent(String talentId) => talents.contains(talentId);
+
+  bool hasTalentType(TalentType talentType) {
+    return talents.any((talentId) => talentId.startsWith(talentType.id));
+  }
+
+  bool hasProjectManagementTalent() => hasTalentType(TalentType.projectManagement);
+
+  bool hasNLPTalent() => hasTalentType(TalentType.nlpCategorization);
+
+  bool needsTalentChoice() {
+    return UserTalents.isTalentLevel(level) && !talentChoices.containsKey(level);
+  }
+
+  List<int> getPendingTalentLevels() {
+    return UserTalents.talentLevels
+        .where((level) => level <= this.level && !talentChoices.containsKey(level))
+        .toList();
+  }
+
+  TalentChoice? getAvailableTalentChoice() {
+    if (!needsTalentChoice()) return null;
+    return UserTalents.getTalentChoice(level);
   }
 } 

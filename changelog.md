@@ -5,6 +5,83 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-08-20
+
+### Added - Comprehensive Perk & Talent System 🌟
+- **🎯 Talent Tree System**: Complete talent specialization with forced choices at levels 5, 10, 15, 20, 25
+  - **Project Management Path**: Unlocks Epic difficulty tasks, multi-task projects, and unique theme rewards
+  - **Smart Categorization Path**: Enables AI-powered task categorization and intelligent keyword analysis
+  - **Forced Choice UI**: Beautiful modal dialog system that prevents dismissal until talent is selected
+  - **Persistent Talent Data**: All choices saved to Firebase with offline support
+
+- **⭐ Enhanced Perk System**: 8 comprehensive perks with real gameplay impact
+  - **Level 3**: Smart Task Suggestions (existing feature enhanced)
+  - **Level 5**: Health Expert (+15% XP for Health category tasks)
+  - **Level 8**: Lucky Charm (+25% loot box bonus chance)
+  - **Level 12**: Streak Guardian (automatic streak freeze on overdue tasks)
+  - **Level 15**: Learning Master (+20% XP for Learning category tasks)
+  - **Level 18**: XP Veteran (+10% XP bonus for all tasks)
+  - **Level 22**: Work Efficiency (+25% XP for Work category tasks)
+  - **Level 25**: Grand Master (+15% all XP + 50% loot box chance)
+
+- **🧠 Natural Language Processing**: Intelligent task analysis for NLP talent holders
+  - **Smart Categorization**: Auto-assigns categories based on 80+ keyword mappings
+  - **Difficulty Suggestions**: Analyzes task titles to suggest appropriate difficulty
+  - **Confidence Scoring**: Shows reliability of AI suggestions to users
+  - **Real-time Integration**: Works seamlessly in task creation dialog
+
+- **🎮 Epic Difficulty System**: Talent-gated maximum difficulty level
+  - **Project Management Exclusive**: Only available to users with Project Management talent
+  - **Enhanced Multiplier**: 2.0x XP multiplier for epic-level tasks
+  - **Future Integration**: Foundation for Epic Project system
+
+### Enhanced - State Management & Integration
+- **🔧 Enhanced UserProvider**: Complete talent and perk management system
+  - **Talent Selection Methods**: Full CRUD operations for talent choices
+  - **Callback System**: Automatic talent choice dialogs and perk unlock notifications
+  - **Utility Methods**: Easy checking of user talents and abilities
+  - **Perk Summary Generation**: Comprehensive overview of active perk effects
+
+- **💪 Enhanced XP Calculation**: Perk effects integrated into core XP system
+  - **Passive Perk Bonuses**: Automatically applied based on user's active perks
+  - **Enhanced Notifications**: Shows perk bonus amounts in completion messages
+  - **Real-time Previews**: Task creation shows expected XP including perk effects
+  - **Detailed Breakdowns**: XP explanations include perk contribution analysis
+
+- **🎨 Enhanced Task Creation Dialog**: Live perk effects display
+  - **Active Perk Section**: Beautiful card showing current perk effects for the selected category
+  - **Smart Categorization Indicator**: Shows when NLP has auto-assigned a category
+  - **Perk Bonus Preview**: Real-time XP calculation including all perk bonuses
+  - **Dynamic Difficulty Options**: Epic difficulty appears only for eligible users
+
+### Technical Implementation
+- **New Data Models**:
+  - `UserTalent` - Comprehensive talent definition and tracking
+  - `EnhancedUserPerk` - Multi-effect perk system with configurable bonuses
+  - `EpicProject` - Foundation for future project management (model only)
+  - `TalentChoice` - Forced choice system with validation
+  - `PerkEffectData` - Flexible perk effect configuration
+
+- **New Services**:
+  - `PerkEffectEngine` - Applies passive perk bonuses to gameplay
+  - `EnhancedXPCalculationService` - Integrates perks with existing XP engine
+  - `TalentManagementService` - Handles talent selection and validation
+  - `TaskAnalyzerService` - NLP keyword analysis for smart categorization
+  - `AppTalentManager` - App-level coordination of talent system
+  - `TalentDialogService` - Manages forced talent selection UI
+
+- **Enhanced UI Components**:
+  - `TalentSelectionDialog` - Beautiful forced choice modal with animations
+  - Enhanced task creation dialog with live perk effects display
+  - Automatic talent choice detection and triggering system
+
+### Integration & Architecture
+- **Firebase Integration**: Automatic persistence of talent and perk data through enhanced User model
+- **Offline Support**: All talent/perk data works offline via existing SecureStorageService
+- **Provider Pattern**: Seamless integration with existing state management
+- **Callback System**: Event-driven talent unlocks and perk notifications
+- **Backwards Compatibility**: All existing features continue to work unchanged
+
 ## [1.2.0] - 2025-08-19
 
 ### Added

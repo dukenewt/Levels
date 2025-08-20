@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../models/user.dart' as app_user;
+import '../models/user_talent.dart';
+import '../models/enhanced_user_perk.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../services/talent_management_service.dart';
 
 class UserProvider with ChangeNotifier {
   final AuthService _authService;
   final FirestoreService _firestoreService;
   app_user.User? _user;
   Function(int oldLevel, int newLevel)? onLevelUp;
+  Function(TalentChoice talentChoice)? onTalentChoice;
+  Function(EnhancedUserPerk perk)? onPerkUnlock;
   
   app_user.User? get user => _user;
 
@@ -20,6 +25,19 @@ class UserProvider with ChangeNotifier {
   bool hasPerk(String perk) {
     return _user?.perks.contains(perk) ?? false;
   }
+
+  // Talent system getters
+  bool hasTalent(String talentId) => _user?.hasTalent(talentId) ?? false;
+  bool hasProjectManagementTalent() => _user?.hasProjectManagementTalent() ?? false;
+  bool hasNLPTalent() => _user?.hasNLPTalent() ?? false;
+  bool needsTalentChoice() => _user?.needsTalentChoice() ?? false;
+  
+  List<EnhancedUserPerk> getActivePerks() {
+    if (_user == null) return [];
+    return EnhancedUserPerks.getAvailablePerksForLevel(_user!.level);
+  }
+  
+  TalentChoice? getAvailableTalentChoice() => _user?.getAvailableTalentChoice();
 
   void updateDependencies(AuthService authService, FirestoreService firestoreService) {
     // This is a bit of a hack to make this work with the proxy provider
@@ -72,7 +90,22 @@ class UserProvider with ChangeNotifier {
       _user = updatedUser;
       
       if (leveledUp && onLevelUp != null) {
-        onLevelUp!(_user!.level, newLevel);
+        onLevelUp!(oldLevel, newLevel);
+      }
+      
+      // Check for talent choices after level up
+      if (leveledUp && updatedUser.needsTalentChoice() && onTalentChoice != null) {
+        final talentChoice = updatedUser.getAvailableTalentChoice();
+        if (talentChoice != null) {
+          onTalentChoice!(talentChoice);
+        }
+      }
+      
+      // Check for new perk unlocks
+      for (final perk in EnhancedUserPerks.getAvailablePerksForLevel(newLevel)) {
+        if (perk.requiredLevel > oldLevel && perk.requiredLevel <= newLevel && onPerkUnlock != null) {
+          onPerkUnlock!(perk);
+        }
       }
       
       notifyListeners();
@@ -120,5 +153,98 @@ class UserProvider with ChangeNotifier {
       _user = updatedUser;
       notifyListeners();
     }
+  }
+
+  // Talent Management Methods
+  Future<TalentSelectionResult> selectTalent(String talentId, int level) async {
+    if (_user == null) {
+      return TalentSelectionResult.error('No user logged in');
+    }
+
+    final result = TalentManagementService.selectTalent(_user!, talentId, level);
+    if (result.success && result.updatedUser != null) {
+      await _firestoreService.setUser(result.updatedUser!);
+      _user = result.updatedUser;
+      notifyListeners();
+    }
+
+    return result;
+  }
+
+  Future<void> forceTalentChoice(TalentChoice talentChoice) async {
+    // This method can be called to trigger the talent choice UI
+    if (onTalentChoice != null) {
+      onTalentChoice!(talentChoice);
+    }
+  }
+
+  // Check and handle pending talent choices on app start
+  Future<void> checkPendingTalentChoices() async {
+    if (_user == null) return;
+
+    final pendingLevels = _user!.getPendingTalentLevels();
+    for (final _ in pendingLevels) {
+      final talentChoice = TalentManagementService.getNextTalentChoice(_user!);
+      if (talentChoice != null && onTalentChoice != null) {
+        onTalentChoice!(talentChoice);
+        break; // Only show one at a time
+      }
+    }
+  }
+
+  // Enhanced perk system methods
+  List<EnhancedUserPerk> getPerksForCategory(String category) {
+    if (_user == null) return [];
+    return EnhancedUserPerks.getAvailablePerksForLevel(_user!.level)
+        .where((perk) => perk.effects.any((effect) => 
+            effect.effect == PerkEffect.categoryBonus && 
+            effect.category?.toLowerCase() == category.toLowerCase()))
+        .toList();
+  }
+
+  Map<String, dynamic> getPerkSummary() {
+    if (_user == null) return {};
+    
+    final activePerks = getActivePerks();
+    Map<String, List<String>> effectsByCategory = {};
+    List<String> generalEffects = [];
+    List<String> specialEffects = [];
+
+    for (final perk in activePerks) {
+      for (final effect in perk.effects) {
+        String description = '';
+        
+        switch (effect.effect) {
+          case PerkEffect.categoryBonus:
+            description = '+${(effect.value * 100).toInt()}% XP';
+            final category = effect.category ?? 'General';
+            effectsByCategory[category] = effectsByCategory[category] ?? [];
+            effectsByCategory[category]!.add(description);
+            break;
+            
+          case PerkEffect.xpBonus:
+            description = '+${(effect.value * 100).toInt()}% All XP';
+            generalEffects.add(description);
+            break;
+            
+          case PerkEffect.lootBoxBonus:
+            description = '+${(effect.value * 100).toInt()}% Loot Box Chance';
+            generalEffects.add(description);
+            break;
+            
+          case PerkEffect.streakFreeze:
+            description = 'Streak Protection';
+            specialEffects.add(description);
+            break;
+        }
+      }
+    }
+
+    return {
+      'categoryEffects': effectsByCategory,
+      'generalEffects': generalEffects,
+      'specialEffects': specialEffects,
+      'totalPerks': activePerks.length,
+    };
   }
 } 

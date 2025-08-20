@@ -18,6 +18,7 @@ import 'screens/profile_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/task_dashboard_screen.dart';
 import 'services/secure_storage_service.dart';
+import 'services/app_talent_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -167,6 +168,7 @@ class MainTabScaffold extends StatefulWidget {
 
 class _MainTabScaffoldState extends State<MainTabScaffold> {
   int _selectedIndex = 0;
+  bool _talentManagerInitialized = false;
 
   static final List<Widget> _screens = <Widget>[
     TaskDashboardScreen(),
@@ -178,6 +180,27 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeTalentManager();
+  }
+
+  void _initializeTalentManager() {
+    if (_talentManagerInitialized) return;
+    
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.user != null) {
+      AppTalentManager.instance.initialize(context, userProvider);
+      _talentManagerInitialized = true;
+      
+      // Check for pending talent choices
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppTalentManager.instance.checkPendingTalentChoices();
+      });
+    }
   }
 
   @override

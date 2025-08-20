@@ -17,6 +17,33 @@ class CompletionContext {
     this.isPartOfChallenge = false,
     this.additionalContext = const {},
   });
+
+  /// Factory constructor for creating default context for previews
+  factory CompletionContext.defaultContext() {
+    return CompletionContext(
+      completionTime: DateTime.now(),
+      currentStreak: 1,
+      perfectWeeksThisMonth: 0,
+      isPartOfChallenge: false,
+    );
+  }
+
+  /// Factory constructor for real task completion
+  factory CompletionContext.forTaskCompletion({
+    required DateTime completionTime,
+    int currentStreak = 0,
+    int perfectWeeksThisMonth = 0,
+    bool isPartOfChallenge = false,
+    Map<String, dynamic> additionalContext = const {},
+  }) {
+    return CompletionContext(
+      completionTime: completionTime,
+      currentStreak: currentStreak,
+      perfectWeeksThisMonth: perfectWeeksThisMonth,
+      isPartOfChallenge: isPartOfChallenge,
+      additionalContext: additionalContext,
+    );
+  }
 }
 
 /// Enhanced task completion result that includes XP breakdown

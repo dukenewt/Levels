@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
-import '../features/character_progression/application/intelligent_xp_engine.dart';
+import '../providers/user_provider.dart';
+import '../services/enhanced_xp_calculation_service.dart';
+import '../services/task_analyzer_service.dart';
+import '../services/perk_effect_engine.dart';
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
 import 'recurrence_pattern_dialog.dart';
@@ -38,6 +41,12 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   int _timeInvestmentMinutes = 30;
   bool _showTimePicker = false;
   
+  // Perk and talent system properties
+  List<String> _activePerkEffects = [];
+  int _perkBonusXp = 0;
+  String? _nlpSuggestedCategory;
+  bool _showPerkEffects = false;
+  
   // Animation controllers
   late AnimationController _slideController;
   late AnimationController _xpAnimationController;
@@ -49,9 +58,6 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   
   final FocusNode _titleFocusNode = FocusNode();
 
-  final List<String> _recurrenceOptions = [
-    'None', 'Daily', 'Weekly', 'Workdays', 'Monthly'
-  ];
 
   final List<String> _categoryOptions = [
     'Work', 'Learning', 'Health', 'Social', 'Creativity', 'Maintenance'
@@ -73,6 +79,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
     _scheduledTime = widget.initialTime;
     
     _setupAnimations();
+    _validateAndUpdateDifficulty();
     _updateEstimatedXp();
     
     // Auto-focus title field after animation
@@ -121,7 +128,68 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
     _slideController.forward();
   }
 
+  void _onTitleChanged(String title) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+    
+    if (user == null) return;
+    
+    // Apply NLP analysis if user has the talent
+    if (user.hasNLPTalent()) {
+      final analysis = TaskAnalyzerService.analyzeTask(
+        title,
+        hasProjectManagementTalent: user.hasProjectManagementTalent(),
+        hasNLPTalent: user.hasNLPTalent(),
+      );
+      
+      setState(() {
+        // Auto-assign category if suggested
+        if (analysis.suggestedCategory != null && 
+            analysis.isHighConfidence &&
+            _categoryOptions.contains(analysis.suggestedCategory)) {
+          _category = analysis.suggestedCategory!;
+          _nlpSuggestedCategory = analysis.suggestedCategory;
+        }
+        
+        // Auto-assign difficulty if suggested
+        final suggestedDifficulty = TaskDifficulty.fromString(analysis.suggestedDifficulty);
+        if (suggestedDifficulty != _difficulty) {
+          _difficulty = suggestedDifficulty;
+        }
+      });
+    }
+    
+    _updateEstimatedXp();
+  }
+
+  void _validateAndUpdateDifficulty() {
+    final availableDifficulties = _getAvailableDifficulties();
+    
+    // If current difficulty is not available, reset to medium
+    if (!availableDifficulties.contains(_difficulty)) {
+      setState(() {
+        _difficulty = TaskDifficulty.medium;
+      });
+    }
+  }
+
+  List<TaskDifficulty> _getAvailableDifficulties() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+    
+    if (user == null) return TaskDifficulty.values;
+    
+    // Use enhanced XP calculation service to get available difficulties
+    final enhancedService = EnhancedXPCalculationService();
+    return enhancedService.getAvailableDifficulties(user);
+  }
+
   void _updateEstimatedXp() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+    
+    if (user == null) return;
+    
     final tempTask = Task(
       id: 'temp_xp_id',
       title: _titleController.text,
@@ -131,10 +199,19 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       timeCostMinutes: _timeInvestmentMinutes,
     );
     
-    final newXp = IntelligentXPEngine().calculateBaseXP(tempTask);
-    if (newXp != _estimatedXp) {
+    // Use enhanced XP calculation service with perk effects
+    final enhancedService = EnhancedXPCalculationService();
+    final xpPreview = enhancedService.getXPPreview(user, tempTask);
+    
+    final newXp = xpPreview['totalXP'] as int;
+    final perkBonus = xpPreview['perkBonus'] as int;
+    
+    if (newXp != _estimatedXp || perkBonus != _perkBonusXp) {
       setState(() {
         _estimatedXp = newXp;
+        _perkBonusXp = perkBonus;
+        _activePerkEffects = PerkEffectEngine.getPerkEffectPreview(user, _category);
+        _showPerkEffects = _activePerkEffects.isNotEmpty;
       });
       if (mounted) {
         _xpAnimationController.safeForward(from: 0.0);
@@ -234,6 +311,10 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
                             const SizedBox(height: 24),
                             _buildDifficultySection(theme),
                             const SizedBox(height: 24),
+                            if (_showPerkEffects) ...[
+                              _buildPerkEffectsSection(theme),
+                              const SizedBox(height: 24),
+                            ],
                             _buildTimeInvestmentSection(theme),
                             const SizedBox(height: 32),
                             _buildActionButtons(theme),
@@ -337,7 +418,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         controller: _titleController,
         focusNode: _titleFocusNode,
         maxLength: 100,
-        onChanged: (_) => _updateEstimatedXp(),
+        onChanged: _onTitleChanged,
         decoration: InputDecoration(
           labelText: 'Task Title',
           hintText: 'What do you want to accomplish?',
@@ -703,7 +784,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
               filled: true,
               fillColor: theme.colorScheme.surface,
             ),
-            items: TaskDifficulty.values.map((TaskDifficulty value) {
+            items: _getAvailableDifficulties().map((TaskDifficulty value) {
               return DropdownMenuItem<TaskDifficulty>(
                 value: value,
                 child: Row(
@@ -872,6 +953,117 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         _scheduledTime = picked;
       });
     }
+  }
+
+  Widget _buildPerkEffectsSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.stars_rounded,
+              color: theme.colorScheme.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Active Perk Effects',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.primary.withOpacity(0.3),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_nlpSuggestedCategory != null) ...[
+                Row(
+                  children: [
+                    Icon(
+                      Icons.psychology_outlined,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Smart categorized as $_nlpSuggestedCategory',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              ..._activePerkEffects.map((effect) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 16,
+                      color: Colors.green,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      effect,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              )).toList(),
+              if (_perkBonusXp > 0) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.amber.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add_circle_outline,
+                        size: 16,
+                        color: Colors.amber[700],
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '+$_perkBonusXp XP Bonus',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.amber[700],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _showRecurrenceDialog() async {
