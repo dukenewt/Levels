@@ -8,6 +8,7 @@ import '../../../core/error_handling.dart';
 import '../../../providers/user_provider.dart';
 import '../../../services/smooth_xp_animation_service.dart';
 import '../../../services/task_notification_service.dart';
+import '../../../services/enhanced_xp_calculation_service.dart';
 import '../../character_progression/application/intelligent_xp_engine.dart';
 import '../../character_progression/domain/completion_context.dart';
 
@@ -16,6 +17,7 @@ import '../../character_progression/domain/completion_context.dart';
 class TaskCompletionService {
   final UserProvider _userProvider;
   final IntelligentXPEngine _xpEngine;
+  final EnhancedXPCalculationService _enhancedXpService;
   final BuildContext? _context;
 
   TaskCompletionService({
@@ -24,6 +26,7 @@ class TaskCompletionService {
     BuildContext? context,
   })  : _userProvider = userProvider,
         _xpEngine = xpEngine,
+        _enhancedXpService = EnhancedXPCalculationService(),
         _context = context;
 
   static const String _streakKey = 'task_streaks';
@@ -35,6 +38,11 @@ class TaskCompletionService {
 
     final completionTime = DateTime.now();
     final streak = await _getStreak(task);
+    final user = _userProvider.user;
+
+    if (user == null) {
+      return Result.failure(ValidationException('User not logged in'));
+    }
 
     final context = CompletionContext(
       completionTime: completionTime,
@@ -42,8 +50,10 @@ class TaskCompletionService {
       perfectWeeksThisMonth: 0, // TODO: Implement perfect week tracking
     );
 
-    final breakdown = _xpEngine.calculateDetailedXP(task, context);
-    final totalXp = breakdown.totalXP;
+    // Use enhanced XP calculation that includes perk effects
+    final enhancedBreakdown = _enhancedXpService.calculateEnhancedXP(user, task, context);
+    final totalXp = enhancedBreakdown.finalTotalXP;
+    final perkBonusXp = enhancedBreakdown.perkBonusXP;
 
     final updatedTask = task.complete();
 
@@ -58,9 +68,16 @@ class TaskCompletionService {
     // Trigger completion notification if context is available
     if (_context != null) {
       await TaskNotificationService.instance.cancelTaskNotification(task.id);
+      
+      // Enhanced notification with perk bonus info
+      String notificationBody = '${task.title} completed! +$totalXp XP';
+      if (perkBonusXp > 0) {
+        notificationBody += ' (+$perkBonusXp perk bonus!)';
+      }
+      
       await TaskNotificationService.instance.showImmediateNotification(
         title: 'Task Completed! 🎉',
-        body: '${task.title} completed! +$totalXp XP',
+        body: notificationBody,
         payload: 'completion_${task.id}',
       );
     }
@@ -72,8 +89,9 @@ class TaskCompletionService {
         xpGained: totalXp,
         leveledUp: false, // Level up detection handled by animation service
         newLevel: null,
-        streakBonus: breakdown.totalBonusXP,
-        breakdown: breakdown, // Add breakdown data to result
+        streakBonus: enhancedBreakdown.originalBreakdown.totalBonusXP,
+        breakdown: enhancedBreakdown.originalBreakdown, // Keep original for compatibility
+        enhancedBreakdown: enhancedBreakdown, // Add enhanced breakdown
       ),
     );
   }

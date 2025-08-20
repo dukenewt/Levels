@@ -1,5 +1,6 @@
 import 'task.dart';
 import '../features/character_progression/application/intelligent_xp_engine.dart';
+import '../services/enhanced_xp_calculation_service.dart';
 
 /// Represents the result of a task completion operation
 /// This gives us explicit, testable outcomes for every operation
@@ -14,6 +15,7 @@ class TaskCompletionResult {
   final int? newLevel;
   final int streakBonus;
   final XPCalculationBreakdown? breakdown;
+  final EnhancedXPCalculationBreakdown? enhancedBreakdown;
 
   TaskCompletionResult({
     required this.isSuccess,
@@ -26,6 +28,7 @@ class TaskCompletionResult {
     this.newLevel,
     this.streakBonus = 0,
     this.breakdown,
+    this.enhancedBreakdown,
   });
 
   /// Creates a successful completion result
