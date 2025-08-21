@@ -69,3 +69,38 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Flutter team for the amazing framework
 - Firebase for the backend services
 - All contributors and users of the app
+
+## Security and Secrets Policy
+
+- Protected assets and secrets are ignored via `.gitignore` to prevent accidental commits:
+  - Generic: `**/secrets/**`, `**/*_secret.*`, `**/*_key.*`, `**/private_keys/**`, `**/*.jks`, `android/**/keystore*`, `**/secrets.json`, `**/config.json`, common cache/tmp paths, local databases, and sensitive media folders.
+  - Firebase client config (treated as sensitive per policy): `lib/firebase_options.dart`, `firebase.json`, `ios/Runner/firebase_config.swift`, plus platform files already ignored: `ios/Runner/GoogleService-Info.plist`, `android/app/google-services.json`.
+
+### Regenerating Firebase Config Locally
+
+This repo does not track Firebase client config. To build locally:
+
+1. Install FlutterFire CLI (one-time):
+   - `dart pub global activate flutterfire_cli`
+2. Configure Firebase and generate options:
+   - From the project root: `flutterfire configure`
+   - This creates `lib/firebase_options.dart` and updates platform configs.
+3. Platform files remain untracked; ensure they exist locally:
+   - iOS: place `ios/Runner/GoogleService-Info.plist` in the Xcode target.
+   - Android: place `android/app/google-services.json` under the app module.
+
+If you rotate Firebase credentials or add environments, re-run `flutterfire configure` and keep generated files uncommitted.
+
+### History Cleanup Guidance (if sensitive files were committed)
+
+If any sensitive files were previously committed, consider purging them from git history and rotating credentials:
+
+- Rotate Firebase keys in the Firebase Console (download fresh `GoogleService-Info.plist` / `google-services.json`).
+- Purge history using `git filter-repo` or BFG (run outside CI):
+  - `git filter-repo --path lib/firebase_options.dart --path ios/Runner/GoogleService-Info.plist --path android/app/google-services.json --invert-paths`
+  - Force-push to protected branches following your org’s policies.
+
+## UI/UX Notes
+
+- The app uses Material 3 (`useMaterial3: true`) via `AppTheme.toThemeData()` to align with Android’s latest guidelines.
+- For iOS, audit key flows for HIG-aligned interactions and accessibility (contrast, minimum tap targets, dynamic text).

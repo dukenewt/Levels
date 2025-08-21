@@ -5,6 +5,15 @@ This document outlines the strategic development priorities for DailyXP, focusin
 ## **📋 REFINED DEVELOPMENT PRIORITY LIST**
 *Updated based on recent Epic Project Management implementation and existing roadmap analysis*
 
+### Talent & Perk System Stabilization (v1.4.x)
+- Goal: Robust, testable, conflict-free talent/perk gameplay that scales.
+- Deliverables:
+  - Domain: normalized `Effect` model, pure `PerkEffectEngine`, deterministic `StateDelta`/`UiEvent` outputs
+  - Pipeline: `CompletionPipeline` to orchestrate compute → persist → emit
+  - UI: unified animations via a screen-level `AnimationOrchestrator` and Reduced Motion support
+  - Tests: unit tests for engine and pipeline, event timeline logger for debugging
+
+
 ### **🏆 TIER 1: POLISH & STABILIZATION** 
 *Focus: Refine the newly implemented features and ensure production readiness*
 

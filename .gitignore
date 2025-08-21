@@ -139,3 +139,27 @@ ios/Runner/GoogleService-Info.plist     # contains keys
 *.pem
 *.key
 .npmrc
+
+# Additional protected paths
+**/secrets/**
+**/*_secret.*
+**/*_key.*
+**/private_keys/**
+android/**/keystore*
+**/*.jks
+**/secrets.json
+**/config.json
+**/.tmp/
+**/tmp/
+**/cache/
+**/.cache/
+**/database.db
+**/*.sqlite
+**/user_data/
+**/sensitive_images/
+**/private_media/
+
+# Firebase client config (treat as sensitive per policy)
+lib/firebase_options.dart
+firebase.json
+ios/Runner/firebase_config.swift
