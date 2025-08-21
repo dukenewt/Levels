@@ -14,9 +14,11 @@ import 'services/firestore_service.dart';
 import 'providers/user_provider.dart';
 import 'providers/task_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/epic_provider.dart';
 import 'screens/profile_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/task_dashboard_screen.dart';
+import 'screens/epic_project_screen.dart';
 import 'services/secure_storage_service.dart';
 import 'services/app_talent_manager.dart';
 
@@ -68,6 +70,9 @@ void main() async {
                 previous!..updateUserProvider(userProvider),
           ),
           ChangeNotifierProvider(create: (_) => SettingsProvider()),
+          ChangeNotifierProvider(
+            create: (_) => EpicProvider(storage: secureStorageService),
+          ),
         ],
         child: const MyApp(),
       ),
@@ -170,11 +175,60 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
   int _selectedIndex = 0;
   bool _talentManagerInitialized = false;
 
-  static final List<Widget> _screens = <Widget>[
-    TaskDashboardScreen(),
-    StatsScreen(),
-    ProfileScreen(),
-  ];
+  List<Widget> _getScreens(bool hasProjectManagement) {
+    if (hasProjectManagement) {
+      return [
+        TaskDashboardScreen(),
+        EpicProjectScreen(),
+        StatsScreen(),
+        ProfileScreen(),
+      ];
+    } else {
+      return [
+        TaskDashboardScreen(),
+        StatsScreen(),
+        ProfileScreen(),
+      ];
+    }
+  }
+
+  List<BottomNavigationBarItem> _getNavItems(bool hasProjectManagement) {
+    if (hasProjectManagement) {
+      return const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.check_circle),
+          label: 'Tasks',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.rocket_launch),
+          label: 'Epics',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.bar_chart),
+          label: 'Stats',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'Profile',
+        ),
+      ];
+    } else {
+      return const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.check_circle),
+          label: 'Tasks',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.bar_chart),
+          label: 'Stats',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'Profile',
+        ),
+      ];
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -205,30 +259,31 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: 'Tasks',
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        final user = userProvider.user;
+        final hasProjectManagement = user?.hasProjectManagementTalent() ?? false;
+        final screens = _getScreens(hasProjectManagement);
+        final navItems = _getNavItems(hasProjectManagement);
+        
+        // Adjust selected index if navigation structure changed
+        if (_selectedIndex >= screens.length) {
+          _selectedIndex = 0;
+        }
+        
+        return Scaffold(
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: screens,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Stats',
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            type: BottomNavigationBarType.fixed,
+            items: navItems,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

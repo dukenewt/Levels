@@ -10,6 +10,9 @@ import 'support_screen.dart';
 import 'notification_preferences_screen.dart';
 import '../models/user_rank.dart';
 import '../widgets/professional_progress_card.dart';
+import '../widgets/talent_tree_widget.dart';
+import '../widgets/perk_summary_card.dart';
+import '../models/enhanced_user_perk.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -121,6 +124,14 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 32),
+
+            // Talent Tree section
+            TalentTreeWidget(user: user),
+            const SizedBox(height: 24),
+
+            // Active Perks section
+            PerkSummaryCard(perks: EnhancedUserPerk.getUnlockedPerks(user.level)),
             const SizedBox(height: 32),
 
             // Settings section

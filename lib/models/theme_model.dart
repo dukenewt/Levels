@@ -16,6 +16,10 @@ enum ThemeType {
   professional,
   natural,
   cyanPinkTeal,
+  // Epic reward themes
+  oceanDepths,
+  forestCanopy,
+  sunsetGlow,
 }
 
 class AppTheme {
@@ -284,6 +288,82 @@ class AppTheme {
     },
   );
 
+  // Epic reward themes
+  static const AppTheme oceanDepths = AppTheme(
+    type: ThemeType.oceanDepths,
+    name: 'Ocean Depths',
+    description: 'A calming blue theme inspired by ocean depths',
+    isPremium: true,
+    primaryColor: Color(0xFF1565C0),
+    secondaryColor: Color(0xFF0277BD),
+    backgroundColor: Color(0xFF0D47A1),
+    surfaceColor: Color(0xFF1976D2),
+    textColor: Colors.white,
+    accentColor: Color(0xFF03DAC6),
+    gradientColors: [
+      Color(0xFF1565C0),
+      Color(0xFF0277BD),
+      Color(0xFF03A9F4),
+    ],
+    blurRadius: 0,
+    glassOpacity: 0,
+    priorityColors: {
+      Priority.low: Color(0xFF03DAC6),
+      Priority.medium: Color(0xFF03A9F4),
+      Priority.high: Color(0xFF0277BD),
+    },
+  );
+
+  static const AppTheme forestCanopy = AppTheme(
+    type: ThemeType.forestCanopy,
+    name: 'Forest Canopy',
+    description: 'An earthy green theme inspired by forest canopies',
+    isPremium: true,
+    primaryColor: Color(0xFF2E7D32),
+    secondaryColor: Color(0xFF388E3C),
+    backgroundColor: Color(0xFF1B5E20),
+    surfaceColor: Color(0xFF2E7D32),
+    textColor: Colors.white,
+    accentColor: Color(0xFF8BC34A),
+    gradientColors: [
+      Color(0xFF2E7D32),
+      Color(0xFF388E3C),
+      Color(0xFF4CAF50),
+    ],
+    blurRadius: 0,
+    glassOpacity: 0,
+    priorityColors: {
+      Priority.low: Color(0xFF8BC34A),
+      Priority.medium: Color(0xFF4CAF50),
+      Priority.high: Color(0xFF2E7D32),
+    },
+  );
+
+  static const AppTheme sunsetGlow = AppTheme(
+    type: ThemeType.sunsetGlow,
+    name: 'Sunset Glow',
+    description: 'A warm orange theme inspired by golden sunsets',
+    isPremium: true,
+    primaryColor: Color(0xFFF57C00),
+    secondaryColor: Color(0xFFFF8F00),
+    backgroundColor: Color(0xFFE65100),
+    surfaceColor: Color(0xFFF57C00),
+    textColor: Colors.white,
+    accentColor: Color(0xFFFFC107),
+    gradientColors: [
+      Color(0xFFF57C00),
+      Color(0xFFFF8F00),
+      Color(0xFFFF9800),
+    ],
+    blurRadius: 0,
+    glassOpacity: 0,
+    priorityColors: {
+      Priority.low: Color(0xFFFFC107),
+      Priority.medium: Color(0xFFFF9800),
+      Priority.high: Color(0xFFF57C00),
+    },
+  );
+
   // Get all available themes
   static List<AppTheme> get allThemes => [
     defaultLight,
@@ -295,6 +375,9 @@ class AppTheme {
     professional,
     natural,
     cyanPinkTeal,
+    oceanDepths,
+    forestCanopy,
+    sunsetGlow,
   ];
 
   // Get theme by type
@@ -307,7 +390,10 @@ class AppTheme {
     final isDark = type == ThemeType.defaultDark || 
                    type == ThemeType.premiumGlassDark || 
                    type == ThemeType.premiumNeon ||
-                   type == ThemeType.cyanPinkTeal;
+                   type == ThemeType.cyanPinkTeal ||
+                   type == ThemeType.oceanDepths ||
+                   type == ThemeType.forestCanopy ||
+                   type == ThemeType.sunsetGlow;
 
     return ThemeData(
       useMaterial3: true,

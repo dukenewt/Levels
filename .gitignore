@@ -119,3 +119,23 @@ ios/Runner.xcworkspace/xcuserdata/
 *.iml
 *.iws
 .DS_Store
+
+# Flutter/Android signing
+android/key.properties
+**/*.jks
+**/*.keystore
+
+# Firebase
+android/app/google-services.json        # contains keys
+ios/Runner/GoogleService-Info.plist     # contains keys
+
+# iOS provisioning/certs
+**/*.p12
+**/*.mobileprovision
+
+# Env & secrets
+.env
+.env.*
+*.pem
+*.key
+.npmrc
