@@ -133,6 +133,11 @@ class EnhancedUserPerk {
           .toList() ?? [],
     );
   }
+
+  /// Get unlocked perks for a given level
+  static List<EnhancedUserPerk> getUnlockedPerks(int level) {
+    return EnhancedUserPerks.getAvailablePerksForLevel(level);
+  }
 }
 
 class EnhancedUserPerks {

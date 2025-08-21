@@ -17,6 +17,9 @@ import '../features/character_progression/application/intelligent_xp_engine.dart
 import '../widgets/xp_reward_snackbar.dart';
 import '../widgets/recurring_task_edit_dialog.dart';
 import '../widgets/xp_breakdown_dialog.dart';
+import 'epic_provider.dart';
+import 'theme_provider.dart';
+import '../models/theme_model.dart';
 
 /// States for async operations to provide proper loading indicators
 enum TaskOperationState {
@@ -443,6 +446,29 @@ class TaskProvider with ChangeNotifier {
           return Result.failure(saveResult.error!);
         }
 
+        // Update epic progress if task is part of an epic
+        if (context.mounted) {
+          try {
+            final epicProvider = Provider.of<EpicProvider>(context, listen: false);
+            final updatedEpic = await epicProvider.updateEpicProgress(updatedTask.id);
+            
+            if (updatedEpic != null && updatedEpic.isCompleted) {
+              // Unlock theme reward if it's a theme type
+              await _handleEpicThemeReward(context, updatedEpic);
+              
+              // Show epic completion celebration
+              Future.delayed(const Duration(milliseconds: 1500), () {
+                if (context.mounted) {
+                  _showEpicCompletionCelebration(context, updatedEpic);
+                }
+              });
+            }
+          } catch (e) {
+            // Epic update failure shouldn't break task completion
+            debugPrint('⚠️ Failed to update epic progress: $e');
+          }
+        }
+
         // Notify UI
         if (context.mounted) {
           // Show the beautiful snackbar first
@@ -570,6 +596,15 @@ class TaskProvider with ChangeNotifier {
   // Public methods for getting filtered tasks (these are safe and don't need error handling)
   List<Task> get activeTasks => _tasks.where((task) => !task.isCompleted).toList();
   List<Task> get completedTasks => _tasks.where((task) => task.isCompleted).toList();
+
+  /// Get task by ID
+  Task? getTaskById(String taskId) {
+    try {
+      return _tasks.firstWhere((task) => task.id == taskId);
+    } catch (e) {
+      return null;
+    }
+  }
   
   List<Task> getFilteredActiveTasks(BuildContext context) {
     final now = DateTime.now();
@@ -646,6 +681,103 @@ class TaskProvider with ChangeNotifier {
   /// Show error to user with context
   void showErrorToUser(BuildContext context, AppException error) {
     ErrorHandlingService().showError(context, error);
+  }
+
+  /// Handle epic theme reward unlocking
+  Future<void> _handleEpicThemeReward(BuildContext context, epic) async {
+    if (epic.reward.type.name != 'theme') return;
+    
+    try {
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      ThemeType? themeToUnlock;
+      
+      // Map epic reward IDs to theme types
+      switch (epic.reward.id) {
+        case 'ocean_theme':
+          themeToUnlock = ThemeType.oceanDepths;
+          break;
+        case 'forest_theme':
+          themeToUnlock = ThemeType.forestCanopy;
+          break;
+        case 'sunset_theme':
+          themeToUnlock = ThemeType.sunsetGlow;
+          break;
+      }
+      
+      if (themeToUnlock != null) {
+        await themeProvider.unlockPremiumTheme(themeToUnlock);
+        debugPrint('🎨 Unlocked epic theme: ${themeToUnlock.name}');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to unlock epic theme: $e');
+    }
+  }
+
+  /// Show epic completion celebration dialog
+  void _showEpicCompletionCelebration(BuildContext context, epic) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.emoji_events,
+              size: 80,
+              color: Colors.amber,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Epic Completed!',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You have completed "${epic.title}"!',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Reward Unlocked:',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    epic.reward.name,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  Text(
+                    epic.reward.description,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Awesome!'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

@@ -181,5 +181,14 @@ class UserTalents {
 
   static List<int> get talentLevels => [5, 10, 15, 20, 25];
 
+  /// Get all talent choices (for talent tree display)
+  static List<TalentChoice> get allTalentChoices => [
+    getTalentChoice(5),
+    getTalentChoice(10),
+    getTalentChoice(15),
+    getTalentChoice(20),
+    getTalentChoice(25),
+  ];
+
   static bool isTalentLevel(int level) => talentLevels.contains(level);
 }
