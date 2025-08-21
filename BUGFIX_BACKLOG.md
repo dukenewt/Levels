@@ -32,14 +32,15 @@ This document tracks specific bugs, UI/UX improvements, and small tweaks discove
 ## 🚀 Performance & Technical
 *Performance optimizations and technical debt*
 
-- [ ] Introduce `AnimationOrchestrator` with controller registry keyed by entity id; central disposal and `TickerMode` handling
-- [ ] Add Reduced Motion preference and guard all animations accordingly
+
 - [ ] Consolidate effect evaluation into pure `PerkEffectEngine`; avoid logic in widgets
 
 ## ✅ Recently Fixed
 *Completed items moved here for reference - clear periodically*
 
 - [x] Example completed item
+- [x] Introduce `AnimationOrchestrator` with controller registry keyed by entity id; central disposal and `TickerMode` handling
+- [x] Add Reduced Motion preference and guard all animations accordingly
 
 ---
 
