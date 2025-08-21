@@ -140,10 +140,10 @@ class UserProvider with ChangeNotifier {
     final perks = <String>[];
     
     for (int level = oldLevel + 1; level <= newLevel; level++) {
-      switch (level) {
-        case 5:
-          perks.add('smart_suggestions');
-          break;
+        switch (level) {
+          case 5:
+            // Previously unlocked 'smart_suggestions' — removed
+            break;
         case 10:
           perks.add('custom_categories');
           break;

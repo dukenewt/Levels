@@ -141,13 +141,7 @@ class EnhancedUserPerk {
 }
 
 class EnhancedUserPerks {
-  // Level 3: Smart Suggestions (existing)
-  static const smartSuggestions = EnhancedUserPerk(
-    id: 'smart_suggestions',
-    name: 'Smart Task Suggestions',
-    description: 'Get AI-powered task recommendations based on your patterns',
-    requiredLevel: 3,
-  );
+  // Removed: Smart/Bound Suggestions perk (no longer supported)
 
   // Level 5: First major perk choice
   static const healthExpert = EnhancedUserPerk(
@@ -255,7 +249,6 @@ class EnhancedUserPerks {
   );
 
   static List<EnhancedUserPerk> get allPerks => [
-    smartSuggestions,
     healthExpert,
     luckyCharm,
     streakGuardian,

@@ -262,8 +262,8 @@ Goal: Resolve critical issues and make the talent/perk system robust, testable, 
 
 ## 🔔 Notifications Respect Preferences
 
-- [ ] Wire `TaskNotificationService` sends/cancellations to `SettingsProvider` toggles (task reminders, completion celebrations, etc.)
-- [ ] Ensure `CompletionPipeline` checks preferences before issuing immediate notifications
+- [x] Ensure `CompletionPipeline` checks preferences before issuing immediate notifications
+- [ ] Wire `TaskNotificationService` reminder scheduling/cancellations to `SettingsProvider` toggles (task reminders, overdue, re-engagement)
 - [ ] Add quick unit smoke test or manual checklist for each toggle
 
 ---
@@ -278,7 +278,7 @@ Goal: Resolve critical issues and make the talent/perk system robust, testable, 
 
 ## 🎯 Perks Cleanup
 
-- [ ] Remove "Smart Suggestions" / "Bound suggestions" perk entirely from data and UI
+- [x] Remove "Smart Suggestions" / "Bound suggestions" perk entirely from data and UI
 - [ ] Audit `EnhancedUserPerks` and UI surfaces to eliminate references
 - [ ] Validate remaining perks apply only desired effects via `PerkEffectEngine`
 
@@ -286,7 +286,7 @@ Goal: Resolve critical issues and make the talent/perk system robust, testable, 
 
 ## 🎉 Epic Completion UX
 
-- [ ] Replace snackbar with orchestrated overlay celebration (Reduced Motion aware)
+- [x] Replace snackbar with orchestrated overlay celebration (Reduced Motion aware) — initial dialog in pipeline
 - [ ] Optionally unlock theme rewards via `ThemeProvider` when epic completes (policy-dependent)
 
 ---
