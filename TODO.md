@@ -198,6 +198,66 @@ This is a **Flutter/Dart gamified task management application** with a sophistic
 - ✅ Perk effects display in task creation
 - ✅ NLP auto-categorization for smart users  
 - ✅ Epic difficulty gating behind talents
+
+---
+
+## 🔐 Security/Config Follow-ups (from recent review)
+
+- [ ] Rotate Firebase client credentials and redistribute fresh `GoogleService-Info.plist` / `google-services.json`
+- [ ] Purge sensitive files from git history (if ever committed):
+      `lib/firebase_options.dart`, `ios/Runner/GoogleService-Info.plist`, `android/app/google-services.json`, `ios/Runner/firebase_config.swift`, `firebase.json`
+- [ ] Add a bootstrap script to generate Firebase configs locally/CI via FlutterFire
+- [ ] Document local setup in SECURITY.md (mirror README section)
+- [ ] Add a CI check to block commits containing forbidden patterns (secrets, keys, keystores)
+
+---
+
+## 🧭 Talent & Perk System Stabilization (Architecture Tasks)
+
+Goal: Resolve critical issues and make the talent/perk system robust, testable, and maintainable without sacrificing animations or UX flair.
+
+1) Domain and Data Modeling
+- [ ] Normalize effects: define a single `Effect` model (scope: global/category/task, modifier: additive/multiplicative, duration/stacking)
+- [ ] Define `StateDelta` and `UiEvent` objects returned by completion flows
+- [ ] Make `PerkEffectEngine` pure: input (User, Task, Context) -> output (Breakdown, Deltas, Events)
+
+2) State Management Boundaries
+- [ ] Create `TalentPerkController` (`ChangeNotifier`) that owns evaluated effects snapshot and publishes view state
+- [ ] Limit `UserProvider` to user persistence; route effect evaluation through the controller
+- [ ] Introduce `CompletionPipeline` service to orchestrate: analyze → compute → persist → emit events
+
+3) Animation Orchestration (conflict-free)
+- [ ] Introduce a per-screen `AnimationOrchestrator` that:
+      - provides controllers by entity id
+      - serializes conflicting sequences (queue/locks)
+      - centralizes tokens (durations/curves) using `AppDesignTokens`
+- [ ] Convert scattered explicit controllers to orchestrator-managed or implicit animations
+- [ ] Add Reduced Motion setting; orchestrator no-ops or shortens animations when enabled
+
+4) Testing and Debuggability
+- [ ] Unit tests for `PerkEffectEngine` (idempotence, stacking, category overrides)
+- [ ] Unit tests for `CompletionPipeline` (deterministic `StateDelta` for given context)
+- [ ] Log-only mode: toggle to record event timelines without running animations (for debugging)
+
+5) Performance/Resilience
+- [ ] Ensure item-level keys and avoid full list rebuilds during per-item animations
+- [ ] Use `TickerMode` for offstage widgets; dispose controllers via orchestrator
+- [ ] Guard against double-taps and race conditions in completion flow
+
+6) UX Consistency
+- [ ] Unify completion animation set across swipe/tap actions
+- [ ] Add haptic feedback timing from `AppDesignTokens`
+- [ ] Ensure Material 3 semantics (shape, elevation, color) across new widgets
+
+---
+
+## 🎯 Immediate Bug-Fix Sprint (Talent/Perk Critical)
+
+- [ ] Fix: talent selection not showing at thresholds (ensure detection runs after level-up commit and navigation is ready)
+- [ ] Fix: conflicting animations cancel each other (introduce orchestrator; sequence checkmark → slide-out → confetti)
+- [ ] Fix: state races between `UserProvider` and `TaskProvider` updates (run via `CompletionPipeline` transaction)
+- [ ] Add: defensive `SafeAnimationController` usage everywhere controllers remain local
+
 - ✅ Enhanced XP calculations with perk bonuses
 - ✅ Forced talent selection at levels 5, 10, 15, 20, 25
 - ✅ Persistent talent and perk data
