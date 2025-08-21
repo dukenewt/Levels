@@ -10,8 +10,19 @@ This document outlines the strategic development priorities for DailyXP, focusin
 - Deliverables:
   - Domain: normalized `Effect` model, pure `PerkEffectEngine`, deterministic `StateDelta`/`UiEvent` outputs
   - Pipeline: `CompletionPipeline` to orchestrate compute → persist → emit
-  - UI: unified animations via a screen-level `AnimationOrchestrator` and Reduced Motion support
-  - Tests: unit tests for engine and pipeline, event timeline logger for debugging
+    - UI: unified animations via a screen-level `AnimationOrchestrator` and Reduced Motion support
+    - Tests: unit tests for engine and pipeline, event timeline logger for debugging
+
+### UI/UX Overhaul (v1.5)
+- Modernize core screens (dashboard, creation flows, profile) with Material 3 components and consistent motion
+- Reduced Motion: ensure all major animations have accessible fallbacks
+- Replace epic completion snackbar with orchestrated overlay (celebration component)
+- Remove legacy “Smart/Bound Suggestions” surfaces and copy
+
+### Data & Security (v1.5)
+- Notifications: honor `SettingsProvider` toggles for completion celebrations
+- Firebase: add query pagination for task lists; design Firestore structure for scalable reads
+- Secure storage hygiene: audit sensitive fields, minimize over-fetching, and document environment setup
 
 
 ### **🏆 TIER 1: POLISH & STABILIZATION** 

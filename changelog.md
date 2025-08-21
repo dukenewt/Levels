@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `WheelOfTimeProgress` to use design tokens, safe controllers, and Reduced Motion behavior
 - Moved talent dialog invocation to post-frame to avoid navigator timing races
 
+### Improvements
+- Notifications now respect user preferences: immediate completion notifications gated by `enableCompletionCelebrations`
+- Removed deprecated "Smart/Bound Suggestions" perk and references
+- Epic completion now uses an orchestrated dialog (placeholder overlay) instead of only a snackbar
+
 ### Known Issues (to be addressed)
 - Notifications currently ignore user preference toggles in `SettingsProvider`
 - Talent dialog and selection flow not triggering as expected after level-up

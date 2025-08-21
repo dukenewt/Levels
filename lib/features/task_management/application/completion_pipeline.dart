@@ -38,15 +38,24 @@ class CompletionPipeline {
     steps.add(() async {
       await StreakService.updateStreak(task, DateTime.now());
       if (!context.mounted) return;
-      final perkBonus = completion.enhancedBreakdown?.perkBonusXP ?? 0;
-      final totalXp = completion.xpGained;
-      await TaskNotificationService.instance.showImmediateNotification(
-        title: 'Task Completed! 🎉',
-        body: perkBonus > 0
-            ? '${task.title} completed! +$totalXp XP (+$perkBonus perk bonus!)'
-            : '${task.title} completed! +$totalXp XP',
-        payload: 'completion_${task.id}',
-      );
+      // Only send if user allows completion celebrations/notifications
+      bool allowCompletionNotifs = false;
+      try {
+        final settings = Provider.of<SettingsProvider>(context, listen: false);
+        allowCompletionNotifs = settings.enableCompletionCelebrations;
+      } catch (_) {}
+
+      if (allowCompletionNotifs) {
+        final perkBonus = completion.enhancedBreakdown?.perkBonusXP ?? 0;
+        final totalXp = completion.xpGained;
+        await TaskNotificationService.instance.showImmediateNotification(
+          title: 'Task Completed! 🎉',
+          body: perkBonus > 0
+              ? '${task.title} completed! +$totalXp XP (+$perkBonus perk bonus!)'
+              : '${task.title} completed! +$totalXp XP',
+          payload: 'completion_${task.id}',
+        );
+      }
     });
 
     // XP snackbar next
@@ -81,13 +90,33 @@ class CompletionPipeline {
       final epicProvider = Provider.of<EpicProvider>(context, listen: false);
       final updatedEpic = await epicProvider.updateEpicProgress(task.id);
       if (updatedEpic != null && updatedEpic.isCompleted) {
-        // For now, keep it simple: show a celebratory snackbar
-        // This can be upgraded to a full-screen celebration widget orchestrated here.
         if (!context.mounted) return;
-        final msg = 'Epic Completed: ${updatedEpic.title}! 🎉';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        // Respect Reduced Motion and user preference for celebrations
+        bool allowCelebrations = false;
+        try {
+          final settings = Provider.of<SettingsProvider>(context, listen: false);
+          allowCelebrations = settings.enableCompletionCelebrations;
+        } catch (_) {}
+
+        if (allowCelebrations) {
+          // Lightweight celebratory dialog; can be swapped for richer overlay
+          await showDialog<void>(
+            context: context,
+            barrierDismissible: true,
+            builder: (ctx) {
+              return AlertDialog(
+                title: const Text('Epic Completed!'),
+                content: Text(updatedEpic.title),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Nice!'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
       }
     });
 
