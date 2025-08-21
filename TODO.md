@@ -258,6 +258,47 @@ Goal: Resolve critical issues and make the talent/perk system robust, testable, 
 - [ ] Fix: state races between `UserProvider` and `TaskProvider` updates (run via `CompletionPipeline` transaction)
 - [ ] Add: defensive `SafeAnimationController` usage everywhere controllers remain local
 
+---
+
+## 🔔 Notifications Respect Preferences
+
+- [ ] Wire `TaskNotificationService` sends/cancellations to `SettingsProvider` toggles (task reminders, completion celebrations, etc.)
+- [ ] Ensure `CompletionPipeline` checks preferences before issuing immediate notifications
+- [ ] Add quick unit smoke test or manual checklist for each toggle
+
+---
+
+## 🧠 Talent Dialog & Selection Flow
+
+- [ ] Re-enable forced talent dialog after level-up using post-frame trigger with single-fire guard
+- [ ] Add pipeline event to request dialog (avoid firing from `UserProvider` directly)
+- [ ] Verify thresholds (5/10/15/20/25) and persist `talentChoices` only once per level
+
+---
+
+## 🎯 Perks Cleanup
+
+- [ ] Remove "Smart Suggestions" / "Bound suggestions" perk entirely from data and UI
+- [ ] Audit `EnhancedUserPerks` and UI surfaces to eliminate references
+- [ ] Validate remaining perks apply only desired effects via `PerkEffectEngine`
+
+---
+
+## 🎉 Epic Completion UX
+
+- [ ] Replace snackbar with orchestrated overlay celebration (Reduced Motion aware)
+- [ ] Optionally unlock theme rewards via `ThemeProvider` when epic completes (policy-dependent)
+
+---
+
+## ♿ Reduced Motion Toggle (UI)
+
+- [ ] Add a settings toggle UI bound to `SettingsProvider.setReducedMotion()`
+- [ ] Audit `ring_unraveling_celebration.dart` and `xp_orb_overlay.dart` for Reduced Motion and safe controllers
+
+### Animation Polish: Wheel of Time
+- [ ] Revisit the "Wheel of Time" animation: migrate to orchestrator-managed sequence, ensure it doesn’t conflict with completion/snackbar dialogs, and respect Reduced Motion.
+
 - ✅ Enhanced XP calculations with perk bonuses
 - ✅ Forced talent selection at levels 5, 10, 15, 20, 25
 - ✅ Persistent talent and perk data

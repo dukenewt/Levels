@@ -14,6 +14,7 @@ This document tracks specific bugs, UI/UX improvements, and small tweaks discove
 *Small tweaks, polish items, and user experience enhancements*
 
 - [ ] ⚠️ HIGH: Add perk unlock notification screen/dialog when perks are achieved - users need visual feedback
+- [ ] high: centralize the notification preferences and honor them currently buttons do not work. 
 - [ ] high: Add interactive click into tasks to update - users need more ways to interact with tasks
 - [ ] high: Need accent or contrast for tasks - support accessibility and visual of tasks
 - [ ] 📝 LOW: Task dashboard view selector is clunky when users complete/delete all tasks - improve empty state handling 

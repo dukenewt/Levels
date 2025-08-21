@@ -121,35 +121,6 @@ class EnhancedXPCalculationService {
     );
   }
 
-  /// Calculate enhanced loot box result with perk bonuses
-  LootBoxResult calculateEnhancedLootBox(
-    User user,
-    Task task,
-    int baseXP,
-  ) {
-    // Get perk effects for loot box enhancement
-    final perkEffects = PerkEffectEngine.applyPerksToTask(
-      user, 
-      task, 
-      CompletionContext.defaultContext()
-    );
-
-    // Base loot box chance (from existing system)
-    double baseLootBoxChance = 0.15; // 15% base chance
-
-    // Apply perk bonuses to loot box chance
-    final enhancedChance = PerkEffectEngine.calculateLootBoxChance(
-      baseLootBoxChance,
-      perkEffects,
-    );
-
-    // Use the enhanced chance to determine if loot box triggers
-    if (enhancedChance > 0 && _shouldTriggerLootBox(enhancedChance)) {
-      return _generateLootBoxResult(baseXP);
-    }
-
-    return LootBoxResult.none();
-  }
 
   /// Get preview of XP calculation for task creation UI
   Map<String, dynamic> getXPPreview(
@@ -200,31 +171,6 @@ class EnhancedXPCalculationService {
     return PerkEffectEngine.getPerkEffectPreview(user, category);
   }
 
-  /// Helper method to check if loot box should trigger
-  bool _shouldTriggerLootBox(double chance) {
-    final random = DateTime.now().millisecondsSinceEpoch % 100;
-    return random < (chance * 100);
-  }
-
-  /// Generate loot box result (using existing logic patterns)
-  LootBoxResult _generateLootBoxResult(int baseXP) {
-    final multipliers = [1.5, 2.0, 2.5, 3.0];
-    final descriptions = [
-      'Lucky Break!',
-      'Golden Loot!',
-      'Epic Discovery!',
-      'Legendary Bonus!',
-    ];
-
-    final randomIndex = DateTime.now().millisecondsSinceEpoch % multipliers.length;
-    final multiplier = multipliers[randomIndex];
-    final bonusXP = (baseXP * (multiplier - 1.0)).round();
-
-    return LootBoxResult(
-      wasTriggered: true,
-      multiplier: multiplier,
-      bonusXP: bonusXP,
-      description: descriptions[randomIndex],
-    );
-  }
+  // Note: Loot box logic is handled by IntelligentXPEngine within the
+  // original breakdown to avoid drift and duplication.
 }

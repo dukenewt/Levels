@@ -73,10 +73,13 @@ class UserProvider with ChangeNotifier {
       int newLevel = _user!.level;
       bool leveledUp = false;
 
-      while (newXp >= nextLevelXp) {
-        newXp -= nextLevelXp;
+      // Recompute required XP per level as we advance levels
+      int requiredXp = _xpForLevel(newLevel);
+      while (newXp >= requiredXp) {
+        newXp -= requiredXp;
         newLevel++;
         leveledUp = true;
+        requiredXp = _xpForLevel(newLevel);
       }
       
       List<String> newPerks = _getPerksUnlockedBetweenLevels(oldLevel, newLevel);
@@ -97,6 +100,7 @@ class UserProvider with ChangeNotifier {
       if (leveledUp && updatedUser.needsTalentChoice() && onTalentChoice != null) {
         final talentChoice = updatedUser.getAvailableTalentChoice();
         if (talentChoice != null) {
+          // Defer UI to caller; callback will handle safe timing
           onTalentChoice!(talentChoice);
         }
       }
@@ -110,6 +114,13 @@ class UserProvider with ChangeNotifier {
       
             notifyListeners();
     }
+  }
+
+  // XP required to advance from `level` to `level + 1`
+  int _xpForLevel(int level) {
+    // Current formula: linear scale (kept consistent with nextLevelXp usage)
+    // Adjust here if progression curve changes in the future.
+    return level * 100;
   }
 
   Future<void> resetToLevelOne() async {

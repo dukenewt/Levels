@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Security and Secrets Policy to README, with steps for key rotation and history cleanup
 - Roadmap updated with Talent/Perk stabilization plan and animation architecture direction
 
+### Refactor and Architecture
+- Added `AnimationOrchestrator` to serialize per-entity UI sequences and prevent animation conflicts
+- Introduced `CompletionPipeline` to centralize post-completion flow (streak update, notifications, XP snackbar, breakdown, epic update)
+- Fixed level-up XP threshold loop in `UserProvider.addXp()` (multi-level gains now correct)
+- Unified loot box logic under `IntelligentXPEngine` to avoid duplication
+- Added `StreakService` for consistent streak read/write; removed direct writes from `TaskCompletionService`
+- Added Reduced Motion support via `SettingsProvider.reducedMotion` and respected it in pipeline and Wheel of Time widget
+- Updated `WheelOfTimeProgress` to use design tokens, safe controllers, and Reduced Motion behavior
+- Moved talent dialog invocation to post-frame to avoid navigator timing races
+
+### Known Issues (to be addressed)
+- Notifications currently ignore user preference toggles in `SettingsProvider`
+- Talent dialog and selection flow not triggering as expected after level-up
+- Perk "Smart Suggestions"/"Bound suggestions" must be removed entirely from perks
+- Epic completion celebration is a basic snackbar; needs orchestrated overlay
+
 ## [1.4.0] - 2025-08-20
 
 ### Added - Epic Project Management System 🚀
