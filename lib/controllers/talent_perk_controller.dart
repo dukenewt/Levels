@@ -183,7 +183,11 @@ class TalentPerkController extends ChangeNotifier {
     }
     
     _currentUser = user;
-    await _refreshEffects();
+    
+    // Defer the refresh to avoid setState during build
+    await Future.microtask(() async {
+      await _refreshEffects();
+    });
   }
   
   /// Refresh effects based on current user

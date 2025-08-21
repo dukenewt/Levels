@@ -61,7 +61,13 @@ class TaskProvider with ChangeNotifier {
   }
 
   void updateUserProvider(UserProvider userProvider) {
-    _userProvider.removeListener(_checkDependenciesReady);
+    // Safety check: only remove listener if provider is not already disposed
+    try {
+      _userProvider.removeListener(_checkDependenciesReady);
+    } catch (e) {
+      debugPrint('📡 TaskProvider: Warning - could not remove listener during update: $e');
+    }
+    
     _setupDependencyListeners();
     _initializeProvider();
   }
@@ -116,7 +122,14 @@ class TaskProvider with ChangeNotifier {
 
   void _setupDependencyListeners() {
     debugPrint('📡 TaskProvider: Setting up dependency listeners');
-    _userProvider.addListener(_checkDependenciesReady);
+    
+    // Safety check: don't add listeners to disposed providers
+    try {
+      _userProvider.addListener(_checkDependenciesReady);
+    } catch (e) {
+      debugPrint('📡 TaskProvider: Warning - could not add listener to UserProvider: $e');
+      // Provider might be disposed during hot reload, this is expected
+    }
   }
 
   void _checkDependenciesReady() {
@@ -747,7 +760,13 @@ class TaskProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    _userProvider.removeListener(_checkDependenciesReady);
+    // Safety check: only remove listener if provider is not already disposed
+    try {
+      _userProvider.removeListener(_checkDependenciesReady);
+    } catch (e) {
+      debugPrint('📡 TaskProvider: Warning - could not remove listener from UserProvider: $e');
+      // Provider might already be disposed, this is expected
+    }
     super.dispose();
   }
 }
