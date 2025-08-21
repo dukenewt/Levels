@@ -7,6 +7,8 @@ import '../providers/task_provider.dart';
 import '../models/user_rank.dart';
 import '../models/user.dart' as app;
 import '../services/smooth_xp_animation_service.dart';
+import '../providers/settings_provider.dart';
+import '../core/theme/app_design_tokens.dart';
 import '../screens/stats_screen.dart';
 
 class WheelOfTimeProgress extends StatefulWidget {
@@ -48,6 +50,8 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
   int _previousNextLevelXP = 1;
   bool _isInitialized = false;
 
+  bool _reducedMotion = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,43 +71,57 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
       }
     });
     
-    // Slow rotation for the mystical effect
+    // Accessibility: read reduced-motion preference
+    try {
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
+      _reducedMotion = settings.reducedMotion;
+    } catch (_) {
+      _reducedMotion = false;
+    }
+
+    // Slow rotation for the mystical effect (skip if reduced motion)
     _rotationController = AnimationController(
       duration: const Duration(seconds: 60),
       vsync: this,
-    )..repeat();
+    );
+    if (!_reducedMotion) {
+      _rotationController.safeRepeat();
+    }
 
     // Gentle pulse animation
     _pulseController = AnimationController(
-      duration: const Duration(seconds: 4),
+      duration: AppDesignTokens.slow,
       vsync: this,
-    )..repeat(reverse: true);
+    );
+    if (!_reducedMotion) {
+      _pulseController.safeRepeat(reverse: true);
+    }
 
     // Ring animations for progress changes
     _xpRingController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: _reducedMotion ? AppDesignTokens.microFast : const Duration(milliseconds: 1200),
       vsync: this,
     );
 
     _rankRingController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: _reducedMotion ? AppDesignTokens.microFast : const Duration(milliseconds: 1200),
       vsync: this,
     );
 
     _taskRingController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: _reducedMotion ? AppDesignTokens.microFast : const Duration(milliseconds: 1200),
       vsync: this,
     );
 
     // Smooth XP progress animation controller
     _xpProgressController = AnimationController(
-      duration: const Duration(milliseconds: 800), // Smooth but not too slow
+      duration: _reducedMotion ? AppDesignTokens.microFast : const Duration(milliseconds: 800),
       vsync: this,
     );
     
     // Celebration animation controller for task completions
     _celebrationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: _reducedMotion ? AppDesignTokens.microFast : const Duration(milliseconds: 800),
       vsync: this,
     );
 
@@ -173,16 +191,22 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
       curve: Curves.easeOutCirc,
     ));
 
-    // Start the ring animations with staggered delays
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _xpRingController.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) _taskRingController.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 900), () {
-      if (mounted) _rankRingController.forward();
-    });
+    // Start the ring animations with staggered delays (or snap complete if reduced motion)
+    if (_reducedMotion) {
+      _xpRingController.value = 1.0;
+      _taskRingController.value = 1.0;
+      _rankRingController.value = 1.0;
+    } else {
+      Future.delayed(AppDesignTokens.microMedium, () {
+        if (mounted) _xpRingController.safeForward();
+      });
+      Future.delayed(AppDesignTokens.microSlow + const Duration(milliseconds: 300), () {
+        if (mounted) _taskRingController.safeForward();
+      });
+      Future.delayed(AppDesignTokens.slow, () {
+        if (mounted) _rankRingController.safeForward();
+      });
+    }
     
     // Mark as initialized
     _isInitialized = true;
@@ -201,29 +225,29 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
     ));
     
     // Reset and start the animation
-    _xpProgressController.reset();
-    _xpProgressController.forward().then((_) {
+    _xpProgressController.safeReset();
+    _xpProgressController.safeForward()?.then((_) {
       if (mounted) {
         _currentDisplayedXPProgress = newProgress;
       }
     });
 
     // Trigger celebration animation for XP gains
-    if (triggerCelebration && newProgress > _currentDisplayedXPProgress) {
-      _celebrationController.reset();
-      _celebrationController.forward().then((_) {
-        if (mounted) {
-          // Pulse briefly to show completion satisfaction
-          _pulseController.reset();
-          _pulseController.forward().then((_) {
-            if (mounted) {
-              _pulseController.reverse();
-            }
-          });
-        }
-      });
+      if (!_reducedMotion && triggerCelebration && newProgress > _currentDisplayedXPProgress) {
+        _celebrationController.safeReset();
+        _celebrationController.safeForward()?.then((_) {
+          if (mounted) {
+            // Pulse briefly to show completion satisfaction
+            _pulseController.safeReset();
+            _pulseController.safeForward()?.then((_) {
+              if (mounted) {
+                _pulseController.safeReverse();
+              }
+            });
+          }
+        });
+      }
     }
-  }
 
   /// Navigate to the detailed stats screen
   void _navigateToStatsScreen(BuildContext context) {

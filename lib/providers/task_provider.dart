@@ -20,6 +20,7 @@ import '../widgets/xp_breakdown_dialog.dart';
 import 'epic_provider.dart';
 import 'theme_provider.dart';
 import '../models/theme_model.dart';
+import '../features/task_management/application/completion_pipeline.dart';
 
 /// States for async operations to provide proper loading indicators
 enum TaskOperationState {
@@ -446,51 +447,15 @@ class TaskProvider with ChangeNotifier {
           return Result.failure(saveResult.error!);
         }
 
-        // Update epic progress if task is part of an epic
-        if (context.mounted) {
-          try {
-            final epicProvider = Provider.of<EpicProvider>(context, listen: false);
-            final updatedEpic = await epicProvider.updateEpicProgress(updatedTask.id);
-            
-            if (updatedEpic != null && updatedEpic.isCompleted) {
-              // Unlock theme reward if it's a theme type
-              await _handleEpicThemeReward(context, updatedEpic);
-              
-              // Show epic completion celebration
-              Future.delayed(const Duration(milliseconds: 1500), () {
-                if (context.mounted) {
-                  _showEpicCompletionCelebration(context, updatedEpic);
-                }
-              });
-            }
-          } catch (e) {
-            // Epic update failure shouldn't break task completion
-            debugPrint('⚠️ Failed to update epic progress: $e');
-          }
-        }
+        // Epic progress and celebration handled inside CompletionPipeline
 
-        // Notify UI
+        // Notify UI via orchestrated sequence to avoid conflicts
         if (context.mounted) {
-          // Show the beautiful snackbar first
-          XPRewardSnackbar.show(
-            context,
-            completionData.xpGained,
-            completionData.streakBonus,
+          await CompletionPipeline.playUiSequence(
+            context: context,
+            task: task,
+            completion: completionData,
           );
-          
-          // Show comprehensive breakdown dialog if breakdown data is available
-          if (completionData.breakdown != null) {
-            // Delay dialog slightly to let snackbar appear first
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (context.mounted) {
-                XpBreakdownDialog.show(
-                  context,
-                  breakdown: completionData.breakdown!,
-                  task: task,
-                );
-              }
-            });
-          }
         }
         return Result.success(completionData);
       } else {

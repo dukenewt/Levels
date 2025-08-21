@@ -25,6 +25,9 @@ class SettingsProvider with ChangeNotifier {
   bool _enableReEngagementNotifications = true;
   int _reminderMinutesBefore = 30; // Default 30 minutes before due time
   
+  // Accessibility
+  bool _reducedMotion = false;
+  
   // Getters
   bool get showTodayTasks => _showTodayTasks;
   bool get showTomorrowTasks => _showTomorrowTasks;
@@ -44,6 +47,7 @@ class SettingsProvider with ChangeNotifier {
   bool get enableStreakReminders => _enableStreakReminders;
   bool get enableReEngagementNotifications => _enableReEngagementNotifications;
   int get reminderMinutesBefore => _reminderMinutesBefore;
+  bool get reducedMotion => _reducedMotion;
   
   // Initialize settings from SharedPreferences
   Future<void> loadSettings() async {
@@ -61,7 +65,8 @@ class SettingsProvider with ChangeNotifier {
       _showWorkTasks = _prefs?.getBool('showWorkTasks') ?? true;
       _showSchoolTasks = _prefs?.getBool('showSchoolTasks') ?? true;
       _showExerciseTasks = _prefs?.getBool('showExerciseTasks') ?? true;
-      _isDarkMode = _prefs?.getBool('isDarkMode') ?? false;
+        _isDarkMode = _prefs?.getBool('isDarkMode') ?? false;
+        _reducedMotion = _prefs?.getBool('reducedMotion') ?? false;
       
       _enableTaskReminders = _prefs?.getBool('enableTaskReminders') ?? true;
       _enableDueDateNotifications = _prefs?.getBool('enableDueDateNotifications') ?? true;
@@ -184,6 +189,20 @@ class SettingsProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving isDarkMode setting: $e');
+    }
+  }
+  
+  Future<void> setReducedMotion(bool value) async {
+    await _ensureInitialized();
+    _reducedMotion = value;
+    try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      await _prefs?.setBool('reducedMotion', value);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving reducedMotion setting: $e');
     }
   }
   

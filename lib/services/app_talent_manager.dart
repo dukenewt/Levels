@@ -31,15 +31,16 @@ class AppTalentManager {
   /// Handle talent choice requirement
   Future<void> _handleTalentChoice(TalentChoice talentChoice) async {
     if (_context == null) return;
-    
-    // Show talent selection dialog
-    final selectedTalent = await TalentDialogService.instance
-        .showTalentSelectionDialog(_context!, talentChoice);
-    
-    if (selectedTalent != null) {
-      // Show success feedback
-      _showTalentUnlockSuccess(selectedTalent);
-    }
+    // Show dialog post-frame to avoid navigation/timing races
+    final ctx = _context!;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!ctx.mounted) return;
+      final selectedTalent = await TalentDialogService.instance
+          .showTalentSelectionDialog(ctx, talentChoice);
+      if (selectedTalent != null) {
+        _showTalentUnlockSuccess(selectedTalent);
+      }
+    });
   }
 
   /// Handle perk unlock notification
