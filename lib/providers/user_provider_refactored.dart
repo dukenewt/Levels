@@ -131,9 +131,8 @@ class UserProvider with ChangeNotifier {
         for (final entry in userDelta.additionalChanges!.entries) {
           switch (entry.key) {
             case 'streak':
-              if (entry.value is int) {
-                updatedUser = updatedUser.copyWith(currentStreak: entry.value as int);
-              }
+              // Note: User model doesn't have currentStreak property
+              // This would be handled by a separate streak tracking system
               break;
             case 'talentChoices':
               if (entry.value is Map<String, dynamic>) {

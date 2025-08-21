@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2025-08-21
+
+### Fixed - Critical Talent Selection Bug 🔧
+- **🎯 Talent Dialog Now Triggers Correctly**: Fixed critical bug where talent selection dialog would not appear at levels 5, 10, 15, 20, 25
+  - Implemented new `TalentPerkController` with proper state management and change detection
+  - Added `TalentTriggerService` to bridge new architecture with existing UI
+  - Added comprehensive integration testing to verify talent system functionality
+  - Fixed race conditions and timing issues that prevented talent dialog from appearing
+
+### Enhanced - Architecture Foundation 🏗️
+- **🔧 Normalized Effect System**: Introduced unified `Effect` model for consistent perk and talent calculations
+  - Replaced scattered effect logic with single `Effect` class supporting scope, modifier, stacking, and duration
+  - Created `StateDelta` and `UiEvent` objects for clean separation of state changes and UI actions
+  - Implemented pure `PureEffectEngine` for predictable, testable effect evaluation
+  
+- **🎯 Clean State Management**: Separated persistence from effect evaluation with clear boundaries
+  - `TalentPerkController` owns effect evaluation and publishes view state
+  - Refactored `UserProvider` to focus purely on data persistence
+  - Added `CompletionPipeline` service for orchestrated task completion flow
+
+### Technical Improvements
+- **🧪 Integration Testing Framework**: Added comprehensive testing for architectural changes
+  - Real-time testing with actual user data alongside existing system
+  - Feature flag system for safe incremental rollout
+  - Debug widgets showing system status and test results in development mode
+
+- **🔒 Error Handling**: Improved provider lifecycle management and hot reload stability
+  - Fixed `setState()` during build errors
+  - Added safety checks for disposed providers during hot reload
+  - Graceful fallback handling between old and new systems
+
+### Developer Experience
+- **📊 Debug Visibility**: Added debug widgets for monitoring new architecture
+  - Feature flag status display
+  - Integration test results
+  - Talent trigger service monitoring
+  - Effect evaluation status
+
+### Backwards Compatibility
+- **♻️ Zero Breaking Changes**: New architecture runs alongside existing system
+  - Existing talent selection UI preserved and enhanced
+  - All existing functionality continues to work unchanged
+  - Incremental migration path with rollback capability
+
 ### Security
 - Hardened `.gitignore` with additional protected patterns (secrets, keys, keystores, local databases, sensitive media)
 - Treated Firebase client configs as sensitive per policy and documented local regeneration via FlutterFire

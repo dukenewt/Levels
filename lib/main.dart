@@ -21,6 +21,9 @@ import 'screens/task_dashboard_screen.dart';
 import 'screens/epic_project_screen.dart';
 import 'services/secure_storage_service.dart';
 import 'services/app_talent_manager.dart';
+import 'controllers/talent_perk_controller.dart';
+import 'services/talent_trigger_service.dart';
+import 'config/feature_flags.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +75,10 @@ void main() async {
           ChangeNotifierProvider(create: (_) => SettingsProvider()),
           ChangeNotifierProvider(
             create: (_) => EpicProvider(storage: secureStorageService),
+          ),
+          // NEW: TalentPerkController - added alongside existing providers
+          ChangeNotifierProvider(
+            create: (_) => TalentPerkController(),
           ),
         ],
         child: const MyApp(),
@@ -246,13 +253,26 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
     if (_talentManagerInitialized) return;
     
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    
+    // Always initialize the new talent trigger service (it can monitor for user changes)
+    if (FeatureFlags.shouldUseNewTalentSystem()) {
+      final talentPerkController = Provider.of<TalentPerkController>(context, listen: false);
+      TalentTriggerService.instance.initialize(context, talentPerkController);
+    }
+    
     if (userProvider.user != null) {
       AppTalentManager.instance.initialize(context, userProvider);
       _talentManagerInitialized = true;
       
       // Check for pending talent choices
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        AppTalentManager.instance.checkPendingTalentChoices();
+        if (FeatureFlags.shouldUseNewTalentSystem()) {
+          // Use new system
+          TalentTriggerService.instance.checkPendingTalentChoices();
+        } else {
+          // Use old system
+          AppTalentManager.instance.checkPendingTalentChoices();
+        }
       });
     }
   }

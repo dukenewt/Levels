@@ -382,7 +382,7 @@ class PureEffectEngine {
     );
     
     // Check for level up
-    final newXP = user.xp + xpBreakdown.totalXP;
+    final newXP = user.currentXp + xpBreakdown.totalXP;
     final oldLevel = user.level;
     final newLevel = _calculateLevel(newXP);
     final leveledUp = newLevel > oldLevel;
