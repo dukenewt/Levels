@@ -108,6 +108,18 @@ class UserProvider with ChangeNotifier {
         }
       }
       
+            notifyListeners();
+    }
+  }
+
+  Future<void> resetToLevelOne() async {
+    if (_user != null) {
+      final updatedUser = _user!.copyWith(
+        level: 1,
+        currentXp: 0,
+      );
+      await _firestoreService.setUser(updatedUser);
+      _user = updatedUser;
       notifyListeners();
     }
   }
