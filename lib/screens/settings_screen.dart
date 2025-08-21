@@ -9,6 +9,7 @@ import '../services/app_backup_service.dart';
 import '../widgets/export_options_dialog.dart';
 import '../models/export_config.dart';
 import '../models/theme_model.dart';
+import '../providers/user_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -78,6 +79,38 @@ class SettingsScreen extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (context) => const DebugScreen(),
                         ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.replay, color: Colors.red),
+                    title: const Text('Reset to Level One'),
+                    subtitle: const Text('This will reset your level and XP.'),
+                    onTap: () {
+                      // Show a confirmation dialog before resetting
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Are you sure?'),
+                            content: const Text('This will reset your level and XP to zero.'),
+                            actions: <Widget>[
+                              TextButton(
+                                child: const Text('Cancel'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              TextButton(
+                                child: const Text('Reset'),
+                                onPressed: () {
+                                  Provider.of<UserProvider>(context, listen: false).resetToLevelOne();
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
                       );
                     },
                   ),
