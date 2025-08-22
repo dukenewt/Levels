@@ -1,0 +1,30 @@
+# Gitleaks configuration for DailyXP
+# Purpose: catch accidental secret commits and sensitive file patterns.
+
+title = "DailyXP Gitleaks Config"
+
+[rules]
+
+[[rules.rules]]
+id = "firebase-web-api-key"
+description = "Firebase Web API Key"
+regex = "(?i)AIza[0-9A-Za-z\-_]{35}"
+severity = "high"
+
+[[rules.rules]]
+id = "generic-api-key"
+description = "Generic API key patterns"
+regex = "(?i)(api[_-]?key|access[_-]?key|secret|token)[^\n]{0,20}[:=][^\n]{0,200}"
+entropy = 3.5
+severity = "high"
+
+[allowlist]
+description = "Allow common directories and files that may appear sensitive but are safe"
+paths = [
+  "^.git/",
+  "^build/",
+  "^\.dart_tool/",
+  "^ios/Pods/",
+  "^android/.gradle/",
+]
+

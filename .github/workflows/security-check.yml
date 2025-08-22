@@ -1,0 +1,54 @@
+name: Security Check
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  secret-scan:
+    name: Secret and Sensitive File Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate no sensitive files are committed
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Scanning for forbidden file patterns..."
+          # Patterns of files that must never be committed
+          PATTERN_REGEX='(GoogleService-Info\.plist|google-services\.json|firebase_options\.dart|firebase_config\.swift|\.env(\..*)?$|secrets\.json|config\.json|\.p12$|\.mobileprovision$|\.jks$|keystore)'
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+            git fetch --no-tags --prune --depth=1 origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+            CHANGED=$(git diff --name-only "$BASE"...HEAD)
+          else
+            CHANGED=$(git ls-files)
+          fi
+
+          echo "$CHANGED" | grep -E "$PATTERN_REGEX" && {
+            echo "Error: Sensitive configuration detected in commit or repo tree." >&2
+            exit 1
+          } || echo "No forbidden files detected."
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: .gitleaks.toml
+          verbose: true
+
+      - name: TruffleHog scan (diff against base)
+        if: github.event_name == 'pull_request'
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          base: ${{ github.event.pull_request.base.sha }}
+          head: ${{ github.sha }}
+          path: ./
+          extra_args: --only-verified
+
