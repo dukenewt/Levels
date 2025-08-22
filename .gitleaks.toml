@@ -3,28 +3,26 @@
 
 title = "DailyXP Gitleaks Config"
 
-[rules]
-
-[[rules.rules]]
+# Define rules
+[[rules]]
 id = "firebase-web-api-key"
 description = "Firebase Web API Key"
-regex = "(?i)AIza[0-9A-Za-z\-_]{35}"
-severity = "high"
+regex = '''AIza[0-9A-Za-z\-_]{35}'''
+tags = ["firebase", "apikey"]
 
-[[rules.rules]]
+[[rules]]
 id = "generic-api-key"
 description = "Generic API key patterns"
-regex = "(?i)(api[_-]?key|access[_-]?key|secret|token)[^\n]{0,20}[:=][^\n]{0,200}"
+regex = '''(?i)(api[_-]?key|access[_-]?key|secret|token)[^\n]{0,20}[:=][^\n]{0,200}'''
 entropy = 3.5
-severity = "high"
+tags = ["generic", "apikey"]
 
 [allowlist]
-description = "Allow common directories and files that may appear sensitive but are safe"
+description = "Allow common directories that may contain false positives"
 paths = [
-  "^.git/",
-  "^build/",
-  "^\.dart_tool/",
-  "^ios/Pods/",
-  "^android/.gradle/",
+  '''^\.git/''',
+  '''^build/''',
+  '''^\.dart_tool/''',
+  '''^ios/Pods/''',
+  '''^android/\.gradle/''',
 ]
-

@@ -40,9 +40,6 @@ jobs:
 
       - name: Gitleaks scan
         uses: gitleaks/gitleaks-action@v2
-        with:
-          config-path: .gitleaks.toml
-          verbose: true
 
       - name: TruffleHog scan (full repo)
         uses: trufflesecurity/trufflehog@main
