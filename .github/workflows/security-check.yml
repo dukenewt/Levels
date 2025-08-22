@@ -2,9 +2,10 @@ name: Security Check
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ "**" ]
   pull_request:
     branches: [ "**" ]
+  workflow_dispatch:
 
 jobs:
   secret-scan:
@@ -43,12 +44,8 @@ jobs:
           config-path: .gitleaks.toml
           verbose: true
 
-      - name: TruffleHog scan (diff against base)
-        if: github.event_name == 'pull_request'
-        uses: trufflesecurity/trufflehog@v3
+      - name: TruffleHog scan (full repo)
+        uses: trufflesecurity/trufflehog@main
         with:
-          base: ${{ github.event.pull_request.base.sha }}
-          head: ${{ github.sha }}
           path: ./
           extra_args: --only-verified
-
