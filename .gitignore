@@ -126,8 +126,8 @@ android/key.properties
 **/*.keystore
 
 # Firebase
-android/app/google-services.json        # contains keys
-ios/Runner/GoogleService-Info.plist     # contains keys
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
 ios/firebase_app_id_file.json
 
 # iOS provisioning/certs
@@ -164,3 +164,11 @@ android/**/keystore*
 lib/firebase_options.dart
 firebase.json
 ios/Runner/firebase_config.swift
+
+
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+ios/Runner/firebase_config.swift
+lib/firebase_options.dart
+firebase.json
+ios/firebase_app_id_file.json
