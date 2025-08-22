@@ -119,3 +119,19 @@ ios/Runner.xcworkspace/xcuserdata/
 *.iml
 *.iws
 .DS_Store
+
+# Firebase client configs (ignore, generated or sensitive)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+ios/Runner/firebase_config.swift
+firebase.json
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Firebase (generated)
+ios/firebase_app_id_file.json
