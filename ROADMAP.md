@@ -1,9 +1,20 @@
-# DailyXP Development Roadmap
+# TaskBound Development Roadmap
 
-This document outlines the strategic development priorities for DailyXP, focusing on building upon the completed Epic Project Management system and enhancing the RPG experience.
+This document outlines the strategic development priorities for TaskBound, focusing on building upon the completed Epic Project Management system and enhancing the RPG experience.
 
 ## **📋 REFINED DEVELOPMENT PRIORITY LIST**
 *Updated based on recent Epic Project Management implementation and existing roadmap analysis*
+
+### Security Hardening (ongoing)
+- Goal: Prevent secret/config leakage and enforce safe defaults as MAUs grow.
+- Deliverables:
+  - CI: Security Check workflow (Gitleaks + TruffleHog + forbidden-path guard) on pushes/PRs
+  - Repo hygiene: `.gitignore` protections for Firebase configs, envs, keystores, and generated files
+  - Local bootstrap: `scripts/bootstrap.sh` for FlutterFire config generation (no secrets in git)
+  - Firestore: baseline rules in `firestore.rules`, App Check enablement then enforcement
+  - History cleanup: `scripts/bfg_cleanup.md` and `scripts/bfg_cleanup.sh` playbooks
+  - Release hygiene: publish checklist covering App Check enforcement, rules deploy, and platform signing
+  - Environments: document dev/staging/prod Firebase projects and switching via bootstrap vars
 
 ### Talent & Perk System Stabilization (v1.4.x)
 - Goal: Robust, testable, conflict-free talent/perk gameplay that scales.
@@ -11,7 +22,7 @@ This document outlines the strategic development priorities for DailyXP, focusin
   - Domain: normalized `Effect` model, pure `PerkEffectEngine`, deterministic `StateDelta`/`UiEvent` outputs
   - Pipeline: `CompletionPipeline` to orchestrate compute → persist → emit
     - UI: unified animations via a screen-level `AnimationOrchestrator` and Reduced Motion support
-    - Tests: unit tests for engine and pipeline, event timeline logger for debugging
+    - Tests: unit tests for engine and pipeline, talent trigger coverage, golden/widget tests, event timeline logger for debugging
 
 ### UI/UX Overhaul (v1.5)
 - Modernize core screens (dashboard, creation flows, profile) with Material 3 components and consistent motion
@@ -23,6 +34,15 @@ This document outlines the strategic development priorities for DailyXP, focusin
 - Notifications: honor `SettingsProvider` toggles for completion celebrations
 - Firebase: add query pagination for task lists; design Firestore structure for scalable reads
 - Secure storage hygiene: audit sensitive fields, minimize over-fetching, and document environment setup
+ - App Check: enable, monitor, then enforce for Firestore/Storage
+ - Branch protection: require Security Check CI to pass on `main`
+
+### Integration Track
+- Merge plan for architecture refactor:
+  - Create `integrate/arch-refactor` from refactor branch
+  - Merge rewritten `main` with `--allow-unrelated-histories`, keep security scaffolding
+  - Sanity scan for forbidden files; regenerate configs; ensure CI green
+  - PR into `main`
 
 
 ### **🏆 TIER 1: POLISH & STABILIZATION** 
@@ -94,11 +114,27 @@ This document outlines the strategic development priorities for DailyXP, focusin
   - Ensure clean separation between talent and task management
   - Document provider interaction patterns
 
+- [ ] **Architecture Docs (ADR/Overview)**
+  - One-page Architecture overview or ADR covering Effect model, `CompletionPipeline`, `TalentPerkController`, and `UiEvent/StateDelta`
+  - Update README links to ADR; keep diagrams minimal but current
+
+- [ ] **Dead Code & TODO Hygiene**
+  - Remove deprecated surfaces (e.g., legacy Smart/Bound Suggestions remnants)
+  - Convert lingering TODOs into issues or roadmap items; prune stale notes
+
 **Priority 3.2: Enhanced Error Handling & Resilience**
 - [ ] **Epic System Error Recovery**
   - Handle corrupted epic project data gracefully
   - Epic progress recovery after app crashes
   - Theme unlock failure recovery mechanisms
+
+**Priority 3.3: CI & Quality Gates**
+- [ ] **Baseline CI Pipeline**
+  - Run `flutter pub get`, `flutter analyze`, and unit tests on PRs/pushes
+  - Add formatter check (`dart format --set-exit-if-changed`)
+  - Add test coverage report with an initial floor (e.g., 30–40%)
+- [ ] **Branch Protection**
+  - Require Security Check and CI Build to pass on `main`
 
 ### **🚀 TIER 4: NEXT-GENERATION FEATURES**
 *Focus: Innovative features that push the app beyond traditional task management*

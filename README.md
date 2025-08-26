@@ -1,106 +1,99 @@
-## 6.2.25 Refactoring starting  added the core folder in lib. 
-## 6.3.25 added the error handling to the taskCompletion widget within the task_tile and added a testing structure to be able to scale the error handling as the app grows. 
+# DailyXP
+
+DailyXP is a gamified task manager for iOS and Android. Complete tasks to earn XP, level up, unlock perks, and make forced talent choices that shape your experience. Build epics (multi-task projects), track streaks, and enjoy satisfying, accessible animations.
+
+## Features
+
+- Levels & XP: satisfying feedback loop with streaks, loot boxes, and level thresholds.
+- Perk & Talent System: forced choices at levels 5/10/15/20/25 with meaningful bonuses and gated features (e.g., Epic difficulty, Epic Projects).
+- Epic Projects: plan, track, and celebrate multi-task projects; unlock exclusive themes on completion.
+- IntelligentXP Engine: unified effect model and pure effect evaluation for deterministic XP breakdowns.
+- Orchestrated Animations: conflict-free UI via AnimationOrchestrator; Reduced Motion supported throughout.
+- Modern Architecture: CompletionPipeline, TalentPerkController, StateDelta/UiEvent, and debug flags/widgets.
+
+## Architecture Overview
+
+- Flutter + Firebase (Firestore, Auth, Storage)
+- Provider for state management, feature-oriented modules.
+- Effect model + PureEffectEngine: predictable, testable effect evaluation (perks/talents/bonuses).
+- CompletionPipeline: orchestrates complete → compute → persist → emit events (snackbar, dialogs, epics).
+- TalentPerkController: owns evaluated effects snapshot and publishes view state.
+- AnimationOrchestrator: serializes per-entity sequences; centralized timings; respects Reduced Motion.
+
+## Security & Secrets
+
+- Sensitive client configs are not committed. `.gitignore` protects Firebase configs, signing files, env files, keystores, and generated artifacts.
+- Security Check CI runs on pushes/PRs: blocks forbidden files and scans with Gitleaks + TruffleHog.
+- Firestore rules included at `firestore.rules` (per‑user access, ownership validation).
+- App Check recommended: enable (Play Integrity / App Attest), monitor, then enforce for Firestore/Storage.
+- See `SECURITY.md` for setup, rotation, history cleanup (git-filter-repo/BFG), and incident response.
+
 ## Getting Started
 
-### Prerequisites
+Prerequisites
+- Flutter (stable channel), Xcode (iOS), Android SDK, Firebase account
+- Firebase CLI and FlutterFire CLI (`dart pub global activate flutterfire_cli`)
 
-- Flutter SDK (latest version)
-- Firebase account
-- Android Studio / VS Code with Flutter extensions
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/level-up-tasks.git
-cd level-up-tasks
+Clone and install
 ```
-
-2. Install dependencies:
-```bash
+git clone https://github.com/dukenewt/Levels.git
+cd dailyxp_1.01
 flutter pub get
 ```
 
-3. Set up Firebase:
-   - Create a new Firebase project
-   - Add Android and iOS apps
-   - Download and add the configuration files:
-     - Android: `google-services.json` to `android/app/`
-     - iOS: `GoogleService-Info.plist` to `ios/Runner/`
+Generate Firebase config (ignored by git)
+```
+export FIREBASE_PROJECT_ID=<your-project-id>
+export ANDROID_APP_ID=com.dailyxp
+export IOS_BUNDLE_ID=com.sam.dailyxp
+bash scripts/bootstrap.sh
+```
 
-4. Run the app:
-```bash
+iOS setup
+```
+cd ios
+pod repo update
+rm -f Podfile.lock
+pod install
+cd ..
+```
+
+Run
+```
 flutter run
 ```
 
-## Project Structure
+## Development Workflow
 
-```
-lib/
-├── models/          # Data models
-├── providers/       # State management
-├── screens/         # UI screens
-├── widgets/         # Reusable widgets
-└── main.dart        # App entry point
-```
+- Branching: large changes land via an integration branch (e.g., `integrate/arch-refactor`) before merging to `main`.
+- CI: “Security Check” must pass; consider enabling branch protection on `main`.
+- Local checks (optional): install pre-commit and add gitleaks to run locally.
+- Firebase configs: regenerate with `scripts/bootstrap.sh` whenever rotating creds or adding environments.
 
-## Dependencies
+## UI/UX Guidelines
 
-- `firebase_core`: Firebase initialization
-- `firebase_auth`: User authentication
-- `provider`: State management
-- `fl_chart`: Charts and graphs
-- `lottie`: Animations
+- Platform-specific design: Material 3 on Android; Apple HIG on iOS.
+- Clarity & Simplicity: clean, intuitive flows; consistent motion.
+- Consistency: design tokens for color/typography/spacing; orchestrated animation sequences.
+- Accessibility: Reduced Motion supported globally; respect dynamic text and contrast; haptics thoughtfully applied.
+
+## Roadmap & Tasks
+
+- High-level roadmap: see `ROADMAP.md` (security hardening, talent/perk stabilization, achievements).
+- Active tasks and checklists: see `TODO.md`.
+
+## Screenshots
+
+See the `screenshots/` directory for the latest UI captures.
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch (`git checkout -b feature/...`)
+3. Keep changes focused and covered by the architecture patterns above
+4. Ensure CI “Security Check” passes; avoid committing client configs
 5. Open a Pull Request
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Flutter team for the amazing framework
-- Firebase for the backend services
-- All contributors and users of the app
-
-## Security and Secrets Policy
-
-- Protected assets and secrets are ignored via `.gitignore` to prevent accidental commits:
-  - Generic: `**/secrets/**`, `**/*_secret.*`, `**/*_key.*`, `**/private_keys/**`, `**/*.jks`, `android/**/keystore*`, `**/secrets.json`, `**/config.json`, common cache/tmp paths, local databases, and sensitive media folders.
-  - Firebase client config (treated as sensitive per policy): `lib/firebase_options.dart`, `firebase.json`, `ios/Runner/firebase_config.swift`, plus platform files already ignored: `ios/Runner/GoogleService-Info.plist`, `android/app/google-services.json`.
-
-### Regenerating Firebase Config Locally
-
-This repo does not track Firebase client config. To build locally:
-
-1. Install FlutterFire CLI (one-time):
-   - `dart pub global activate flutterfire_cli`
-2. Configure Firebase and generate options:
-   - From the project root: `flutterfire configure`
-   - This creates `lib/firebase_options.dart` and updates platform configs.
-3. Platform files remain untracked; ensure they exist locally:
-   - iOS: place `ios/Runner/GoogleService-Info.plist` in the Xcode target.
-   - Android: place `android/app/google-services.json` under the app module.
-
-If you rotate Firebase credentials or add environments, re-run `flutterfire configure` and keep generated files uncommitted.
-
-### History Cleanup Guidance (if sensitive files were committed)
-
-If any sensitive files were previously committed, consider purging them from git history and rotating credentials:
-
-- Rotate Firebase keys in the Firebase Console (download fresh `GoogleService-Info.plist` / `google-services.json`).
-- Purge history using `git filter-repo` or BFG (run outside CI):
-  - `git filter-repo --path lib/firebase_options.dart --path ios/Runner/GoogleService-Info.plist --path android/app/google-services.json --invert-paths`
-  - Force-push to protected branches following your org’s policies.
-
-## UI/UX Notes
-
-- The app uses Material 3 (`useMaterial3: true`) via `AppTheme.toThemeData()` to align with Android’s latest guidelines.
-- For iOS, audit key flows for HIG-aligned interactions and accessibility (contrast, minimum tap targets, dynamic text).

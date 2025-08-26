@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Versioning
+- Renumbering: earlier 1.x entries were internal, unreleased milestones used during TestFlight-only development. The pre-1.0 public series begins at `0.7.0` to reflect ongoing stabilization work. Build numbers will continue to increase monotonically on each platform.
+### Security
+- Added repository hardening: ignore Firebase client configs and environment files; prevent accidental commits via `.gitignore` updates.
+- Introduced Security Check CI workflow (Gitleaks + TruffleHog + forbidden-path guard) running on pushes/PRs and manual dispatch.
+- Documented rotation + history cleanup (git-filter-repo/BFG) and added helper scripts under `scripts/`.
+- Added baseline Firestore security rules (`firestore.rules`) with per-user access and ownership validation.
+- Added `scripts/bootstrap.sh` to generate `lib/firebase_options.dart` locally via FlutterFire (no secrets in git).
+
+### Tooling/Docs
+- SECURITY.md added with setup guide, incident response, App Check guidance, and cleanup playbook.
+- CI workflow triggers widened; TruffleHog action reference corrected; Gitleaks config validated for v8.
+
 
 ## [1.5.0] - 2025-08-21
 

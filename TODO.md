@@ -12,12 +12,16 @@ This is a **Flutter/Dart gamified task management application** with a sophistic
 
 ## 🔐 Security/Config Follow-ups (from recent review)
 
-- [ ] Rotate Firebase client credentials and redistribute fresh `GoogleService-Info.plist` / `google-services.json`
-- [ ] Purge sensitive files from git history (if ever committed):
+- [x] Rotate Firebase client credentials and redistribute fresh `GoogleService-Info.plist` / `google-services.json`
+- [x] Purge sensitive files from git history (if ever committed):
       `lib/firebase_options.dart`, `ios/Runner/GoogleService-Info.plist`, `android/app/google-services.json`, `ios/Runner/firebase_config.swift`, `firebase.json`
-- [ ] Add a bootstrap script to generate Firebase configs locally/CI via FlutterFire
-- [ ] Document local setup in SECURITY.md (mirror README section)
-- [ ] Add a CI check to block commits containing forbidden patterns (secrets, keys, keystores)
+- [x] Add a bootstrap script to generate Firebase configs locally/CI via FlutterFire (`scripts/bootstrap.sh`)
+- [x] Document local setup in SECURITY.md (setup, incident response, App Check)
+- [x] Add a CI check to block commits containing forbidden patterns; run Gitleaks/TruffleHog
+- [x] Widen workflow triggers to run on all pushes/PRs and manual dispatch
+- [ ] Enable App Check, monitor, then enforce for Firestore/Storage
+- [ ] Deploy `firestore.rules` to Firebase; add to release checklist
+- [ ] Add branch protection requiring “Security Check” to pass on `main`
 
 ---
 
@@ -108,3 +112,12 @@ Goal: Resolve critical issues and make the talent/perk system robust, testable, 
 ### Animation Polish: Wheel of Time
 - [ ] Revisit the "Wheel of Time" animation: migrate to orchestrator-managed sequence, ensure it doesn’t conflict with completion/snackbar dialogs, and respect Reduced Motion.
 
+---
+
+## 🔀 Architecture Refactor Integration Track
+
+- [x] Create `integrate/arch-refactor` from refactor branch
+- [x] Merge rewritten `main` with `--allow-unrelated-histories`; keep security scaffolding from `main`
+- [x] Regenerate local Firebase configs via bootstrap; verify no sensitive files tracked
+- [x] Ensure Security Check CI passes on integration branch
+- [ ] Open/merge PR into `main` after functional verification (Android/iOS build + smoke tests)
