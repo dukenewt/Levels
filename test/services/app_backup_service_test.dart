@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../lib/services/app_backup_service.dart';
-import '../../lib/models/export_config.dart';
+import 'package:dailyxp/services/app_backup_service.dart';
+import 'package:dailyxp/models/export_config.dart';
 
 void main() {
   setUp(() async {
