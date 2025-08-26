@@ -29,7 +29,8 @@ void main() {
     final export = await AppBackupService.exportAllData(
       config: const ExportConfig(
         includeTestData: true,
-        completedTasksDaysLimit: null, // include all completed tasks regardless of age
+        completedTasksDaysLimit:
+            null, // include all completed tasks regardless of age
       ),
     );
     final tasks = export['tasks'] as List;
