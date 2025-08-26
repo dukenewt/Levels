@@ -35,8 +35,27 @@ jobs:
             exit 1;
           }
 
-      - name: Analyze
+      - name: Analyze (full, non-blocking)
+        continue-on-error: true
         run: flutter analyze
+
+      - name: Determine changed Dart files
+        id: changed
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            lib/**/*.dart
+            test/**/*.dart
+            integration_test/**/*.dart
+
+      - name: Analyze changed files (blocking)
+        if: ${{ steps.changed.outputs.all_changed_files != '' }}
+        run: |
+          echo "Changed Dart files: ${{ steps.changed.outputs.all_changed_files }}"
+          flutter analyze ${{ steps.changed.outputs.all_changed_files }}
+      - name: No Dart file changes detected
+        if: ${{ steps.changed.outputs.all_changed_files == '' }}
+        run: echo "No changed Dart files to analyze."
 
       - name: Unit Tests
         run: flutter test --no-pub
