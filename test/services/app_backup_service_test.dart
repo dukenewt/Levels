@@ -27,7 +27,10 @@ void main() {
 
   test('Export filtering includes test tasks if requested', () async {
     final export = await AppBackupService.exportAllData(
-      config: ExportConfig(includeTestData: true),
+      config: const ExportConfig(
+        includeTestData: true,
+        completedTasksDaysLimit: null, // include all completed tasks regardless of age
+      ),
     );
     final tasks = export['tasks'] as List;
     // Both tasks should be included
