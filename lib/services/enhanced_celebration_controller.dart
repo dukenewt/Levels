@@ -4,7 +4,8 @@ import '../widgets/ring_unraveling_celebration.dart';
 
 /// Enhanced celebration controller that uses the ring unraveling animation
 class EnhancedCelebrationController {
-  static final EnhancedCelebrationController _instance = EnhancedCelebrationController._();
+  static final EnhancedCelebrationController _instance =
+      EnhancedCelebrationController._();
   static EnhancedCelebrationController get instance => _instance;
   EnhancedCelebrationController._();
 
@@ -23,14 +24,14 @@ class EnhancedCelebrationController {
     }
 
     _isShowingCelebration = true;
-    
+
     // For level up celebrations, we want to show the ring that just completed
     // If no specific progress provided, assume the ring was full (1.0)
     final ringProgress = preCompletionProgress ?? 1.0;
-    
+
     // Use provided XP bar color or fall back to rank color
     final celebrationColor = xpBarColor ?? data.rankColor;
-    
+
     // Create the overlay with your enhanced ring animation
     _currentOverlay = OverlayEntry(
       builder: (context) => RingUnravelingCelebration(
@@ -46,7 +47,8 @@ class EnhancedCelebrationController {
     final overlay = Overlay.of(context);
     overlay.insert(_currentOverlay!);
 
-    debugPrint('🎉 Enhanced ring unraveling celebration started for level ${data.newLevel}');
+    debugPrint(
+        '🎉 Enhanced ring unraveling celebration started for level ${data.newLevel}');
     debugPrint('   Progress: ${(ringProgress * 100).toStringAsFixed(1)}%');
     debugPrint('   Color: ${celebrationColor.toString()}');
     debugPrint('   Unlocked perks: ${data.unlockedPerks.join(", ")}');
@@ -64,19 +66,21 @@ class EnhancedCelebrationController {
     if (_isShowingCelebration) return;
 
     _isShowingCelebration = true;
-    
+
     try {
       // For XP gain celebrations, we could show a mini version
       // This could be a separate, simpler animation
       debugPrint('💫 XP gain celebration: +$xpGained XP');
-      debugPrint('   Current progress: ${(currentProgress * 100).toStringAsFixed(1)}%');
+      debugPrint(
+          '   Current progress: ${(currentProgress * 100).toStringAsFixed(1)}%');
       debugPrint('   Ring color: ${ringColor.toString()}');
-      
+
       // You could implement a simpler ring animation here for non-level-up XP gains
       // For now, we'll show a brief pulse effect or mini celebration
-      
+
       // For now, just dismiss after the specified duration
-      final celebrationDuration = duration ?? const Duration(milliseconds: 1500);
+      final celebrationDuration =
+          duration ?? const Duration(milliseconds: 1500);
       await Future.delayed(celebrationDuration);
     } catch (e) {
       debugPrint('Error in XP gain celebration: $e');
@@ -98,9 +102,10 @@ class EnhancedCelebrationController {
     }
 
     _isShowingCelebration = true;
-    
-    final perks = testPerks ?? ['Enhanced Focus', 'Streak Master', 'Time Warrior'];
-    
+
+    final perks =
+        testPerks ?? ['Enhanced Focus', 'Streak Master', 'Time Warrior'];
+
     _currentOverlay = OverlayEntry(
       builder: (context) => RingUnravelingCelebration(
         initialProgress: progress,
@@ -149,4 +154,4 @@ class EnhancedCelebrationController {
       baseColor.withOpacity(0.8),
     ];
   }
-} 
+}

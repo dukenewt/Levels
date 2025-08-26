@@ -43,4 +43,4 @@ class UserPerks {
   );
 
   static List<UserPerk> get allPerks => [smartSuggestions];
-} 
+}

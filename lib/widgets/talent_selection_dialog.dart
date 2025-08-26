@@ -36,7 +36,7 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -71,7 +71,8 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
     _scaleController.forward();
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final result = await userProvider.selectTalent(talent.id, widget.talentChoice.level);
+    final result =
+        await userProvider.selectTalent(talent.id, widget.talentChoice.level);
 
     if (result.success) {
       // Show success and close
@@ -86,7 +87,7 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
         _isSelecting = false;
       });
       _scaleController.reverse();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -101,7 +102,7 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return PopScope(
       canPop: false, // Prevent dismissal - talent choice is mandatory
       child: FadeTransition(
@@ -143,8 +144,9 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
                         const SizedBox(height: 24),
                         _buildChoiceInstructions(theme),
                         const SizedBox(height: 32),
-                        ...widget.talentChoice.options.map((talent) => 
-                          _buildTalentOption(talent, theme)).toList(),
+                        ...widget.talentChoice.options
+                            .map((talent) => _buildTalentOption(talent, theme))
+                            .toList(),
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -273,7 +275,7 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
   Widget _buildTalentOption(UserTalent talent, ThemeData theme) {
     final isSelected = _selectedTalent?.id == talent.id;
     final isOtherSelected = _selectedTalent != null && !isSelected;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: AnimatedScale(
@@ -290,7 +292,7 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: isSelected 
+                  color: isSelected
                       ? theme.colorScheme.primary.withOpacity(0.1)
                       : theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
@@ -324,7 +326,8 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: _getTalentColor(talent.type).withOpacity(0.2),
+                            color:
+                                _getTalentColor(talent.type).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -342,7 +345,7 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
                                 talent.name,
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: isSelected 
+                                  color: isSelected
                                       ? theme.colorScheme.primary
                                       : theme.colorScheme.onSurface,
                                 ),
@@ -398,7 +401,7 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
 
   Widget _buildTalentFeatures(UserTalent talent, ThemeData theme) {
     List<String> features;
-    
+
     switch (talent.type) {
       case TalentType.projectManagement:
         features = [
@@ -427,27 +430,29 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
           ),
         ),
         const SizedBox(height: 4),
-        ...features.map((feature) => Padding(
-          padding: const EdgeInsets.only(bottom: 2),
-          child: Row(
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: 14,
-                color: _getTalentColor(talent.type),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  feature,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+        ...features
+            .map((feature) => Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 14,
+                        color: _getTalentColor(talent.type),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          feature,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-          ),
-        )).toList(),
+                ))
+            .toList(),
       ],
     );
   }

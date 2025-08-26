@@ -31,21 +31,19 @@ class TaskTile extends StatefulWidget {
   State<TaskTile> createState() => _TaskTileState();
 }
 
-class _TaskTileState extends State<TaskTile>
-    with TickerProviderStateMixin {
-  
+class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
   // Animation controllers for different effects
   late AnimationController _completionController;
   late AnimationController _hoverController;
   late AnimationController _pulseController;
-  
+
   // Animations
   late Animation<double> _scaleAnimation;
   late Animation<double> _rotationAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<Color?> _colorAnimation;
   late Animation<double> _pulseAnimation;
-  
+
   bool _isCompleting = false;
   bool _isHovered = false;
 
@@ -73,13 +71,13 @@ class _TaskTileState extends State<TaskTile>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     // Hover/tap feedback animation
     _hoverController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    
+
     // Subtle pulse for active tasks
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 2000),
@@ -89,9 +87,9 @@ class _TaskTileState extends State<TaskTile>
 
   void _setupAnimations() {
     if (!mounted) return;
-    
+
     final theme = Theme.of(context);
-    
+
     // Scale effect for completion
     _scaleAnimation = Tween<double>(
       begin: 1.0,
@@ -158,22 +156,21 @@ class _TaskTileState extends State<TaskTile>
       setState(() {
         _isCompleting = true;
       });
-      
+
       // Stop idle animations
       _pulseController.safeStop();
       _hoverController.safeStop();
-      
+
       // Start completion animation
       _completionController.forward();
-      
+
       try {
         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
         // The provider now handles all completion logic
         await taskProvider.completeTask(context, widget.task);
-        
+
         // The tile will be rebuilt by the provider's notification
         // and the didUpdateWidget will handle the final animation state.
-
       } catch (e) {
         debugPrint('Error completing task: $e');
         if (mounted) {
@@ -198,7 +195,7 @@ class _TaskTileState extends State<TaskTile>
     // Stop any lingering animations
     _pulseController.safeStop();
     _hoverController.safeReset();
-    
+
     // Reset hover state
     setState(() => _isHovered = false);
   }
@@ -206,7 +203,7 @@ class _TaskTileState extends State<TaskTile>
   /// Safely revert completion animation with proper cleanup
   Future<void> _revertCompletionAnimation() async {
     await _completionController.safeReverse();
-    
+
     // Reset hover state
     if (mounted) {
       setState(() => _isHovered = false);
@@ -257,7 +254,8 @@ class _TaskTileState extends State<TaskTile>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error completing task: ${result.error?.message ?? "Unknown error"}'),
+          content: Text(
+              'Error completing task: ${result.error?.message ?? "Unknown error"}'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -295,9 +293,9 @@ class _TaskTileState extends State<TaskTile>
       ]),
       builder: (context, child) {
         return Transform.scale(
-          scale: (_scaleAnimation.value) * 
-                (_isHovered ? 1.02 : 1.0) * 
-                (_pulseAnimation.value),
+          scale: (_scaleAnimation.value) *
+              (_isHovered ? 1.02 : 1.0) *
+              (_pulseAnimation.value),
           child: Transform.rotate(
             angle: _rotationAnimation.value,
             child: Opacity(
@@ -320,7 +318,7 @@ class _TaskTileState extends State<TaskTile>
   @override
   void didUpdateWidget(TaskTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Check if task completion state changed
     if (oldWidget.task.isCompleted != widget.task.isCompleted) {
       if (widget.task.isCompleted) {
@@ -350,7 +348,7 @@ class _TaskTileState extends State<TaskTile>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: widget.task.isCompleted 
+            color: widget.task.isCompleted
                 ? theme.colorScheme.primary.withOpacity(0.3)
                 : Colors.transparent,
             width: 1,
@@ -376,8 +374,10 @@ class _TaskTileState extends State<TaskTile>
       return Dismissible(
         key: Key(widget.task.id),
         confirmDismiss: widget.confirmDismiss,
-        background: _buildSwipeBackground(Colors.green, Icons.check, Alignment.centerLeft),
-        secondaryBackground: _buildSwipeBackground(Colors.red, Icons.delete, Alignment.centerRight),
+        background: _buildSwipeBackground(
+            Colors.green, Icons.check, Alignment.centerLeft),
+        secondaryBackground: _buildSwipeBackground(
+            Colors.red, Icons.delete, Alignment.centerRight),
         child: taskWidget,
       );
     }
@@ -393,7 +393,8 @@ class _TaskTileState extends State<TaskTile>
     return GestureDetector(
       onTap: widget.task.isCompleted ? null : _handleComplete,
       child: TweenAnimationBuilder<double>(
-        key: ValueKey('completion_${widget.task.id}_${widget.task.isCompleted}'),
+        key:
+            ValueKey('completion_${widget.task.id}_${widget.task.isCompleted}'),
         duration: const Duration(milliseconds: 300),
         tween: Tween<double>(
           begin: 0.0,
@@ -453,10 +454,9 @@ class _TaskTileState extends State<TaskTile>
           key: ValueKey('title_${widget.task.id}_${widget.task.isCompleted}'),
           duration: const Duration(milliseconds: 300),
           style: theme.textTheme.titleMedium!.copyWith(
-            decoration: widget.task.isCompleted 
-                ? TextDecoration.lineThrough 
-                : null,
-            color: widget.task.isCompleted 
+            decoration:
+                widget.task.isCompleted ? TextDecoration.lineThrough : null,
+            color: widget.task.isCompleted
                 ? theme.colorScheme.onSurface.withOpacity(0.6)
                 : theme.colorScheme.onSurface,
           ),
@@ -465,13 +465,13 @@ class _TaskTileState extends State<TaskTile>
         if (widget.task.description.isNotEmpty) ...[
           const SizedBox(height: 4),
           AnimatedDefaultTextStyle(
-            key: ValueKey('description_${widget.task.id}_${widget.task.isCompleted}'),
+            key: ValueKey(
+                'description_${widget.task.id}_${widget.task.isCompleted}'),
             duration: const Duration(milliseconds: 300),
             style: theme.textTheme.bodyMedium!.copyWith(
               color: theme.colorScheme.onSurface.withOpacity(0.6),
-              decoration: widget.task.isCompleted 
-                  ? TextDecoration.lineThrough 
-                  : null,
+              decoration:
+                  widget.task.isCompleted ? TextDecoration.lineThrough : null,
             ),
             child: Text(
               widget.task.description,
@@ -491,11 +491,11 @@ class _TaskTileState extends State<TaskTile>
   Widget _buildTimeChip(ThemeData theme) {
     final isOverdue = DateHelpers.isOverdue(widget.task.dueDate!);
     final timeText = DateHelpers.formatDueDate(context, widget.task.dueDate!);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isOverdue 
+        color: isOverdue
             ? theme.colorScheme.error.withOpacity(0.1)
             : theme.colorScheme.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
@@ -505,9 +505,8 @@ class _TaskTileState extends State<TaskTile>
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: isOverdue 
-              ? theme.colorScheme.error
-              : theme.colorScheme.primary,
+          color:
+              isOverdue ? theme.colorScheme.error : theme.colorScheme.primary,
         ),
       ),
     );
@@ -558,7 +557,8 @@ class _TaskTileState extends State<TaskTile>
     );
   }
 
-  Widget _buildSwipeBackground(Color color, IconData icon, Alignment alignment) {
+  Widget _buildSwipeBackground(
+      Color color, IconData icon, Alignment alignment) {
     return Container(
       alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -591,7 +591,8 @@ class _TaskTileState extends State<TaskTile>
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: Icon(Icons.edit_outlined, color: Theme.of(context).colorScheme.primary),
+              leading: Icon(Icons.edit_outlined,
+                  color: Theme.of(context).colorScheme.primary),
               title: const Text('Edit Task'),
               onTap: () {
                 Navigator.pop(context);
@@ -626,7 +627,8 @@ class _TaskTileState extends State<TaskTile>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Task'),
-        content: const Text('Are you sure you want to delete this task? This action cannot be undone.'),
+        content: const Text(
+            'Are you sure you want to delete this task? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -635,7 +637,8 @@ class _TaskTileState extends State<TaskTile>
           TextButton(
             child: const Text('Delete'),
             onPressed: () {
-              final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+              final taskProvider =
+                  Provider.of<TaskProvider>(context, listen: false);
               taskProvider.deleteTask(widget.task.id);
               Navigator.of(context).pop();
             },
@@ -650,7 +653,8 @@ class _TaskTileState extends State<TaskTile>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Mark Task as Completed'),
-        content: const Text('Are you sure you want to mark this task as completed?'),
+        content:
+            const Text('Are you sure you want to mark this task as completed?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -659,8 +663,10 @@ class _TaskTileState extends State<TaskTile>
           TextButton(
             child: const Text('Complete'),
             onPressed: () {
-              final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-              final userProvider = Provider.of<UserProvider>(context, listen: false);
+              final taskProvider =
+                  Provider.of<TaskProvider>(context, listen: false);
+              final userProvider =
+                  Provider.of<UserProvider>(context, listen: false);
               TaskCompletionService(
                 userProvider: userProvider,
                 xpEngine: IntelligentXPEngine(),
@@ -681,4 +687,4 @@ class _TaskTileState extends State<TaskTile>
     _pulseController.dispose();
     super.dispose();
   }
-} 
+}

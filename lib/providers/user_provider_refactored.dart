@@ -18,40 +18,41 @@ class UserProvider with ChangeNotifier {
   final AuthService _authService;
   final FirestoreService _firestoreService;
   final TalentPerkController _talentPerkController;
-  
+
   app_user.User? _user;
   bool _isLoading = false;
   String? _error;
-  
+
   // Callbacks for UI events (but not effect calculations)
   Function(int oldLevel, int newLevel)? onLevelUp;
   Function(TalentChoice talentChoice)? onTalentChoice;
   Function(EnhancedUserPerk perk)? onPerkUnlock;
-  
+
   // Getters
   app_user.User? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
   TalentPerkController get talentPerkController => _talentPerkController;
-  
+
   // Simple delegation to controller for effect-related queries
   bool hasPerk(String perk) => _user?.perks.contains(perk) ?? false;
   bool hasTalent(String talentId) => _user?.hasTalent(talentId) ?? false;
-  bool hasProjectManagementTalent() => _talentPerkController.hasProjectManagement();
+  bool hasProjectManagementTalent() =>
+      _talentPerkController.hasProjectManagement();
   bool hasNLPTalent() => _talentPerkController.hasSmartCategorization();
   bool needsTalentChoice() => _talentPerkController.state.needsTalentChoice;
-  
+
   // Basic user data getters (not effect-related)
   int get nextLevelXp {
     if (_user == null) return 100;
     return _user!.level * 100;
   }
-  
+
   TalentChoice? getAvailableTalentChoice() => _user?.getAvailableTalentChoice();
-  
+
   UserProvider(
-    this._authService, 
-    this._firestoreService, 
+    this._authService,
+    this._firestoreService,
     this._talentPerkController,
   ) {
     _authService.user.listen(_onAuthStateChanged);
@@ -60,13 +61,14 @@ class UserProvider with ChangeNotifier {
   Future<void> _onAuthStateChanged(firebase_auth.User? firebaseUser) async {
     _setLoading(true);
     _clearError();
-    
+
     try {
       if (firebaseUser == null) {
         _user = null;
         _talentPerkController.clear();
       } else {
-        var userFromFirestore = await _firestoreService.getUser(firebaseUser.uid);
+        var userFromFirestore =
+            await _firestoreService.getUser(firebaseUser.uid);
         if (userFromFirestore == null) {
           await _firestoreService.createUserFromFirebase(
             firebaseUser.uid,
@@ -76,7 +78,7 @@ class UserProvider with ChangeNotifier {
           userFromFirestore = await _firestoreService.getUser(firebaseUser.uid);
         }
         _user = userFromFirestore;
-        
+
         // Update controller with new user data
         if (_user != null) {
           await _talentPerkController.updateUser(_user!);
@@ -87,45 +89,45 @@ class UserProvider with ChangeNotifier {
     } finally {
       _setLoading(false);
     }
-    
+
     notifyListeners();
   }
 
   /// Apply state delta to user (pure persistence)
   Future<bool> applyStateDelta(StateDelta delta) async {
     if (_user == null || delta.user == null) return false;
-    
+
     _setLoading(true);
     _clearError();
-    
+
     try {
       final userDelta = delta.user!;
       app_user.User updatedUser = _user!;
-      
+
       // Apply XP changes
       if (userDelta.xpChange != null) {
         final newCurrentXp = updatedUser.currentXp + userDelta.xpChange!;
         updatedUser = updatedUser.copyWith(currentXp: newCurrentXp);
       }
-      
+
       // Apply level changes
       if (userDelta.levelChange != null) {
         final newLevel = updatedUser.level + userDelta.levelChange!;
         updatedUser = updatedUser.copyWith(level: newLevel);
       }
-      
+
       // Apply new perks
       if (userDelta.newPerks != null) {
         final newPerks = [...updatedUser.perks, ...userDelta.newPerks!];
         updatedUser = updatedUser.copyWith(perks: newPerks);
       }
-      
+
       // Apply new talents
       if (userDelta.newTalents != null) {
         final newTalents = [...updatedUser.talents, ...userDelta.newTalents!];
         updatedUser = updatedUser.copyWith(talents: newTalents);
       }
-      
+
       // Apply additional changes
       if (userDelta.additionalChanges != null) {
         for (final entry in userDelta.additionalChanges!.entries) {
@@ -136,7 +138,10 @@ class UserProvider with ChangeNotifier {
               break;
             case 'talentChoices':
               if (entry.value is Map<String, dynamic>) {
-                final newChoices = {...updatedUser.talentChoices, ...entry.value as Map<String, dynamic>};
+                final newChoices = {
+                  ...updatedUser.talentChoices,
+                  ...entry.value as Map<String, dynamic>
+                };
                 updatedUser = updatedUser.copyWith(talentChoices: newChoices);
               }
               break;
@@ -144,22 +149,22 @@ class UserProvider with ChangeNotifier {
           }
         }
       }
-      
+
       // Persist to Firestore
       await _firestoreService.setUser(updatedUser);
-      
+
       // Update local state
       final oldUser = _user!;
       _user = updatedUser;
-      
+
       // Update controller
       await _talentPerkController.updateUser(updatedUser);
-      
+
       // Trigger callbacks for UI events (but don't calculate effects here)
       if (userDelta.levelChange != null && userDelta.levelChange! > 0) {
         onLevelUp?.call(oldUser.level, updatedUser.level);
       }
-      
+
       // Trigger talent choice if needed
       if (updatedUser.needsTalentChoice()) {
         final talentChoice = updatedUser.getAvailableTalentChoice();
@@ -167,7 +172,7 @@ class UserProvider with ChangeNotifier {
           onTalentChoice?.call(talentChoice);
         }
       }
-      
+
       // Trigger perk unlock notifications
       if (userDelta.newPerks != null) {
         for (final perkId in userDelta.newPerks!) {
@@ -177,10 +182,9 @@ class UserProvider with ChangeNotifier {
           }
         }
       }
-      
+
       notifyListeners();
       return true;
-      
     } catch (e) {
       _setError(e.toString());
       return false;
@@ -192,24 +196,26 @@ class UserProvider with ChangeNotifier {
   /// Legacy XP addition method - now creates a StateDelta and applies it
   Future<void> addXp(int amount) async {
     if (_user == null) return;
-    
+
     final oldLevel = _user!.level;
     final oldXp = _user!.currentXp;
-    
+
     // Calculate new level using the existing logic
     int newXp = oldXp + amount;
     int newLevel = oldLevel;
-    
+
     int requiredXp = _xpForLevel(newLevel);
     while (newXp >= requiredXp) {
       newXp -= requiredXp;
       newLevel++;
       requiredXp = _xpForLevel(newLevel);
     }
-    
+
     final leveledUp = newLevel > oldLevel;
-    final newPerks = leveledUp ? _getPerksUnlockedBetweenLevels(oldLevel, newLevel) : <String>[];
-    
+    final newPerks = leveledUp
+        ? _getPerksUnlockedBetweenLevels(oldLevel, newLevel)
+        : <String>[];
+
     // Create state delta
     final delta = StateDelta(
       user: UserStateDelta(
@@ -223,7 +229,7 @@ class UserProvider with ChangeNotifier {
       timestamp: DateTime.now(),
       operation: 'add_xp',
     );
-    
+
     await applyStateDelta(delta);
   }
 
@@ -233,14 +239,15 @@ class UserProvider with ChangeNotifier {
       return TalentSelectionResult.error('No user logged in');
     }
 
-    final result = TalentManagementService.selectTalent(_user!, talentId, level);
+    final result =
+        TalentManagementService.selectTalent(_user!, talentId, level);
     if (result.success && result.updatedUser != null) {
       await _firestoreService.setUser(result.updatedUser!);
       _user = result.updatedUser;
-      
+
       // Update controller
       await _talentPerkController.updateUser(_user!);
-      
+
       notifyListeners();
     }
 
@@ -269,7 +276,7 @@ class UserProvider with ChangeNotifier {
   /// Reset user to level one - pure persistence
   Future<void> resetToLevelOne() async {
     if (_user == null) return;
-    
+
     final delta = StateDelta(
       user: UserStateDelta(
         additionalChanges: {
@@ -283,23 +290,23 @@ class UserProvider with ChangeNotifier {
       timestamp: DateTime.now(),
       operation: 'reset_level',
     );
-    
+
     await applyStateDelta(delta);
   }
 
   /// Update profile picture - pure persistence
   Future<void> updateProfilePicture(String url) async {
     if (_user == null) return;
-    
+
     _setLoading(true);
     try {
       await _firestoreService.updateUserProfilePicture(_user!.id, url);
       final updatedUser = _user!.copyWith(profilePictureUrl: url);
       _user = updatedUser;
-      
+
       // Update controller
       await _talentPerkController.updateUser(updatedUser);
-      
+
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
@@ -311,10 +318,10 @@ class UserProvider with ChangeNotifier {
   /// Refresh user data from Firestore
   Future<void> refresh() async {
     if (_user?.id == null) return;
-    
+
     _setLoading(true);
     _clearError();
-    
+
     try {
       final refreshedUser = await _firestoreService.getUser(_user!.id);
       if (refreshedUser != null) {
@@ -334,12 +341,12 @@ class UserProvider with ChangeNotifier {
     _isLoading = loading;
     notifyListeners();
   }
-  
+
   void _setError(String error) {
     _error = error;
     notifyListeners();
   }
-  
+
   void _clearError() {
     _error = null;
   }
@@ -352,7 +359,7 @@ class UserProvider with ChangeNotifier {
   // Perk unlock helper (kept for legacy compatibility)
   List<String> _getPerksUnlockedBetweenLevels(int oldLevel, int newLevel) {
     final perks = <String>[];
-    
+
     for (int level = oldLevel + 1; level <= newLevel; level++) {
       switch (level) {
         case 5:
@@ -381,7 +388,7 @@ class UserProvider with ChangeNotifier {
           break;
       }
     }
-    
+
     return perks;
   }
 
@@ -397,16 +404,16 @@ extension UserProviderLegacySupport on UserProvider {
   List<EnhancedUserPerk> getActivePerks() {
     return talentPerkController.state.unlockedPerks;
   }
-  
+
   /// Get perks for category - delegated to controller
   List<EnhancedUserPerk> getPerksForCategory(String category) {
     return talentPerkController.state.unlockedPerks
-        .where((perk) => perk.effects.any((effect) => 
-            effect.effect == PerkEffect.categoryBonus && 
+        .where((perk) => perk.effects.any((effect) =>
+            effect.effect == PerkEffect.categoryBonus &&
             effect.category?.toLowerCase() == category.toLowerCase()))
         .toList();
   }
-  
+
   /// Get perk summary - delegated to controller
   Map<String, dynamic> getPerkSummary() {
     return talentPerkController.getPerkSummary();
@@ -427,12 +434,12 @@ extension UserProviderEffectQueries on UserProvider {
       difficulty: difficulty,
     );
   }
-  
+
   /// Get effect preview for category - delegated to controller
   Future<List<String>> getEffectPreview(String category) {
     return talentPerkController.getEffectPreviewForContext(category: category);
   }
-  
+
   /// Check if has effects for category - delegated to controller
   bool hasEffectsForCategory(String category) {
     return talentPerkController.hasEffectsForCategory(category);

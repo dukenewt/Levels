@@ -75,9 +75,9 @@ class AppTheme {
     blurRadius: 0,
     glassOpacity: 0,
     priorityColors: {
-      Priority.low: Color(0xFF10B981),    // Emerald
+      Priority.low: Color(0xFF10B981), // Emerald
       Priority.medium: Color(0xFFF59E0B), // Amber
-      Priority.high: Color(0xFFEF4444),   // Red
+      Priority.high: Color(0xFFEF4444), // Red
     },
   );
 
@@ -101,9 +101,9 @@ class AppTheme {
     blurRadius: 0,
     glassOpacity: 0,
     priorityColors: {
-      Priority.low: Color(0xFF34D399),    // Emerald
+      Priority.low: Color(0xFF34D399), // Emerald
       Priority.medium: Color(0xFFFBBF24), // Yellow
-      Priority.high: Color(0xFFF87171),   // Light red
+      Priority.high: Color(0xFFF87171), // Light red
     },
   );
 
@@ -214,7 +214,8 @@ class AppTheme {
   static const AppTheme professional = AppTheme(
     type: ThemeType.professional,
     name: 'Executive',
-    description: 'Sophisticated theme with subtle gradients for professional use',
+    description:
+        'Sophisticated theme with subtle gradients for professional use',
     isPremium: false,
     primaryColor: Color(0xFF1E40AF), // Navy blue
     secondaryColor: Color(0xFF059669), // Emerald
@@ -366,19 +367,19 @@ class AppTheme {
 
   // Get all available themes
   static List<AppTheme> get allThemes => [
-    defaultLight,
-    defaultDark,
-    premiumGlassDark,
-    premiumGlassLight,
-    premiumNeon,
-    premiumMinimal,
-    professional,
-    natural,
-    cyanPinkTeal,
-    oceanDepths,
-    forestCanopy,
-    sunsetGlow,
-  ];
+        defaultLight,
+        defaultDark,
+        premiumGlassDark,
+        premiumGlassLight,
+        premiumNeon,
+        premiumMinimal,
+        professional,
+        natural,
+        cyanPinkTeal,
+        oceanDepths,
+        forestCanopy,
+        sunsetGlow,
+      ];
 
   // Get theme by type
   static AppTheme getThemeByType(ThemeType type) {
@@ -387,13 +388,13 @@ class AppTheme {
 
   // Enhanced ThemeData conversion with better gradient integration
   ThemeData toThemeData() {
-    final isDark = type == ThemeType.defaultDark || 
-                   type == ThemeType.premiumGlassDark || 
-                   type == ThemeType.premiumNeon ||
-                   type == ThemeType.cyanPinkTeal ||
-                   type == ThemeType.oceanDepths ||
-                   type == ThemeType.forestCanopy ||
-                   type == ThemeType.sunsetGlow;
+    final isDark = type == ThemeType.defaultDark ||
+        type == ThemeType.premiumGlassDark ||
+        type == ThemeType.premiumNeon ||
+        type == ThemeType.cyanPinkTeal ||
+        type == ThemeType.oceanDepths ||
+        type == ThemeType.forestCanopy ||
+        type == ThemeType.sunsetGlow;
 
     return ThemeData(
       useMaterial3: true,
@@ -407,7 +408,7 @@ class AppTheme {
         onSurface: textColor,
         brightness: isDark ? Brightness.dark : Brightness.light,
       ),
-      
+
       // Enhanced card theme with subtle gradients
       cardTheme: CardTheme(
         elevation: 2,
@@ -417,7 +418,7 @@ class AppTheme {
         ),
         color: surfaceColor,
       ),
-      
+
       // Enhanced AppBar with gradient potential
       appBarTheme: AppBarTheme(
         centerTitle: false,
@@ -430,7 +431,7 @@ class AppTheme {
           color: textColor,
         ),
       ),
-      
+
       // Better input decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -450,7 +451,7 @@ class AppTheme {
         labelStyle: TextStyle(color: textColor.withOpacity(0.8)),
         hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
       ),
-      
+
       // Enhanced button themes
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -463,13 +464,13 @@ class AppTheme {
           foregroundColor: Colors.white,
         ),
       ),
-      
+
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 4,
       ),
-      
+
       // Enhanced text theme
       textTheme: TextTheme(
         headlineLarge: TextStyle(
@@ -502,4 +503,4 @@ class AppTheme {
       ),
     );
   }
-} 
+}

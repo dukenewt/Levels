@@ -25,7 +25,15 @@ jobs:
         run: flutter pub get
 
       - name: Format Check
-        run: dart format --set-exit-if-changed .
+        run: |
+          set -e
+          echo "Checking Dart formatting..."
+          # Show files that would be changed and fail if any are unformatted
+          dart format --output=show --set-exit-if-changed . || {
+            echo "\nFormatting changes detected. To fix locally, run:";
+            echo "  dart format .";
+            exit 1;
+          }
 
       - name: Analyze
         run: flutter analyze
@@ -36,4 +44,3 @@ jobs:
       # Optional: Uncomment to build Android on CI (heavier)
       # - name: Build Android APK (optional)
       #   run: flutter build apk --debug
-

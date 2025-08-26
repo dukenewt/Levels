@@ -3,11 +3,11 @@
 
 /// Defines where an effect applies
 enum EffectScope {
-  global,     // Applies to all tasks/activities
-  category,   // Applies to specific task categories
-  task,       // Applies to specific tasks
-  context;    // Applies based on context (time, streak, etc.)
-  
+  global, // Applies to all tasks/activities
+  category, // Applies to specific task categories
+  task, // Applies to specific tasks
+  context; // Applies based on context (time, streak, etc.)
+
   String get id {
     return name;
   }
@@ -15,11 +15,11 @@ enum EffectScope {
 
 /// Defines how an effect modifies values
 enum EffectModifier {
-  additive,       // Adds a flat amount (+10 XP)
+  additive, // Adds a flat amount (+10 XP)
   multiplicative, // Multiplies by percentage (+15%)
-  override,       // Replaces the value entirely
-  conditional;    // Applies only if conditions are met
-  
+  override, // Replaces the value entirely
+  conditional; // Applies only if conditions are met
+
   String get id {
     return name;
   }
@@ -27,12 +27,12 @@ enum EffectModifier {
 
 /// Defines when/how effects stack with others
 enum EffectStacking {
-  none,        // Only one effect of this type applies
-  additive,    // Multiple effects add together (+10% + 15% = +25%)
+  none, // Only one effect of this type applies
+  additive, // Multiple effects add together (+10% + 15% = +25%)
   multiplicative, // Multiple effects multiply (1.1 * 1.15 = 1.265)
-  highest,     // Only the highest value applies
-  latest;      // Only the most recently applied effect counts
-  
+  highest, // Only the highest value applies
+  latest; // Only the most recently applied effect counts
+
   String get id {
     return name;
   }
@@ -40,12 +40,12 @@ enum EffectStacking {
 
 /// Duration/persistence of an effect
 enum EffectDuration {
-  permanent,   // Always active once unlocked
-  session,     // Active for current app session
-  task,        // Active for single task completion
-  streak,      // Active while maintaining streak
-  temporary;   // Has explicit start/end times
-  
+  permanent, // Always active once unlocked
+  session, // Active for current app session
+  task, // Active for single task completion
+  streak, // Active while maintaining streak
+  temporary; // Has explicit start/end times
+
   String get id {
     return name;
   }
@@ -53,18 +53,18 @@ enum EffectDuration {
 
 /// Conditions that must be met for effect to apply
 class EffectCondition {
-  final String type;           // 'category', 'difficulty', 'time', 'streak', etc.
-  final String operator;       // 'equals', 'greater_than', 'contains', etc.
-  final dynamic value;         // The value to compare against
-  final bool inverted;         // Whether to invert the condition
-  
+  final String type; // 'category', 'difficulty', 'time', 'streak', etc.
+  final String operator; // 'equals', 'greater_than', 'contains', etc.
+  final dynamic value; // The value to compare against
+  final bool inverted; // Whether to invert the condition
+
   const EffectCondition({
     required this.type,
     required this.operator,
     required this.value,
     this.inverted = false,
   });
-  
+
   Map<String, dynamic> toJson() {
     return {
       'type': type,
@@ -73,7 +73,7 @@ class EffectCondition {
       'inverted': inverted,
     };
   }
-  
+
   factory EffectCondition.fromJson(Map<String, dynamic> json) {
     return EffectCondition(
       type: json['type'] as String,
@@ -82,12 +82,12 @@ class EffectCondition {
       inverted: json['inverted'] as bool? ?? false,
     );
   }
-  
+
   /// Check if this condition is met given the context
   bool isMet(Map<String, dynamic> context) {
     final contextValue = context[type];
     bool result = false;
-    
+
     switch (operator) {
       case 'equals':
         result = contextValue == value;
@@ -96,16 +96,19 @@ class EffectCondition {
         result = contextValue != value;
         break;
       case 'greater_than':
-        result = (contextValue as num?) != null && 
-                 (contextValue as num) > (value as num);
+        result = (contextValue as num?) != null &&
+            (contextValue as num) > (value as num);
         break;
       case 'less_than':
-        result = (contextValue as num?) != null && 
-                 (contextValue as num) < (value as num);
+        result = (contextValue as num?) != null &&
+            (contextValue as num) < (value as num);
         break;
       case 'contains':
-        result = contextValue?.toString().toLowerCase()
-                    .contains(value.toString().toLowerCase()) ?? false;
+        result = contextValue
+                ?.toString()
+                .toLowerCase()
+                .contains(value.toString().toLowerCase()) ??
+            false;
         break;
       case 'in_list':
         result = (value as List?)?.contains(contextValue) ?? false;
@@ -113,27 +116,28 @@ class EffectCondition {
       default:
         result = false;
     }
-    
+
     return inverted ? !result : result;
   }
 }
 
 /// Unified effect model that replaces all scattered effect logic
 class Effect {
-  final String id;                        // Unique identifier
-  final String name;                      // Human-readable name
-  final String description;               // Description for UI
-  final EffectScope scope;                // Where this effect applies
-  final EffectModifier modifier;          // How this effect modifies values
-  final EffectStacking stacking;          // How this effect stacks
-  final EffectDuration duration;          // How long this effect lasts
-  final double value;                     // The effect value
-  final String? targetProperty;           // What property this affects (xp, loot_chance, etc.)
+  final String id; // Unique identifier
+  final String name; // Human-readable name
+  final String description; // Description for UI
+  final EffectScope scope; // Where this effect applies
+  final EffectModifier modifier; // How this effect modifies values
+  final EffectStacking stacking; // How this effect stacks
+  final EffectDuration duration; // How long this effect lasts
+  final double value; // The effect value
+  final String?
+      targetProperty; // What property this affects (xp, loot_chance, etc.)
   final List<EffectCondition> conditions; // When this effect applies
-  final Map<String, dynamic> metadata;    // Additional effect data
-  final DateTime? createdAt;              // When effect was created
-  final DateTime? expiresAt;              // When effect expires (for temporary)
-  
+  final Map<String, dynamic> metadata; // Additional effect data
+  final DateTime? createdAt; // When effect was created
+  final DateTime? expiresAt; // When effect expires (for temporary)
+
   const Effect({
     required this.id,
     required this.name,
@@ -149,7 +153,7 @@ class Effect {
     this.createdAt,
     this.expiresAt,
   });
-  
+
   /// Create an XP bonus effect
   factory Effect.xpBonus({
     required String id,
@@ -160,7 +164,7 @@ class Effect {
     List<EffectCondition> conditions = const [],
   }) {
     final effectConditions = <EffectCondition>[...conditions];
-    
+
     // Add category condition if specified
     if (category != null) {
       effectConditions.add(EffectCondition(
@@ -169,7 +173,7 @@ class Effect {
         value: category,
       ));
     }
-    
+
     return Effect(
       id: id,
       name: name,
@@ -185,7 +189,7 @@ class Effect {
       conditions: effectConditions,
     );
   }
-  
+
   /// Create a loot box bonus effect
   factory Effect.lootBoxBonus({
     required String id,
@@ -206,7 +210,7 @@ class Effect {
       conditions: conditions,
     );
   }
-  
+
   /// Create a streak protection effect
   factory Effect.streakFreeze({
     required String id,
@@ -217,7 +221,7 @@ class Effect {
     return Effect(
       id: id,
       name: name,
-      description: uses == 1 
+      description: uses == 1
           ? 'One-time streak protection'
           : '$uses streak protection uses',
       scope: EffectScope.context,
@@ -230,24 +234,24 @@ class Effect {
       metadata: {'uses': uses, 'remaining_uses': uses},
     );
   }
-  
+
   /// Check if this effect applies to the given context
   bool appliesTo(Map<String, dynamic> context) {
     // Check if effect has expired
     if (expiresAt != null && DateTime.now().isAfter(expiresAt!)) {
       return false;
     }
-    
+
     // Check all conditions
     return conditions.every((condition) => condition.isMet(context));
   }
-  
+
   /// Apply this effect to a base value
   double applyTo(double baseValue, Map<String, dynamic> context) {
     if (!appliesTo(context)) {
       return baseValue;
     }
-    
+
     switch (modifier) {
       case EffectModifier.additive:
         return baseValue + value;
@@ -260,7 +264,7 @@ class Effect {
         return value;
     }
   }
-  
+
   /// Get a copy of this effect with updated metadata
   Effect copyWith({
     String? id,
@@ -293,7 +297,7 @@ class Effect {
       expiresAt: expiresAt ?? this.expiresAt,
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -311,7 +315,7 @@ class Effect {
       'expiresAt': expiresAt?.toIso8601String(),
     };
   }
-  
+
   factory Effect.fromJson(Map<String, dynamic> json) {
     return Effect(
       id: json['id'] as String,
@@ -336,26 +340,27 @@ class Effect {
       value: (json['value'] as num).toDouble(),
       targetProperty: json['targetProperty'] as String?,
       conditions: (json['conditions'] as List<dynamic>?)
-          ?.map((c) => EffectCondition.fromJson(c as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map((c) => EffectCondition.fromJson(c as Map<String, dynamic>))
+              .toList() ??
+          [],
       metadata: json['metadata'] as Map<String, dynamic>? ?? {},
-      createdAt: json['createdAt'] != null 
+      createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
-      expiresAt: json['expiresAt'] != null 
+      expiresAt: json['expiresAt'] != null
           ? DateTime.parse(json['expiresAt'] as String)
           : null,
     );
   }
-  
+
   @override
   bool operator ==(Object other) {
     return other is Effect && other.id == id;
   }
-  
+
   @override
   int get hashCode => id.hashCode;
-  
+
   @override
   String toString() {
     return 'Effect(id: $id, name: $name, scope: $scope, value: $value)';
@@ -375,7 +380,7 @@ class EffectContext {
       'category': category,
       'difficulty': difficulty,
     };
-    
+
     if (streak != null) context['streak'] = streak;
     if (completionTime != null) {
       context['completion_time'] = completionTime;
@@ -383,14 +388,14 @@ class EffectContext {
       context['is_morning'] = completionTime.hour < 12;
       context['is_weekend'] = completionTime.weekday > 5;
     }
-    
+
     if (additional != null) {
       context.addAll(additional);
     }
-    
+
     return context;
   }
-  
+
   static Map<String, dynamic> forPreview({
     required String category,
     Map<String, dynamic>? additional,
@@ -401,11 +406,11 @@ class EffectContext {
       'streak': 1,
       'completion_time': DateTime.now(),
     };
-    
+
     if (additional != null) {
       context.addAll(additional);
     }
-    
+
     return context;
   }
 }

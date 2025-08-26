@@ -108,8 +108,8 @@ class EpicProject {
     this.startedAt,
     this.completedAt,
     this.dueDate,
-  }) : id = id ?? const Uuid().v4(),
-       createdAt = createdAt ?? DateTime.now();
+  })  : id = id ?? const Uuid().v4(),
+        createdAt = createdAt ?? DateTime.now();
 
   double get progressPercentage {
     if (requiredTasks == 0) return 0.0;
@@ -182,13 +182,13 @@ class EpicProject {
       ),
       reward: EpicReward.fromJson(json['reward'] as Map<String, dynamic>),
       createdAt: DateTime.parse(json['createdAt'] as String),
-      startedAt: json['startedAt'] != null 
+      startedAt: json['startedAt'] != null
           ? DateTime.parse(json['startedAt'] as String)
           : null,
-      completedAt: json['completedAt'] != null 
+      completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'] as String)
           : null,
-      dueDate: json['dueDate'] != null 
+      dueDate: json['dueDate'] != null
           ? DateTime.parse(json['dueDate'] as String)
           : null,
     );
@@ -245,14 +245,15 @@ class EpicRewards {
   );
 
   static List<EpicReward> get allRewards => [
-    oceanTheme,
-    forestTheme,
-    sunsetTheme,
-    epicMaster,
-  ];
+        oceanTheme,
+        forestTheme,
+        sunsetTheme,
+        epicMaster,
+      ];
 
   static EpicReward getRandomReward() {
-    final rewards = allRewards.where((r) => r.type == EpicRewardType.theme).toList();
+    final rewards =
+        allRewards.where((r) => r.type == EpicRewardType.theme).toList();
     rewards.shuffle();
     return rewards.first;
   }

@@ -37,21 +37,22 @@ class TaskProvider with ChangeNotifier {
   final SecureStorageService _storage;
   final UserProvider _userProvider;
   final IntelligentXPEngine _xpEngine;
-  
+
   // State management
   TaskOperationState _operationState = TaskOperationState.idle;
   AppException? _lastError;
   bool _isInitialized = false;
   bool _isInitializing = false;
-  
+
   final _uuid = const Uuid();
 
   TaskProvider({
     required SecureStorageService storage,
     required UserProvider userProvider,
-  }) : _storage = storage,
-       _userProvider = userProvider,
-       _xpEngine = IntelligentXPEngine() { // Instantiate the engine
+  })  : _storage = storage,
+        _userProvider = userProvider,
+        _xpEngine = IntelligentXPEngine() {
+    // Instantiate the engine
     // Only initialize if dependencies are ready
     if (userProvider.user != null) {
       _initializeProvider();
@@ -65,33 +66,35 @@ class TaskProvider with ChangeNotifier {
     try {
       _userProvider.removeListener(_checkDependenciesReady);
     } catch (e) {
-      debugPrint('📡 TaskProvider: Warning - could not remove listener during update: $e');
+      debugPrint(
+          '📡 TaskProvider: Warning - could not remove listener during update: $e');
     }
-    
+
     _setupDependencyListeners();
     _initializeProvider();
   }
 
   // Getters with safety checks
   List<Task> get tasks => List.unmodifiable(_tasks);
-  Map<String, List<Task>> get tasksByCategory => Map.unmodifiable(_tasksByCategory);
+  Map<String, List<Task>> get tasksByCategory =>
+      Map.unmodifiable(_tasksByCategory);
   TaskOperationState get operationState => _operationState;
   AppException? get lastError => _lastError;
   bool get isInitialized => _isInitialized;
   bool get isInitializing => _isInitializing;
   bool get isLoading => _operationState == TaskOperationState.loading;
-  
+
   /// Initialize the provider with comprehensive error handling
   Future<void> _initializeProvider() async {
     if (_isInitializing || _isInitialized) return;
-    
+
     _isInitializing = true;
     _operationState = TaskOperationState.loading;
     notifyListeners();
-    
+
     try {
       debugPrint('🎯 TaskProvider: Starting initialization...');
-      
+
       final result = await _loadTasks();
       if (result.isSuccess) {
         _isInitialized = true;
@@ -102,17 +105,16 @@ class TaskProvider with ChangeNotifier {
         // Still mark as initialized to keep app functional
         _isInitialized = true;
       }
-      
     } catch (e, stackTrace) {
       debugPrint('❌ TaskProvider: Initialization failed: $e');
-      _lastError = AppException('Failed to initialize task provider', originalError: e);
+      _lastError =
+          AppException('Failed to initialize task provider', originalError: e);
       ErrorHandlingService().logError(_lastError!, stackTrace: stackTrace);
-      
+
       // Initialize with empty data to keep app functional
       _tasks = [];
       _updateTasksByCategory();
       _isInitialized = true;
-      
     } finally {
       _isInitializing = false;
       _operationState = TaskOperationState.idle;
@@ -122,21 +124,21 @@ class TaskProvider with ChangeNotifier {
 
   void _setupDependencyListeners() {
     debugPrint('📡 TaskProvider: Setting up dependency listeners');
-    
+
     // Safety check: don't add listeners to disposed providers
     try {
       _userProvider.addListener(_checkDependenciesReady);
     } catch (e) {
-      debugPrint('📡 TaskProvider: Warning - could not add listener to UserProvider: $e');
+      debugPrint(
+          '📡 TaskProvider: Warning - could not add listener to UserProvider: $e');
       // Provider might be disposed during hot reload, this is expected
     }
   }
 
   void _checkDependenciesReady() {
-    if (_userProvider.user != null && 
-        !_isInitialized && 
-        !_isInitializing) {
-      debugPrint('🎉 TaskProvider: Dependencies ready, starting initialization');
+    if (_userProvider.user != null && !_isInitialized && !_isInitializing) {
+      debugPrint(
+          '🎉 TaskProvider: Dependencies ready, starting initialization');
       _userProvider.removeListener(_checkDependenciesReady);
       _initializeProvider();
     }
@@ -146,32 +148,32 @@ class TaskProvider with ChangeNotifier {
   Future<Result<void>> _loadTasks() async {
     try {
       debugPrint('📖 TaskProvider: Loading tasks from storage...');
-      
+
       final tasksResult = await _storage.taskRepository.getTasks();
       if (tasksResult.isSuccess) {
         _tasks = tasksResult.data!;
         _updateTasksByCategory();
-        
-        debugPrint('✅ TaskProvider: Loaded ${_tasks.length} tasks successfully');
+
+        debugPrint(
+            '✅ TaskProvider: Loaded ${_tasks.length} tasks successfully');
         return Result.success(null);
-        
       } else {
         debugPrint('⚠️ TaskProvider: Failed to load tasks, using empty list');
         _tasks = [];
         _updateTasksByCategory();
-        
+
         return Result.failure(tasksResult.error!);
       }
-      
     } catch (e, stackTrace) {
       debugPrint('❌ TaskProvider: Unexpected error loading tasks: $e');
-      final error = AppException('Unexpected error loading tasks', originalError: e);
+      final error =
+          AppException('Unexpected error loading tasks', originalError: e);
       ErrorHandlingService().logError(error, stackTrace: stackTrace);
-      
+
       // Ensure we have a valid state even if loading fails
       _tasks = [];
       _updateTasksByCategory();
-      
+
       return Result.failure(error);
     }
   }
@@ -180,44 +182,48 @@ class TaskProvider with ChangeNotifier {
   Future<Result<Task>> createTask(BuildContext context, Task task) async {
     try {
       debugPrint('📝 TaskProvider: Creating new task: ${task.title}');
-      
+
       // Validate task data
       final validationResult = _validateTask(task);
       if (!validationResult.isSuccess) {
         return Result.failure(validationResult.error!);
       }
-      
+
       _operationState = TaskOperationState.saving;
       notifyListeners();
-      
+
       // Handle recurring tasks
       List<Task> tasksToAdd = [];
       if (task.recurrencePattern != null) {
         debugPrint('🔄 TaskProvider: Generating recurring task instances');
-        tasksToAdd = Task.generateRecurringInstances(template: task, daysAhead: 30);
+        tasksToAdd =
+            Task.generateRecurringInstances(template: task, daysAhead: 30);
       } else {
         // Create single task with proper XP calculation
-        final xpReward = task.xpReward == 50 ? Task.calculateXPReward(task.difficulty) : task.xpReward;
+        final xpReward = task.xpReward == 50
+            ? Task.calculateXPReward(task.difficulty)
+            : task.xpReward;
         final newTask = task.copyWith(
           id: _uuid.v4(),
           xpReward: xpReward,
         );
         tasksToAdd = [newTask];
       }
-      
+
       // Add to local state first (optimistic update)
       final originalTasks = List<Task>.from(_tasks);
       _tasks.addAll(tasksToAdd);
       _updateTasksByCategory();
       notifyListeners();
-      
+
       // Save to storage
       final saveResult = await _storage.taskRepository.saveTasks(_tasks);
       if (saveResult.isSuccess) {
         debugPrint('✅ TaskProvider: Task created successfully');
         _lastError = null;
         for (final newTask in tasksToAdd) {
-          TaskNotificationService.instance.scheduleTaskReminder(context, newTask);
+          TaskNotificationService.instance
+              .scheduleTaskReminder(context, newTask);
         }
         return Result.success(tasksToAdd.first);
       } else {
@@ -226,16 +232,14 @@ class TaskProvider with ChangeNotifier {
         _tasks = originalTasks;
         _updateTasksByCategory();
         notifyListeners();
-        
+
         return Result.failure(saveResult.error!);
       }
-      
     } catch (e, stackTrace) {
       debugPrint('❌ TaskProvider: Unexpected error creating task: $e');
       final error = AppException('Failed to create task', originalError: e);
       ErrorHandlingService().logError(error, stackTrace: stackTrace);
       return Result.failure(error);
-      
     } finally {
       _operationState = TaskOperationState.idle;
       notifyListeners();
@@ -243,40 +247,43 @@ class TaskProvider with ChangeNotifier {
   }
 
   /// Update task with optimistic updates and rollback capability
-  Future<Result<void>> updateTask(BuildContext context, Task updatedTask) async {
+  Future<Result<void>> updateTask(
+      BuildContext context, Task updatedTask) async {
     try {
       debugPrint('🔄 TaskProvider: Updating task: ${updatedTask.title}');
-      
+
       // Validate updated task
       final validationResult = _validateTask(updatedTask);
       if (!validationResult.isSuccess) {
         return Result.failure(validationResult.error!);
       }
-      
+
       // Find the task to update
       final taskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
       if (taskIndex == -1) {
         return Result.failure(ValidationException('Task not found'));
       }
-      
+
       _operationState = TaskOperationState.saving;
       notifyListeners();
-      
+
       // Store original task for potential rollback
       final originalTask = _tasks[taskIndex];
-      
+
       // Apply optimistic update
       _tasks[taskIndex] = updatedTask;
       _updateTasksByCategory();
       notifyListeners();
-      
+
       // Save to storage
       final saveResult = await _storage.taskRepository.updateTask(updatedTask);
       if (saveResult.isSuccess) {
         debugPrint('✅ TaskProvider: Task updated successfully');
         _lastError = null;
-        await TaskNotificationService.instance.cancelTaskNotification(updatedTask.id);
-        await TaskNotificationService.instance.scheduleTaskReminder(context, updatedTask);
+        await TaskNotificationService.instance
+            .cancelTaskNotification(updatedTask.id);
+        await TaskNotificationService.instance
+            .scheduleTaskReminder(context, updatedTask);
         return Result.success(null);
       } else {
         debugPrint('❌ TaskProvider: Failed to save updated task, reverting');
@@ -284,10 +291,9 @@ class TaskProvider with ChangeNotifier {
         _tasks[taskIndex] = originalTask;
         _updateTasksByCategory();
         notifyListeners();
-        
+
         return Result.failure(saveResult.error!);
       }
-      
     } catch (e, stackTrace) {
       final appError = AppException(
         'Failed to update task',
@@ -296,7 +302,6 @@ class TaskProvider with ChangeNotifier {
       );
       ErrorHandlingService().logError(appError, stackTrace: stackTrace);
       return Result.failure(appError);
-      
     } finally {
       _operationState = TaskOperationState.idle;
       notifyListeners();
@@ -305,19 +310,17 @@ class TaskProvider with ChangeNotifier {
 
   /// Update recurring task based on the edit scope
   Future<Result<void>> updateRecurringTask(
-    BuildContext context, 
-    Task updatedTask, 
-    EditScope editScope
-  ) async {
+      BuildContext context, Task updatedTask, EditScope editScope) async {
     try {
-      debugPrint('🔄 TaskProvider: Updating recurring task: ${updatedTask.title}, scope: $editScope');
-      
+      debugPrint(
+          '🔄 TaskProvider: Updating recurring task: ${updatedTask.title}, scope: $editScope');
+
       // Validate updated task
       final validationResult = _validateTask(updatedTask);
       if (!validationResult.isSuccess) {
         return Result.failure(validationResult.error!);
       }
-      
+
       _operationState = TaskOperationState.saving;
       notifyListeners();
 
@@ -326,7 +329,7 @@ class TaskProvider with ChangeNotifier {
           // Edit only this specific occurrence
           await _updateSingleOccurrence(context, updatedTask);
           break;
-          
+
         case EditScope.allFutureTasks:
           // Edit this and all future occurrences
           await _updateFutureOccurrences(context, updatedTask);
@@ -335,11 +338,10 @@ class TaskProvider with ChangeNotifier {
 
       _updateTasksByCategory();
       notifyListeners();
-      
+
       debugPrint('✅ TaskProvider: Recurring task updated successfully');
       _lastError = null;
       return Result.success(null);
-      
     } catch (e, stackTrace) {
       final appError = AppException(
         'Failed to update recurring task',
@@ -348,7 +350,6 @@ class TaskProvider with ChangeNotifier {
       );
       ErrorHandlingService().logError(appError, stackTrace: stackTrace);
       return Result.failure(appError);
-      
     } finally {
       _operationState = TaskOperationState.idle;
       notifyListeners();
@@ -356,7 +357,8 @@ class TaskProvider with ChangeNotifier {
   }
 
   /// Update only the specific occurrence of a recurring task
-  Future<void> _updateSingleOccurrence(BuildContext context, Task updatedTask) async {
+  Future<void> _updateSingleOccurrence(
+      BuildContext context, Task updatedTask) async {
     // If this task is part of a recurring series, break it away from the series
     final modifiedTask = updatedTask.copyWith(
       parentTaskId: null, // Break connection to recurring series
@@ -370,28 +372,31 @@ class TaskProvider with ChangeNotifier {
     final taskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
     if (taskIndex != -1) {
       _tasks[taskIndex] = modifiedTask;
-      
+
       // Save to storage
       await _storage.taskRepository.updateTask(modifiedTask);
-      
+
       // Update notifications
-      await TaskNotificationService.instance.cancelTaskNotification(modifiedTask.id);
-      await TaskNotificationService.instance.scheduleTaskReminder(context, modifiedTask);
+      await TaskNotificationService.instance
+          .cancelTaskNotification(modifiedTask.id);
+      await TaskNotificationService.instance
+          .scheduleTaskReminder(context, modifiedTask);
     }
   }
 
   /// Update this and all future occurrences of a recurring task
-  Future<void> _updateFutureOccurrences(BuildContext context, Task updatedTask) async {
+  Future<void> _updateFutureOccurrences(
+      BuildContext context, Task updatedTask) async {
     final now = DateTime.now();
-    
+
     // Find the original recurring task (parent) or use this task if it's the parent
     String parentId = updatedTask.parentTaskId ?? updatedTask.id;
-    
+
     // Update all future tasks in the series (including this one)
     final tasksToUpdate = _tasks.where((task) {
       return (task.id == parentId || task.parentTaskId == parentId) &&
-             !task.isCompleted &&
-             (task.dueDate == null || !task.dueDate!.isBefore(now));
+          !task.isCompleted &&
+          (task.dueDate == null || !task.dueDate!.isBefore(now));
     }).toList();
 
     for (final task in tasksToUpdate) {
@@ -413,13 +418,15 @@ class TaskProvider with ChangeNotifier {
       final taskIndex = _tasks.indexWhere((t) => t.id == task.id);
       if (taskIndex != -1) {
         _tasks[taskIndex] = modifiedTask;
-        
+
         // Save to storage
         await _storage.taskRepository.updateTask(modifiedTask);
-        
+
         // Update notifications
-        await TaskNotificationService.instance.cancelTaskNotification(modifiedTask.id);
-        await TaskNotificationService.instance.scheduleTaskReminder(context, modifiedTask);
+        await TaskNotificationService.instance
+            .cancelTaskNotification(modifiedTask.id);
+        await TaskNotificationService.instance
+            .scheduleTaskReminder(context, modifiedTask);
       }
     }
   }
@@ -437,13 +444,15 @@ class TaskProvider with ChangeNotifier {
         context: context,
       );
 
-      final result = await completionService.completeTask(task, isEnhanced: isEnhanced);
+      final result =
+          await completionService.completeTask(task, isEnhanced: isEnhanced);
 
       if (result.isSuccess) {
         final completionData = result.data!;
         final updatedTask = completionData.updatedTask!;
 
-        await TaskNotificationService.instance.cancelTaskNotification(updatedTask.id);
+        await TaskNotificationService.instance
+            .cancelTaskNotification(updatedTask.id);
 
         // Optimistically update the task in the UI
         final taskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
@@ -454,7 +463,8 @@ class TaskProvider with ChangeNotifier {
         }
 
         // Save the updated task to persistent storage
-        final saveResult = await _storage.taskRepository.updateTask(updatedTask);
+        final saveResult =
+            await _storage.taskRepository.updateTask(updatedTask);
         if (!saveResult.isSuccess) {
           ErrorHandlingService().logError(saveResult.error!);
           return Result.failure(saveResult.error!);
@@ -490,7 +500,7 @@ class TaskProvider with ChangeNotifier {
   Future<Result<void>> deleteTask(String taskId) async {
     try {
       debugPrint('🗑️ TaskProvider: Deleting task: $taskId');
-      
+
       final taskIndex = _tasks.indexWhere((task) => task.id == taskId);
       if (taskIndex == -1) {
         return Result.failure(ValidationException('Task not found'));
@@ -501,7 +511,7 @@ class TaskProvider with ChangeNotifier {
 
       // Store the task for potential undo
       final deletedTask = _tasks[taskIndex];
-      
+
       // Remove from local state (optimistic update)
       _tasks.removeAt(taskIndex);
       _updateTasksByCategory();
@@ -520,16 +530,14 @@ class TaskProvider with ChangeNotifier {
         _tasks.insert(taskIndex, deletedTask);
         _updateTasksByCategory();
         notifyListeners();
-        
+
         return Result.failure(deleteResult.error!);
       }
-
     } catch (e, stackTrace) {
       debugPrint('❌ TaskProvider: Unexpected error deleting task: $e');
       final error = AppException('Failed to delete task', originalError: e);
       ErrorHandlingService().logError(error, stackTrace: stackTrace);
       return Result.failure(error);
-      
     } finally {
       _operationState = TaskOperationState.idle;
       notifyListeners();
@@ -547,19 +555,21 @@ class TaskProvider with ChangeNotifier {
     if (task.id.isEmpty) {
       return Result.failure(ValidationException('Task must have an ID'));
     }
-    
+
     if (task.title.trim().isEmpty) {
       return Result.failure(ValidationException('Task must have a title'));
     }
-    
+
     if (task.xpReward < 0) {
-      return Result.failure(ValidationException('XP reward cannot be negative'));
+      return Result.failure(
+          ValidationException('XP reward cannot be negative'));
     }
-    
+
     if (task.timeCostMinutes < 1) {
-      return Result.failure(ValidationException('Time cost must be at least 1 minute'));
+      return Result.failure(
+          ValidationException('Time cost must be at least 1 minute'));
     }
-    
+
     return Result.success(null);
   }
 
@@ -572,8 +582,10 @@ class TaskProvider with ChangeNotifier {
   }
 
   // Public methods for getting filtered tasks (these are safe and don't need error handling)
-  List<Task> get activeTasks => _tasks.where((task) => !task.isCompleted).toList();
-  List<Task> get completedTasks => _tasks.where((task) => task.isCompleted).toList();
+  List<Task> get activeTasks =>
+      _tasks.where((task) => !task.isCompleted).toList();
+  List<Task> get completedTasks =>
+      _tasks.where((task) => task.isCompleted).toList();
 
   /// Get task by ID
   Task? getTaskById(String taskId) {
@@ -583,26 +595,26 @@ class TaskProvider with ChangeNotifier {
       return null;
     }
   }
-  
+
   List<Task> getFilteredActiveTasks(BuildContext context) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     return _tasks.where((task) {
       if (task.isCompleted) return false;
-      
+
       if (task.recurrencePattern != null) {
         if (task.dueDate == null) return true;
-        
+
         final dueDate = DateTime(
           task.dueDate!.year,
           task.dueDate!.month,
           task.dueDate!.day,
         );
-        
+
         return !dueDate.isBefore(today);
       }
-      
+
       if (task.dueDate != null) {
         final dueDate = DateTime(
           task.dueDate!.year,
@@ -611,31 +623,31 @@ class TaskProvider with ChangeNotifier {
         );
         return !dueDate.isBefore(today);
       }
-      
+
       return true;
     }).toList();
   }
 
   Future<List<Task>> getTasksForDate(DateTime date) async {
     final targetDate = DateTime(date.year, date.month, date.day);
-    
+
     return _tasks.where((task) {
       if (task.dueDate == null) return false;
-      
+
       final taskDate = DateTime(
         task.dueDate!.year,
         task.dueDate!.month,
         task.dueDate!.day,
       );
-      
+
       return taskDate.isAtSameMomentAs(targetDate);
     }).toList();
   }
-  
+
   List<Task> get completedTasksToday {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     final completedToday = _tasks.where((task) {
       if (!task.isCompleted || task.completedAt == null) return false;
       final completedDate = DateTime(
@@ -645,7 +657,7 @@ class TaskProvider with ChangeNotifier {
       );
       return completedDate.isAtSameMomentAs(today) && task.isCompleted;
     }).toList();
-    
+
     completedToday.sort((a, b) => b.completedAt!.compareTo(a.completedAt!));
     return completedToday;
   }
@@ -664,11 +676,11 @@ class TaskProvider with ChangeNotifier {
   /// Handle epic theme reward unlocking
   Future<void> _handleEpicThemeReward(BuildContext context, epic) async {
     if (epic.reward.type.name != 'theme') return;
-    
+
     try {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       ThemeType? themeToUnlock;
-      
+
       // Map epic reward IDs to theme types
       switch (epic.reward.id) {
         case 'ocean_theme':
@@ -681,7 +693,7 @@ class TaskProvider with ChangeNotifier {
           themeToUnlock = ThemeType.sunsetGlow;
           break;
       }
-      
+
       if (themeToUnlock != null) {
         await themeProvider.unlockPremiumTheme(themeToUnlock);
         debugPrint('🎨 Unlocked epic theme: ${themeToUnlock.name}');
@@ -709,8 +721,8 @@ class TaskProvider with ChangeNotifier {
             Text(
               'Epic Completed!',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -734,9 +746,9 @@ class TaskProvider with ChangeNotifier {
                   Text(
                     epic.reward.name,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                   ),
                   Text(
                     epic.reward.description,
@@ -764,7 +776,8 @@ class TaskProvider with ChangeNotifier {
     try {
       _userProvider.removeListener(_checkDependenciesReady);
     } catch (e) {
-      debugPrint('📡 TaskProvider: Warning - could not remove listener from UserProvider: $e');
+      debugPrint(
+          '📡 TaskProvider: Warning - could not remove listener from UserProvider: $e');
       // Provider might already be disposed, this is expected
     }
     super.dispose();

@@ -19,7 +19,7 @@ class SettingsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -49,7 +49,9 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ListTile(
                     title: const Text('App Theme'),
-                    subtitle: Text(AppTheme.getThemeByType(themeProvider.currentTheme).name),
+                    subtitle: Text(
+                        AppTheme.getThemeByType(themeProvider.currentTheme)
+                            .name),
                     leading: Icon(
                       Icons.palette,
                       color: theme.colorScheme.primary,
@@ -93,7 +95,8 @@ class SettingsScreen extends StatelessWidget {
                         builder: (BuildContext context) {
                           return AlertDialog(
                             title: const Text('Are you sure?'),
-                            content: const Text('This will reset your level and XP to zero.'),
+                            content: const Text(
+                                'This will reset your level and XP to zero.'),
                             actions: <Widget>[
                               TextButton(
                                 child: const Text('Cancel'),
@@ -104,7 +107,9 @@ class SettingsScreen extends StatelessWidget {
                               TextButton(
                                 child: const Text('Reset'),
                                 onPressed: () {
-                                  Provider.of<UserProvider>(context, listen: false).resetToLevelOne();
+                                  Provider.of<UserProvider>(context,
+                                          listen: false)
+                                      .resetToLevelOne();
                                   Navigator.of(context).pop();
                                 },
                               ),
@@ -119,9 +124,9 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Task Filter Settings Section
           Card(
             shape: RoundedRectangleBorder(
@@ -178,9 +183,9 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // App Info Section
           Card(
             shape: RoundedRectangleBorder(
@@ -220,7 +225,9 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificationPreferencesScreen()),
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const NotificationPreferencesScreen()),
               );
             },
           ),
@@ -258,7 +265,9 @@ class SettingsScreen extends StatelessWidget {
                               builder: (_) => const ExportOptionsDialog(),
                             );
                             if (config == null) return;
-                            final path = await AppBackupService.exportBackupToDownloads(config: config);
+                            final path =
+                                await AppBackupService.exportBackupToDownloads(
+                                    config: config);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -279,7 +288,8 @@ class SettingsScreen extends StatelessWidget {
                           icon: const Icon(Icons.upload),
                           label: const Text('Import Backup'),
                           onPressed: () async {
-                            final success = await AppBackupService.importBackupFromFile();
+                            final success =
+                                await AppBackupService.importBackupFromFile();
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -303,7 +313,9 @@ class SettingsScreen extends StatelessWidget {
                       await AppBackupService.printAllPrefs();
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('SharedPreferences printed to debug console.')),
+                          const SnackBar(
+                              content: Text(
+                                  'SharedPreferences printed to debug console.')),
                         );
                       }
                     },
@@ -317,4 +329,4 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

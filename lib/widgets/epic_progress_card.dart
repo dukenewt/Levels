@@ -41,17 +41,24 @@ class EpicProgressCard extends StatelessWidget {
                       children: [
                         Text(
                           epic.title,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         if (epic.description.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(
                             epic.description,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.7),
+                                ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -74,15 +81,15 @@ class EpicProgressCard extends StatelessWidget {
                     Text(
                       'Progress',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     Text(
                       '${epic.completedTasks}/${epic.requiredTasks} tasks',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ],
                 ),
@@ -92,7 +99,8 @@ class EpicProgressCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: epic.progressPercentage,
                     minHeight: 8,
-                    backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceVariant,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       epic.isCompleted
                           ? Colors.green
@@ -109,14 +117,20 @@ class EpicProgressCard extends StatelessWidget {
                   Icon(
                     Icons.assignment,
                     size: 20,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '${tasks.length} tasks',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                        ),
                   ),
                   const SizedBox(width: 16),
                   Icon(
@@ -129,9 +143,9 @@ class EpicProgressCard extends StatelessWidget {
                     child: Text(
                       epic.reward.name,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.secondary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.w600,
+                          ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -152,9 +166,9 @@ class EpicProgressCard extends StatelessWidget {
                     Text(
                       'Due: ${_formatDate(epic.dueDate!)}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: _getDueDateColor(context),
-                        fontWeight: FontWeight.w500,
-                      ),
+                            color: _getDueDateColor(context),
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                   ],
                 ),
@@ -172,8 +186,10 @@ class EpicProgressCard extends StatelessWidget {
                           icon: const Icon(Icons.play_arrow),
                           label: const Text('Start Epic'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onPrimary,
                           ),
                         ),
                       ),
@@ -216,10 +232,11 @@ class EpicProgressCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'Epic completed! Reward unlocked: ${epic.reward.name}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.green,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                       ),
                     ],
@@ -237,7 +254,7 @@ class EpicProgressCard extends StatelessWidget {
     Color color;
     IconData icon;
     String text;
-    
+
     switch (epic.status) {
       case EpicStatus.planning:
         color = Colors.orange;
@@ -288,11 +305,11 @@ class EpicProgressCard extends StatelessWidget {
 
   Color _getDueDateColor(BuildContext context) {
     if (epic.dueDate == null) return Theme.of(context).colorScheme.onSurface;
-    
+
     final now = DateTime.now();
     final dueDate = epic.dueDate!;
     final difference = dueDate.difference(now).inDays;
-    
+
     if (difference < 0) {
       return Colors.red; // Overdue
     } else if (difference <= 1) {
@@ -307,7 +324,7 @@ class EpicProgressCard extends StatelessWidget {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = date.difference(now).inDays;
-    
+
     if (difference < 0) {
       return 'Overdue (${date.day}/${date.month})';
     } else if (difference == 0) {

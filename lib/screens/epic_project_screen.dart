@@ -60,9 +60,10 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
       body: !_isInitialized
           ? const Center(child: CircularProgressIndicator())
           : Consumer3<EpicProvider, UserProvider, TaskProvider>(
-              builder: (context, epicProvider, userProvider, taskProvider, child) {
+              builder:
+                  (context, epicProvider, userProvider, taskProvider, child) {
                 final user = userProvider.user;
-                
+
                 if (user == null) {
                   return const Center(
                     child: Text('Please log in to view epic projects'),
@@ -79,9 +80,16 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
                 return TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildEpicList(userEpics.where((e) => e.isActive).toList(), taskProvider),
-                    _buildEpicList(userEpics.where((e) => e.status == EpicStatus.planning).toList(), taskProvider),
-                    _buildEpicList(userEpics.where((e) => e.isCompleted).toList(), taskProvider),
+                    _buildEpicList(userEpics.where((e) => e.isActive).toList(),
+                        taskProvider),
+                    _buildEpicList(
+                        userEpics
+                            .where((e) => e.status == EpicStatus.planning)
+                            .toList(),
+                        taskProvider),
+                    _buildEpicList(
+                        userEpics.where((e) => e.isCompleted).toList(),
+                        taskProvider),
                   ],
                 );
               },
@@ -92,7 +100,7 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
           if (user?.hasProjectManagementTalent() != true) {
             return const SizedBox.shrink();
           }
-          
+
           return FloatingActionButton.extended(
             onPressed: () => _showCreateEpicDialog(context),
             icon: const Icon(Icons.add),
@@ -119,8 +127,8 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
             Text(
               'Epic Projects Locked',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -128,8 +136,11 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
               'Reach level 5, 10, 15, 20, or 25 to unlock talent choices!',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
+                  ),
             ),
             const SizedBox(height: 24),
             Container(
@@ -185,8 +196,8 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
             tasks: tasks,
             onTap: () => _showEpicDetails(context, epic, tasks),
             onStart: epic.canStart ? () => _startEpic(epic) : null,
-            onComplete: epic.isActive && epic.progressPercentage >= 1.0 
-                ? () => _completeEpic(epic) 
+            onComplete: epic.isActive && epic.progressPercentage >= 1.0
+                ? () => _completeEpic(epic)
                 : null,
           );
         },
@@ -210,16 +221,19 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
             Text(
               'No Epic Projects Yet',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
             Text(
               'Create your first epic project to unlock exclusive rewards!',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
+                  ),
             ),
           ],
         ),
@@ -235,7 +249,8 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
     );
   }
 
-  void _showEpicDetails(BuildContext context, EpicProject epic, List<Task> tasks) {
+  void _showEpicDetails(
+      BuildContext context, EpicProject epic, List<Task> tasks) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -263,11 +278,12 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // Header
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -279,17 +295,26 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
                         children: [
                           Text(
                             epic.title,
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                           if (epic.description.isNotEmpty) ...[
                             const SizedBox(height: 8),
                             Text(
                               epic.description,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.7),
+                                  ),
                             ),
                           ],
                         ],
@@ -316,17 +341,21 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
                           ),
                           Text(
                             '${epic.completedTasks}/${epic.requiredTasks}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       LinearProgressIndicator(
                         value: epic.progressPercentage,
-                        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.surfaceVariant,
                       ),
                     ],
                   ),
@@ -356,9 +385,12 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
                           children: [
                             Text(
                               'Reward: ${epic.reward.name}',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
                             Text(
                               epic.reward.description,
@@ -386,27 +418,35 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
                           'Tasks (${tasks.length})',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                       );
                     }
-                    
+
                     final task = tasks[index - 1];
                     return Card(
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         leading: Icon(
-                          task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                          color: task.isCompleted 
-                              ? Theme.of(context).colorScheme.primary 
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                          task.isCompleted
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: task.isCompleted
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.5),
                         ),
                         title: Text(
                           task.title,
                           style: TextStyle(
-                            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                            decoration: task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
                         ),
                         subtitle: task.description?.isNotEmpty == true
@@ -428,7 +468,7 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
   Widget _buildStatusBadge(EpicStatus status) {
     Color color;
     IconData icon;
-    
+
     switch (status) {
       case EpicStatus.planning:
         color = Colors.orange;
@@ -510,7 +550,7 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
   Future<void> _startEpic(EpicProject epic) async {
     final epicProvider = Provider.of<EpicProvider>(context, listen: false);
     final success = await epicProvider.startEpic(epic.id);
-    
+
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -524,7 +564,7 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
   Future<void> _completeEpic(EpicProject epic) async {
     final epicProvider = Provider.of<EpicProvider>(context, listen: false);
     final success = await epicProvider.completeEpic(epic.id);
-    
+
     if (success && mounted) {
       _showEpicCompletionCelebration(epic);
     }
@@ -547,8 +587,8 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
             Text(
               'Epic Completed!',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -572,9 +612,9 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
                   Text(
                     epic.reward.name,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                   ),
                   Text(
                     epic.reward.description,

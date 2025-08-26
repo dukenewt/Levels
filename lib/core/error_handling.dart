@@ -26,7 +26,8 @@ class Result<T> {
   /// Only use this when you're sure the result is successful
   T get data {
     if (!isSuccess) {
-      throw StateError('Tried to get data from a failed result:  [31m [1m [4m${_error?.message} [0m');
+      throw StateError(
+          'Tried to get data from a failed result:  [31m [1m [4m${_error?.message} [0m');
     }
     return _data!;
   }
@@ -41,7 +42,8 @@ class Result<T> {
       try {
         return Result.success(transform(_data!));
       } catch (error) {
-        return Result.failure(AppException('Transform failed', originalError: error));
+        return Result.failure(
+            AppException('Transform failed', originalError: error));
       }
     } else {
       return Result.failure(_error!);
@@ -88,14 +90,22 @@ class AppException implements Exception {
 
 /// Exception for validation errors (invalid input, missing fields, etc.)
 class ValidationException extends AppException {
-  ValidationException(String message, {dynamic originalError, StackTrace? stackTrace})
-      : super(message, code: 'VALIDATION_ERROR', originalError: originalError, stackTrace: stackTrace);
+  ValidationException(String message,
+      {dynamic originalError, StackTrace? stackTrace})
+      : super(message,
+            code: 'VALIDATION_ERROR',
+            originalError: originalError,
+            stackTrace: stackTrace);
 }
 
 /// Exception for storage errors (read/write failures, corruption, etc.)
 class StorageException extends AppException {
-  StorageException(String message, {dynamic originalError, StackTrace? stackTrace})
-      : super(message, code: 'STORAGE_ERROR', originalError: originalError, stackTrace: stackTrace);
+  StorageException(String message,
+      {dynamic originalError, StackTrace? stackTrace})
+      : super(message,
+            code: 'STORAGE_ERROR',
+            originalError: originalError,
+            stackTrace: stackTrace);
 }
 
 /// Exception for network errors (connectivity, timeouts, etc.)
@@ -115,21 +125,23 @@ class ErrorHandlingService {
   /// Log an error for debugging and potential user reporting
   void logError(AppException error, {StackTrace? stackTrace}) {
     _errorHistory.add(error);
-    
+
     // In debug mode, print detailed error info
     if (kDebugMode) {
       debugPrint('🚨 AppException: ${error.message}');
       if (error.code != null) debugPrint('   Code: ${error.code}');
-      if (error.originalError != null) debugPrint('   Original: ${error.originalError}');
+      if (error.originalError != null)
+        debugPrint('   Original: ${error.originalError}');
       if (stackTrace != null) debugPrint('   Stack: $stackTrace');
     }
-    
+
     // In production, you might want to send this to a crash reporting service
     // like Firebase Crashlytics or Sentry
   }
 
   /// Get recent errors for debugging
-  List<AppException> get recentErrors => List.unmodifiable(_errorHistory.take(10));
+  List<AppException> get recentErrors =>
+      List.unmodifiable(_errorHistory.take(10));
 
   /// Clear error history (useful for testing)
   void clearHistory() {
@@ -158,4 +170,4 @@ class ErrorHandlingService {
       ),
     );
   }
-} 
+}

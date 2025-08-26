@@ -18,12 +18,12 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  
+
   List<Task> _availableTasks = [];
   List<String> _selectedTaskIds = [];
   DateTime? _dueDate;
   bool _isCreating = false;
-  
+
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -40,7 +40,7 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeInOut,
@@ -50,13 +50,13 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
   void _loadAvailableTasks() {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final epicProvider = Provider.of<EpicProvider>(context, listen: false);
-    
+
     // Get all uncompleted tasks that aren't already in an epic
     _availableTasks = taskProvider.tasks
         .where((task) => !task.isCompleted)
         .where((task) => epicProvider.findEpicForTask(task.id) == null)
         .toList();
-    
+
     setState(() {});
   }
 
@@ -84,7 +84,8 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Row(
                   children: [
@@ -100,16 +101,24 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                         children: [
                           Text(
                             'Create Epic Project',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                           ),
                           Text(
                             'Combine multiple tasks for exclusive rewards',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                ),
                           ),
                         ],
                       ),
@@ -124,7 +133,7 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                   ],
                 ),
               ),
-              
+
               // Content
               Expanded(
                 child: SingleChildScrollView(
@@ -152,9 +161,9 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                             return null;
                           },
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        
+
                         // Description field
                         TextFormField(
                           controller: _descriptionController,
@@ -168,9 +177,9 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        
+
                         // Due date picker
                         InkWell(
                           onTap: _selectDueDate,
@@ -191,63 +200,81 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                                     _dueDate != null
                                         ? 'Due: ${_formatDate(_dueDate!)}'
                                         : 'Set due date (optional)',
-                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: _dueDate != null
-                                          ? Theme.of(context).colorScheme.onSurface
-                                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(
+                                          color: _dueDate != null
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withOpacity(0.6),
+                                        ),
                                   ),
                                 ),
                                 if (_dueDate != null)
                                   IconButton(
-                                    onPressed: () => setState(() => _dueDate = null),
+                                    onPressed: () =>
+                                        setState(() => _dueDate = null),
                                     icon: const Icon(Icons.clear),
                                   ),
                               ],
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Task selection section
                         Text(
                           'Select Tasks *',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
-                        
+
                         const SizedBox(height: 8),
-                        
+
                         Text(
                           'Choose at least 3 tasks to create a meaningful epic project.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.7),
+                                  ),
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        
+
                         // Available tasks list
                         if (_availableTasks.isEmpty)
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceVariant,
+                              color:
+                                  Theme.of(context).colorScheme.surfaceVariant,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
                                 Icon(
                                   Icons.info_outline,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
                                     'No available tasks. Create some tasks first to build an epic project.',
-                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                   ),
                                 ),
                               ],
@@ -266,8 +293,9 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                               itemCount: _availableTasks.length,
                               itemBuilder: (context, index) {
                                 final task = _availableTasks[index];
-                                final isSelected = _selectedTaskIds.contains(task.id);
-                                
+                                final isSelected =
+                                    _selectedTaskIds.contains(task.id);
+
                                 return CheckboxListTile(
                                   value: isSelected,
                                   onChanged: (selected) {
@@ -287,20 +315,23 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                                           overflow: TextOverflow.ellipsis,
                                         )
                                       : null,
-                                  secondary: _buildDifficultyBadge(task.difficulty),
+                                  secondary:
+                                      _buildDifficultyBadge(task.difficulty),
                                 );
                               },
                             ),
                           ),
-                        
+
                         const SizedBox(height: 16),
-                        
+
                         // Selected tasks count
                         if (_selectedTaskIds.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -313,22 +344,29 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                                 const SizedBox(width: 8),
                                 Text(
                                   '${_selectedTaskIds.length} tasks selected',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
                               ],
                             ),
                           ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Reward preview
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -338,15 +376,21 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                                 children: [
                                   Icon(
                                     Icons.emoji_events,
-                                    color: Theme.of(context).colorScheme.secondary,
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Epic Reward',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.secondary,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -363,19 +407,25 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                   ),
                 ),
               ),
-              
+
               // Actions
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceVariant
+                      .withOpacity(0.3),
+                  borderRadius:
+                      const BorderRadius.vertical(bottom: Radius.circular(20)),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: _isCreating ? null : () => Navigator.of(context).pop(),
+                        onPressed: _isCreating
+                            ? null
+                            : () => Navigator.of(context).pop(),
                         child: const Text('Cancel'),
                       ),
                     ),
@@ -383,12 +433,15 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                     Expanded(
                       flex: 2,
                       child: ElevatedButton(
-                        onPressed: _isCreating || _selectedTaskIds.length < 3 ? null : _createEpic,
+                        onPressed: _isCreating || _selectedTaskIds.length < 3
+                            ? null
+                            : _createEpic,
                         child: _isCreating
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Text('Create Epic'),
                       ),
@@ -444,7 +497,7 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    
+
     if (date != null) {
       setState(() => _dueDate = date);
     }
@@ -464,7 +517,7 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final epicProvider = Provider.of<EpicProvider>(context, listen: false);
-      
+
       final user = userProvider.user;
       if (user == null) {
         throw Exception('User not logged in');
@@ -480,7 +533,7 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
 
       if (epic != null && mounted) {
         Navigator.of(context).pop();
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -497,7 +550,8 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
         );
       } else if (mounted) {
         // Show error from provider
-        final error = epicProvider.lastError?.message ?? 'Failed to create epic project';
+        final error =
+            epicProvider.lastError?.message ?? 'Failed to create epic project';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error),

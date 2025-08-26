@@ -125,12 +125,13 @@ class EnhancedUserPerk {
       requiredLevel: json['requiredLevel'] as int,
       isUnlocked: json['isUnlocked'] as bool? ?? false,
       isActive: json['isActive'] as bool? ?? false,
-      unlockedAt: json['unlockedAt'] != null 
+      unlockedAt: json['unlockedAt'] != null
           ? DateTime.parse(json['unlockedAt'] as String)
           : null,
       effects: (json['effects'] as List<dynamic>?)
-          ?.map((e) => PerkEffectData.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map((e) => PerkEffectData.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -249,14 +250,14 @@ class EnhancedUserPerks {
   );
 
   static List<EnhancedUserPerk> get allPerks => [
-    healthExpert,
-    luckyCharm,
-    streakGuardian,
-    learningMaster,
-    xpVeteran,
-    workEfficiency,
-    grandMaster,
-  ];
+        healthExpert,
+        luckyCharm,
+        streakGuardian,
+        learningMaster,
+        xpVeteran,
+        workEfficiency,
+        grandMaster,
+      ];
 
   static List<EnhancedUserPerk> getAvailablePerksForLevel(int level) {
     return allPerks.where((perk) => perk.requiredLevel <= level).toList();

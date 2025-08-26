@@ -138,7 +138,8 @@ class TaskAnalyzerService {
   };
 
   /// Suggests difficulty based on task title using keyword analysis
-  static String suggestDifficulty(String taskTitle, {bool hasProjectManagementTalent = false}) {
+  static String suggestDifficulty(String taskTitle,
+      {bool hasProjectManagementTalent = false}) {
     final title = taskTitle.toLowerCase();
 
     // Check for epic keywords only if user has Project Management talent
@@ -167,7 +168,8 @@ class TaskAnalyzerService {
   }
 
   /// Suggests category based on task title using keyword analysis
-  static String? suggestCategory(String taskTitle, {bool hasNLPTalent = false}) {
+  static String? suggestCategory(String taskTitle,
+      {bool hasNLPTalent = false}) {
     if (!hasNLPTalent) return null;
 
     final title = taskTitle.toLowerCase();
@@ -224,13 +226,13 @@ class TaskAnalyzerService {
 
   /// Get all available categories
   static List<String> get availableCategories => [
-    'Health',
-    'Learning',
-    'Work',
-    'Social',
-    'Personal',
-    'Creative',
-  ];
+        'Health',
+        'Learning',
+        'Work',
+        'Social',
+        'Personal',
+        'Creative',
+      ];
 
   /// Check if a keyword exists for a specific category
   static bool hasKeywordForCategory(String taskTitle, String category) {

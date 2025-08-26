@@ -94,7 +94,8 @@ class CompletionPipeline {
         // Respect Reduced Motion and user preference for celebrations
         bool allowCelebrations = false;
         try {
-          final settings = Provider.of<SettingsProvider>(context, listen: false);
+          final settings =
+              Provider.of<SettingsProvider>(context, listen: false);
           allowCelebrations = settings.enableCompletionCelebrations;
         } catch (_) {}
 

@@ -31,14 +31,20 @@ class TalentTreeWidget extends StatelessWidget {
               Text(
                 'No Talents Yet',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                ),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.7),
+                    ),
               ),
               Text(
                 'Reach level 5 to unlock your first talent',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                ),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.5),
+                    ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -68,8 +74,8 @@ class TalentTreeWidget extends StatelessWidget {
                 Text(
                   'Talent Specializations',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -92,15 +98,16 @@ class TalentTreeWidget extends StatelessWidget {
         final level = entry.key;
         final talentId = entry.value;
         final talent = _getTalentById(talentId);
-        
+
         if (talent == null) return const SizedBox.shrink();
-        
+
         return _buildTalentChoiceItem(context, level, talent);
       }).toList(),
     );
   }
 
-  Widget _buildTalentChoiceItem(BuildContext context, int level, UserTalent talent) {
+  Widget _buildTalentChoiceItem(
+      BuildContext context, int level, UserTalent talent) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -116,9 +123,9 @@ class TalentTreeWidget extends StatelessWidget {
               child: Text(
                 level.toString(),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ),
           ),
@@ -127,7 +134,10 @@ class TalentTreeWidget extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer
+                    .withOpacity(0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
@@ -147,9 +157,10 @@ class TalentTreeWidget extends StatelessWidget {
                       Expanded(
                         child: Text(
                           talent.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                       ),
                     ],
@@ -158,8 +169,11 @@ class TalentTreeWidget extends StatelessWidget {
                   Text(
                     talent.description,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                        ),
                   ),
                 ],
               ),
@@ -181,7 +195,8 @@ class TalentTreeWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
+        color:
+            Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
@@ -201,15 +216,18 @@ class TalentTreeWidget extends StatelessWidget {
                 Text(
                   'Next Talent Choice',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
                 ),
                 Text(
                   'Available at level $nextChoiceLevel',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  ),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
+                      ),
                 ),
               ],
             ),
@@ -224,9 +242,9 @@ class TalentTreeWidget extends StatelessWidget {
               child: Text(
                 'Ready!',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
+                      color: Theme.of(context).colorScheme.onSecondary,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ),
         ],

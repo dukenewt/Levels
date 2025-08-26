@@ -27,19 +27,19 @@ import 'config/feature_flags.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   // Initialize core systems first
   AppLogger.instance.initialize();
   GlobalErrorHandler.instance.initialize(AppLogger.instance);
   OfflineManager.instance.initialize();
-  
+
   // Initialize notification service
   await TaskNotificationService.instance.initialize();
-  
+
   try {
     final prefs = await SharedPreferences.getInstance();
     final secureStorageService = SecureStorageService(prefs);
@@ -56,13 +56,15 @@ void main() async {
           ChangeNotifierProvider(
             create: (_) => ThemeProvider()..init(),
           ),
-          ChangeNotifierProxyProvider2<AuthService, FirestoreService, UserProvider>(
+          ChangeNotifierProxyProvider2<AuthService, FirestoreService,
+              UserProvider>(
             create: (context) => UserProvider(
               context.read<AuthService>(),
               context.read<FirestoreService>(),
             ),
             update: (context, authService, firestoreService, previous) =>
-                UserProvider(authService, firestoreService)..updateDependencies(authService, firestoreService),
+                UserProvider(authService, firestoreService)
+                  ..updateDependencies(authService, firestoreService),
           ),
           ChangeNotifierProxyProvider<UserProvider, TaskProvider>(
             create: (context) => TaskProvider(
@@ -251,19 +253,20 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
 
   void _initializeTalentManager() {
     if (_talentManagerInitialized) return;
-    
+
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    
+
     // Always initialize the new talent trigger service (it can monitor for user changes)
     if (FeatureFlags.shouldUseNewTalentSystem()) {
-      final talentPerkController = Provider.of<TalentPerkController>(context, listen: false);
+      final talentPerkController =
+          Provider.of<TalentPerkController>(context, listen: false);
       TalentTriggerService.instance.initialize(context, talentPerkController);
     }
-    
+
     if (userProvider.user != null) {
       AppTalentManager.instance.initialize(context, userProvider);
       _talentManagerInitialized = true;
-      
+
       // Check for pending talent choices
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (FeatureFlags.shouldUseNewTalentSystem()) {
@@ -282,15 +285,16 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         final user = userProvider.user;
-        final hasProjectManagement = user?.hasProjectManagementTalent() ?? false;
+        final hasProjectManagement =
+            user?.hasProjectManagementTalent() ?? false;
         final screens = _getScreens(hasProjectManagement);
         final navItems = _getNavItems(hasProjectManagement);
-        
+
         // Adjust selected index if navigation structure changed
         if (_selectedIndex >= screens.length) {
           _selectedIndex = 0;
         }
-        
+
         return Scaffold(
           body: IndexedStack(
             index: _selectedIndex,

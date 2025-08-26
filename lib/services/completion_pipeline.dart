@@ -22,7 +22,7 @@ class PipelineExecutionResult {
   final String? error;
   final Duration executionTime;
   final Map<String, dynamic>? debugInfo;
-  
+
   const PipelineExecutionResult({
     required this.success,
     this.stateDelta,
@@ -32,7 +32,7 @@ class PipelineExecutionResult {
     required this.executionTime,
     this.debugInfo,
   });
-  
+
   factory PipelineExecutionResult.success({
     required StateDelta stateDelta,
     required UiEventBatch uiEvents,
@@ -49,7 +49,7 @@ class PipelineExecutionResult {
       debugInfo: debugInfo,
     );
   }
-  
+
   factory PipelineExecutionResult.failure({
     required String error,
     required Duration executionTime,
@@ -62,7 +62,7 @@ class PipelineExecutionResult {
       debugInfo: debugInfo,
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'success': success,
@@ -84,7 +84,7 @@ class PipelineSettings {
   final bool reducedMotion;
   final bool debugMode;
   final Duration maxExecutionTime;
-  
+
   const PipelineSettings({
     this.enableAnimations = true,
     this.enableNotifications = true,
@@ -93,12 +93,14 @@ class PipelineSettings {
     this.debugMode = false,
     this.maxExecutionTime = const Duration(seconds: 5),
   });
-  
-  factory PipelineSettings.fromUserPreferences(Map<String, dynamic> preferences) {
+
+  factory PipelineSettings.fromUserPreferences(
+      Map<String, dynamic> preferences) {
     return PipelineSettings(
       enableAnimations: preferences['enableAnimations'] as bool? ?? true,
       enableNotifications: preferences['enableNotifications'] as bool? ?? true,
-      enableHapticFeedback: preferences['enableHapticFeedback'] as bool? ?? true,
+      enableHapticFeedback:
+          preferences['enableHapticFeedback'] as bool? ?? true,
       reducedMotion: preferences['reducedMotion'] as bool? ?? false,
       debugMode: preferences['debugMode'] as bool? ?? false,
     );
@@ -110,12 +112,12 @@ class CompletionPipeline {
   final UserProvider _userProvider;
   final TalentPerkController _talentPerkController;
   final IntelligentXPEngine _xpEngine;
-  
+
   // Event handlers
   final Function(UiEventBatch)? onUiEvents;
   final Function(String)? onError;
   final Function(Map<String, dynamic>)? onDebugLog;
-  
+
   CompletionPipeline({
     required UserProvider userProvider,
     required TalentPerkController talentPerkController,
@@ -123,9 +125,9 @@ class CompletionPipeline {
     this.onUiEvents,
     this.onError,
     this.onDebugLog,
-  }) : _userProvider = userProvider,
-       _talentPerkController = talentPerkController,
-       _xpEngine = xpEngine;
+  })  : _userProvider = userProvider,
+        _talentPerkController = talentPerkController,
+        _xpEngine = xpEngine;
 
   /// Execute the complete task completion pipeline
   Future<PipelineExecutionResult> executeTaskCompletion({
@@ -136,7 +138,7 @@ class CompletionPipeline {
     final stopwatch = Stopwatch()..start();
     final pipelineSettings = settings ?? const PipelineSettings();
     final debugInfo = <String, dynamic>{};
-    
+
     try {
       _debugLog('Starting task completion pipeline', {
         'task_id': task.id,
@@ -157,8 +159,8 @@ class CompletionPipeline {
 
       // PHASE 2: COMPUTE
       final computationResult = await _computeEffects(
-        task, 
-        context, 
+        task,
+        context,
         analysisResult.baseXP!,
         analysisResult.hasLootBox!,
         debugInfo,
@@ -189,7 +191,7 @@ class CompletionPipeline {
       if (pipelineSettings.reducedMotion) {
         uiEvents = uiEvents.filterForReducedMotion(true);
       }
-      
+
       final emissionResult = await _emitEvents(
         uiEvents,
         pipelineSettings,
@@ -216,16 +218,15 @@ class CompletionPipeline {
         executionTime: stopwatch.elapsed,
         debugInfo: debugInfo,
       );
-
     } catch (e, stackTrace) {
       final error = 'Pipeline execution failed: $e';
       _debugLog('Pipeline execution failed', {
         'error': e.toString(),
         'stack_trace': stackTrace.toString(),
       });
-      
+
       onError?.call(error);
-      
+
       return PipelineExecutionResult.failure(
         error: error,
         executionTime: stopwatch.elapsed,
@@ -238,7 +239,7 @@ class CompletionPipeline {
 
   /// PHASE 1: Analyze the completion context and determine base XP
   Future<_PhaseResult> _analyzeCompletion(
-    Task task, 
+    Task task,
     CompletionContext context,
     Map<String, dynamic> debugInfo,
   ) async {
@@ -251,10 +252,10 @@ class CompletionPipeline {
 
       // Calculate base XP using the existing intelligent engine
       final baseXP = _xpEngine.calculateXP(task, context);
-      
+
       // Determine if loot box should be awarded
       final hasLootBox = _xpEngine.shouldAwardLootBox(task);
-      
+
       debugInfo['analysis'] = {
         'base_xp': baseXP,
         'has_loot_box': hasLootBox,
@@ -266,7 +267,6 @@ class CompletionPipeline {
         baseXP: baseXP,
         hasLootBox: hasLootBox,
       );
-      
     } catch (e) {
       return _PhaseResult.failure('Analysis phase failed: $e');
     }
@@ -302,7 +302,8 @@ class CompletionPipeline {
 
       debugInfo['computation'] = {
         'final_xp': completionResult.xpBreakdown.totalXP,
-        'effects_applied': completionResult.xpBreakdown.effectResults.appliedEffects.length,
+        'effects_applied':
+            completionResult.xpBreakdown.effectResults.appliedEffects.length,
         'ui_events_generated': completionResult.uiEvents.events.length,
         'level_change': completionResult.stateDelta.user?.levelChange,
         'new_perks': completionResult.stateDelta.user?.newPerks?.length ?? 0,
@@ -313,7 +314,6 @@ class CompletionPipeline {
         uiEvents: completionResult.uiEvents,
         xpBreakdown: completionResult.xpBreakdown,
       );
-      
     } catch (e) {
       return _PhaseResult.failure('Computation phase failed: $e');
     }
@@ -333,7 +333,7 @@ class CompletionPipeline {
 
       // Apply state delta to user provider (pure persistence)
       final success = await _userProvider.applyStateDelta(stateDelta);
-      
+
       if (!success) {
         return _PhaseResult.failure('Failed to persist user state changes');
       }
@@ -345,7 +345,6 @@ class CompletionPipeline {
       };
 
       return _PhaseResult.success();
-      
     } catch (e) {
       return _PhaseResult.failure('Persistence phase failed: $e');
     }
@@ -366,21 +365,25 @@ class CompletionPipeline {
 
       // Filter events based on settings
       var filteredEvents = uiEvents;
-      
+
       if (!settings.enableAnimations) {
         filteredEvents = UiEventBatch(
-          events: uiEvents.events.where((e) => e.type != UiEventType.playAnimation).toList(),
+          events: uiEvents.events
+              .where((e) => e.type != UiEventType.playAnimation)
+              .toList(),
           batchId: uiEvents.batchId,
           timestamp: uiEvents.timestamp,
           sequential: uiEvents.sequential,
         );
       }
-      
+
       if (!settings.enableNotifications) {
         filteredEvents = UiEventBatch(
-          events: filteredEvents.events.where((e) => 
-              e.type != UiEventType.showSnackbar && 
-              e.type != UiEventType.showToast).toList(),
+          events: filteredEvents.events
+              .where((e) =>
+                  e.type != UiEventType.showSnackbar &&
+                  e.type != UiEventType.showToast)
+              .toList(),
           batchId: filteredEvents.batchId,
           timestamp: filteredEvents.timestamp,
           sequential: filteredEvents.sequential,
@@ -399,11 +402,11 @@ class CompletionPipeline {
         'original_count': uiEvents.events.length,
         'filtered_count': filteredEvents.events.length,
         'emitted': filteredEvents.events.isNotEmpty,
-        'priorities': filteredEvents.events.map((e) => e.priority.name).toList(),
+        'priorities':
+            filteredEvents.events.map((e) => e.priority.name).toList(),
       };
 
       return _PhaseResult.success();
-      
     } catch (e) {
       return _PhaseResult.failure('Emission phase failed: $e');
     }
@@ -429,11 +432,13 @@ class CompletionPipeline {
 
       // Create state delta for epic completion
       final stateDelta = StateDelta(
-        epics: [EpicStateDelta(
-          epicId: epicId,
-          completed: true,
-          rewardsUnlocked: rewardsUnlocked,
-        )],
+        epics: [
+          EpicStateDelta(
+            epicId: epicId,
+            completed: true,
+            rewardsUnlocked: rewardsUnlocked,
+          )
+        ],
         timestamp: DateTime.now(),
         operation: 'epic_completion',
       );
@@ -457,10 +462,10 @@ class CompletionPipeline {
       }
 
       // Emit events
-      var filteredEvents = pipelineSettings.reducedMotion 
-          ? uiEvents.filterForReducedMotion(true) 
+      var filteredEvents = pipelineSettings.reducedMotion
+          ? uiEvents.filterForReducedMotion(true)
           : uiEvents;
-      
+
       if (onUiEvents != null && filteredEvents.events.isNotEmpty) {
         onUiEvents!(filteredEvents);
       }
@@ -476,7 +481,6 @@ class CompletionPipeline {
         executionTime: stopwatch.elapsed,
         debugInfo: debugInfo,
       );
-
     } catch (e) {
       return PipelineExecutionResult.failure(
         error: 'Epic completion pipeline failed: $e',
@@ -492,9 +496,8 @@ class CompletionPipeline {
   Map<String, dynamic> getHealthStatus() {
     return {
       'user_connected': _userProvider.user != null,
-      'controller_ready': _talentPerkController.state.lastUpdated.isAfter(
-        DateTime.now().subtract(const Duration(minutes: 5))
-      ),
+      'controller_ready': _talentPerkController.state.lastUpdated
+          .isAfter(DateTime.now().subtract(const Duration(minutes: 5))),
       'xp_engine_ready': true, // Always ready
       'last_check': DateTime.now().toIso8601String(),
     };
@@ -505,7 +508,11 @@ class CompletionPipeline {
       debugPrint('CompletionPipeline: $message');
       debugPrint('Data: $data');
     }
-    onDebugLog?.call({'message': message, 'data': data, 'timestamp': DateTime.now().toIso8601String()});
+    onDebugLog?.call({
+      'message': message,
+      'data': data,
+      'timestamp': DateTime.now().toIso8601String()
+    });
   }
 }
 
@@ -518,7 +525,7 @@ class _PhaseResult {
   final StateDelta? stateDelta;
   final UiEventBatch? uiEvents;
   final XPCalculationBreakdown? xpBreakdown;
-  
+
   const _PhaseResult({
     required this.success,
     this.error,
@@ -528,7 +535,7 @@ class _PhaseResult {
     this.uiEvents,
     this.xpBreakdown,
   });
-  
+
   factory _PhaseResult.success({
     int? baseXP,
     bool? hasLootBox,
@@ -545,7 +552,7 @@ class _PhaseResult {
       xpBreakdown: xpBreakdown,
     );
   }
-  
+
   factory _PhaseResult.failure(String error) {
     return _PhaseResult(success: false, error: error);
   }

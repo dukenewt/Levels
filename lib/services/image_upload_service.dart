@@ -12,7 +12,8 @@ class ImageUploadService {
     if (image != null) {
       try {
         File file = File(image.path);
-        String fileName = 'profile_pictures/${userId}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+        String fileName =
+            'profile_pictures/${userId}/${DateTime.now().millisecondsSinceEpoch}.jpg';
         UploadTask uploadTask = _storage.ref(fileName).putFile(file);
         TaskSnapshot snapshot = await uploadTask;
         String downloadUrl = await snapshot.ref.getDownloadURL();
@@ -25,4 +26,4 @@ class ImageUploadService {
     }
     return null;
   }
-} 
+}

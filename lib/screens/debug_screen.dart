@@ -9,7 +9,7 @@ class DebugScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       appBar: AppBar(title: const Text('Debug Tools & Design System')),
       body: SingleChildScrollView(
@@ -45,11 +45,11 @@ class DebugScreen extends StatelessWidget {
               },
               child: const Text('View Micro Interactions'),
             ),
-            
+
             const SizedBox(height: 32),
             const Divider(),
             const SizedBox(height: 32),
-            
+
             // Shadow System Showcase
             Text(
               'Enhanced Shadow System',
@@ -73,9 +73,11 @@ class DebugScreen extends StatelessWidget {
               context,
               [
                 _buildShadowCard('Low Shadow', CardShadowLevel.low, context),
-                _buildShadowCard('Medium Shadow', CardShadowLevel.medium, context),
+                _buildShadowCard(
+                    'Medium Shadow', CardShadowLevel.medium, context),
                 _buildShadowCard('High Shadow', CardShadowLevel.high, context),
-                _buildShadowCard('Extra High Shadow', CardShadowLevel.xHigh, context),
+                _buildShadowCard(
+                    'Extra High Shadow', CardShadowLevel.xHigh, context),
               ],
             ),
 
@@ -90,7 +92,8 @@ class DebugScreen extends StatelessWidget {
                 EnhancedCard(
                   isInteractive: true,
                   shadowLevel: CardShadowLevel.medium,
-                  onTap: () => _showSnackbar(context, 'Interactive card tapped!'),
+                  onTap: () =>
+                      _showSnackbar(context, 'Interactive card tapped!'),
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -230,7 +233,8 @@ class DebugScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: EnhancedButton(
-                        onPressed: () => _showSnackbar(context, 'Primary button pressed!'),
+                        onPressed: () =>
+                            _showSnackbar(context, 'Primary button pressed!'),
                         child: const Text('Primary Button'),
                       ),
                     ),
@@ -238,7 +242,8 @@ class DebugScreen extends StatelessWidget {
                     Expanded(
                       child: EnhancedButton(
                         isPrimary: false,
-                        onPressed: () => _showSnackbar(context, 'Secondary button pressed!'),
+                        onPressed: () =>
+                            _showSnackbar(context, 'Secondary button pressed!'),
                         child: const Text('Secondary Button'),
                       ),
                     ),
@@ -324,10 +329,11 @@ class DebugScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildSection(String title, String description, BuildContext context, List<Widget> children) {
+
+  Widget _buildSection(String title, String description, BuildContext context,
+      List<Widget> children) {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -350,7 +356,8 @@ class DebugScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildShadowCard(String title, CardShadowLevel level, BuildContext context) {
+  Widget _buildShadowCard(
+      String title, CardShadowLevel level, BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: EnhancedCard(
@@ -384,4 +391,4 @@ class DebugScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

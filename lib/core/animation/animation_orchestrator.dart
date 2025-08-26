@@ -41,10 +41,10 @@ class AnimationOrchestrator {
   }
 
   /// Enqueue and run a sequence of tasks for an entity key.
-  Future<void> runSequence(String key, List<Future<void> Function()> tasks) async {
+  Future<void> runSequence(
+      String key, List<Future<void> Function()> tasks) async {
     for (final t in tasks) {
       await run(key, t);
     }
   }
 }
-

@@ -52,14 +52,15 @@ class TalentManagementService {
 
   /// Select a talent for the user
   static TalentSelectionResult selectTalent(
-    User user, 
-    String talentId, 
+    User user,
+    String talentId,
     int level,
   ) {
     // Validate that this is a valid talent choice
     final talentChoice = UserTalents.getTalentChoice(level);
     if (talentChoice.options.isEmpty) {
-      return TalentSelectionResult.error('No talent choice available for level $level');
+      return TalentSelectionResult.error(
+          'No talent choice available for level $level');
     }
 
     // Find the selected talent in the available options
@@ -77,7 +78,8 @@ class TalentManagementService {
     }
 
     if (user.talentChoices.containsKey(level)) {
-      return TalentSelectionResult.error('Talent already chosen for level $level');
+      return TalentSelectionResult.error(
+          'Talent already chosen for level $level');
     }
 
     // Update user with new talent
@@ -100,7 +102,7 @@ class TalentManagementService {
   /// Get all talent choices made by user
   static List<UserTalent> getUserTalents(User user) {
     List<UserTalent> talents = [];
-    
+
     for (final talentId in user.talents) {
       // Find talent in predefined talents
       final talent = _findTalentById(talentId);
@@ -152,7 +154,8 @@ class TalentManagementService {
     var newStatus = epic.status;
 
     // Check if epic is completed
-    if (newCompletedTasks >= epic.requiredTasks && epic.status == EpicStatus.active) {
+    if (newCompletedTasks >= epic.requiredTasks &&
+        epic.status == EpicStatus.active) {
       newStatus = EpicStatus.completed;
     }
 
@@ -182,18 +185,20 @@ class TalentManagementService {
     for (final level in UserTalents.talentLevels) {
       final choice = UserTalents.getTalentChoice(level);
       final selectedTalentId = user.talentChoices[level];
-      
+
       treeData['level_$level'] = {
         'level': level,
         'isUnlocked': user.level >= level,
         'hasChoice': choice.options.isNotEmpty,
-        'options': choice.options.map((talent) => {
-          'id': talent.id,
-          'name': talent.name,
-          'description': talent.description,
-          'type': talent.type.displayName,
-          'isSelected': talent.id == selectedTalentId,
-        }).toList(),
+        'options': choice.options
+            .map((talent) => {
+                  'id': talent.id,
+                  'name': talent.name,
+                  'description': talent.description,
+                  'type': talent.type.displayName,
+                  'isSelected': talent.id == selectedTalentId,
+                })
+            .toList(),
         'selectedTalent': selectedTalentId,
         'needsChoice': user.level >= level && selectedTalentId == null,
       };
@@ -219,20 +224,24 @@ class TalentManagementService {
       'projectManagement': {
         'count': projectManagementTalents,
         'hasPath': projectManagementTalents > 0,
-        'features': projectManagementTalents > 0 ? [
-          'Epic Difficulty Tasks',
-          'Multi-Task Projects',
-          'Unique Theme Rewards',
-        ] : [],
+        'features': projectManagementTalents > 0
+            ? [
+                'Epic Difficulty Tasks',
+                'Multi-Task Projects',
+                'Unique Theme Rewards',
+              ]
+            : [],
       },
       'nlpCategorization': {
         'count': nlpTalents,
         'hasPath': nlpTalents > 0,
-        'features': nlpTalents > 0 ? [
-          'Auto Task Categorization',
-          'Smart Difficulty Suggestions',
-          'Keyword Analysis',
-        ] : [],
+        'features': nlpTalents > 0
+            ? [
+                'Auto Task Categorization',
+                'Smart Difficulty Suggestions',
+                'Keyword Analysis',
+              ]
+            : [],
       },
       'totalTalents': user.talents.length,
       'availableChoices': user.getPendingTalentLevels().length,
@@ -268,7 +277,7 @@ class TalentManagementService {
     // Add available difficulties
     effects['availableDifficulties'] = [
       'easy',
-      'medium', 
+      'medium',
       'hard',
       if (user.hasProjectManagementTalent()) 'epic',
     ];
@@ -291,15 +300,14 @@ class TalentManagementService {
   }
 
   /// Get epic projects for a user
-  static List<EpicProject> getEpicProjectsForUser(String userId, List<EpicProject> allEpics) {
+  static List<EpicProject> getEpicProjectsForUser(
+      String userId, List<EpicProject> allEpics) {
     return allEpics.where((epic) => epic.userId == userId).toList();
   }
 
   /// Check if task is part of any epic project
   static EpicProject? findEpicForTask(String taskId, List<EpicProject> epics) {
-    return epics
-        .where((epic) => epic.taskIds.contains(taskId))
-        .firstOrNull;
+    return epics.where((epic) => epic.taskIds.contains(taskId)).firstOrNull;
   }
 
   /// Validate epic project creation

@@ -12,11 +12,12 @@ import '../features/character_progression/domain/completion_context.dart';
 /// Result of evaluating all effects for a given context
 class EffectEvaluationResult {
   final Map<String, double> propertyModifiers; // xp -> 1.25 (25% bonus)
-  final Map<String, dynamic> conditionalValues; // streak_freeze -> 1 (has protection)
+  final Map<String, dynamic>
+      conditionalValues; // streak_freeze -> 1 (has protection)
   final List<Effect> appliedEffects;
   final Map<String, String> effectDescriptions;
   final DateTime evaluatedAt;
-  
+
   const EffectEvaluationResult({
     this.propertyModifiers = const {},
     this.conditionalValues = const {},
@@ -24,25 +25,25 @@ class EffectEvaluationResult {
     this.effectDescriptions = const {},
     required this.evaluatedAt,
   });
-  
+
   /// Get the final multiplier for a property (default 1.0 if not affected)
   double getMultiplier(String property) {
     return propertyModifiers[property] ?? 1.0;
   }
-  
+
   /// Get a conditional value (e.g., streak freeze uses available)
   T? getConditionalValue<T>(String property) {
     return conditionalValues[property] as T?;
   }
-  
+
   /// Check if any effects were applied
   bool get hasEffects => appliedEffects.isNotEmpty;
-  
+
   /// Get human-readable summary of effects
   List<String> get effectSummary {
     return effectDescriptions.values.toList();
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'propertyModifiers': propertyModifiers,
@@ -57,13 +58,13 @@ class EffectEvaluationResult {
 /// Breakdown of XP calculation with effects applied
 class XPCalculationBreakdown {
   final int baseXP;
-  final Map<String, int> categoryBonuses;  // Health -> +15 XP
-  final Map<String, int> globalBonuses;    // All XP -> +10 XP
-  final Map<String, int> contextBonuses;   // Morning -> +5 XP
+  final Map<String, int> categoryBonuses; // Health -> +15 XP
+  final Map<String, int> globalBonuses; // All XP -> +10 XP
+  final Map<String, int> contextBonuses; // Morning -> +5 XP
   final int totalXP;
   final List<String> explanations;
   final EffectEvaluationResult effectResults;
-  
+
   const XPCalculationBreakdown({
     required this.baseXP,
     this.categoryBonuses = const {},
@@ -73,7 +74,7 @@ class XPCalculationBreakdown {
     this.explanations = const [],
     required this.effectResults,
   });
-  
+
   factory XPCalculationBreakdown.fromEffects({
     required int baseXP,
     required EffectEvaluationResult effects,
@@ -84,19 +85,20 @@ class XPCalculationBreakdown {
     final globalBonuses = <String, int>{};
     final contextBonuses = <String, int>{};
     final explanations = <String>[];
-    
+
     double totalMultiplier = 1.0;
-    
+
     // Apply category-specific XP bonuses
     for (final effect in effects.appliedEffects) {
-      if (effect.targetProperty == 'xp' && effect.scope == EffectScope.category) {
+      if (effect.targetProperty == 'xp' &&
+          effect.scope == EffectScope.category) {
         final bonus = (baseXP * effect.value).round();
         categoryBonuses[effect.name] = bonus;
         totalMultiplier += effect.value;
         explanations.add('+${(effect.value * 100).toInt()}% $category XP');
       }
     }
-    
+
     // Apply global XP bonuses
     for (final effect in effects.appliedEffects) {
       if (effect.targetProperty == 'xp' && effect.scope == EffectScope.global) {
@@ -106,19 +108,20 @@ class XPCalculationBreakdown {
         explanations.add('+${(effect.value * 100).toInt()}% All XP');
       }
     }
-    
+
     // Apply context-based bonuses (morning, streak, etc.)
     for (final effect in effects.appliedEffects) {
-      if (effect.targetProperty == 'xp' && effect.scope == EffectScope.context) {
+      if (effect.targetProperty == 'xp' &&
+          effect.scope == EffectScope.context) {
         final bonus = (baseXP * effect.value).round();
         contextBonuses[effect.name] = bonus;
         totalMultiplier += effect.value;
         explanations.add(effect.description);
       }
     }
-    
+
     final totalXP = (baseXP * totalMultiplier).round();
-    
+
     return XPCalculationBreakdown(
       baseXP: baseXP,
       categoryBonuses: categoryBonuses,
@@ -129,7 +132,7 @@ class XPCalculationBreakdown {
       effectResults: effects,
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'baseXP': baseXP,
@@ -148,7 +151,7 @@ class PureEffectEngine {
   /// Convert existing perks to normalized Effect objects
   static List<Effect> _convertPerksToEffects(List<EnhancedUserPerk> perks) {
     final effects = <Effect>[];
-    
+
     for (final perk in perks) {
       for (final effectData in perk.effects) {
         final effect = _convertPerkEffectToEffect(perk, effectData);
@@ -157,12 +160,13 @@ class PureEffectEngine {
         }
       }
     }
-    
+
     return effects;
   }
-  
+
   /// Convert a single perk effect to normalized Effect
-  static Effect? _convertPerkEffectToEffect(EnhancedUserPerk perk, PerkEffectData effectData) {
+  static Effect? _convertPerkEffectToEffect(
+      EnhancedUserPerk perk, PerkEffectData effectData) {
     switch (effectData.effect) {
       case PerkEffect.xpBonus:
         return Effect.xpBonus(
@@ -171,7 +175,7 @@ class PureEffectEngine {
           bonusPercentage: effectData.value,
           scope: EffectScope.global,
         );
-        
+
       case PerkEffect.categoryBonus:
         if (effectData.category != null) {
           return Effect.xpBonus(
@@ -183,14 +187,14 @@ class PureEffectEngine {
           );
         }
         break;
-        
+
       case PerkEffect.lootBoxBonus:
         return Effect.lootBoxBonus(
           id: '${perk.id}_loot_bonus',
           name: perk.name,
           bonusPercentage: effectData.value,
         );
-        
+
       case PerkEffect.streakFreeze:
         return Effect.streakFreeze(
           id: '${perk.id}_streak_freeze',
@@ -198,10 +202,10 @@ class PureEffectEngine {
           uses: effectData.value.round(),
         );
     }
-    
+
     return null;
   }
-  
+
   /// Pure function: evaluate all effects for given context
   static EffectEvaluationResult evaluateEffects({
     required User user,
@@ -210,28 +214,28 @@ class PureEffectEngine {
     // Get user's unlocked perks and convert to effects
     final unlockedPerks = _getUnlockedPerks(user);
     final effects = _convertPerksToEffects(unlockedPerks);
-    
+
     final propertyModifiers = <String, double>{};
     final conditionalValues = <String, dynamic>{};
     final appliedEffects = <Effect>[];
     final effectDescriptions = <String, String>{};
-    
+
     // Evaluate each effect
     for (final effect in effects) {
       if (effect.appliesTo(context)) {
         appliedEffects.add(effect);
         effectDescriptions[effect.id] = effect.description;
-        
+
         if (effect.targetProperty != null) {
           final property = effect.targetProperty!;
-          
+
           if (effect.modifier == EffectModifier.conditional) {
             // Store conditional values (like streak freeze availability)
             conditionalValues[property] = effect.value;
           } else {
             // Calculate property modifiers
             final currentModifier = propertyModifiers[property] ?? 1.0;
-            
+
             switch (effect.stacking) {
               case EffectStacking.additive:
                 if (effect.modifier == EffectModifier.multiplicative) {
@@ -240,16 +244,19 @@ class PureEffectEngine {
                   propertyModifiers[property] = currentModifier + effect.value;
                 }
                 break;
-                
+
               case EffectStacking.multiplicative:
-                propertyModifiers[property] = currentModifier * (1.0 + effect.value);
+                propertyModifiers[property] =
+                    currentModifier * (1.0 + effect.value);
                 break;
-                
+
               case EffectStacking.highest:
-                propertyModifiers[property] = [currentModifier, 1.0 + effect.value].reduce(
-                  (a, b) => a > b ? a : b);
+                propertyModifiers[property] = [
+                  currentModifier,
+                  1.0 + effect.value
+                ].reduce((a, b) => a > b ? a : b);
                 break;
-                
+
               case EffectStacking.latest:
               case EffectStacking.none:
                 propertyModifiers[property] = 1.0 + effect.value;
@@ -259,7 +266,7 @@ class PureEffectEngine {
         }
       }
     }
-    
+
     return EffectEvaluationResult(
       propertyModifiers: propertyModifiers,
       conditionalValues: conditionalValues,
@@ -268,7 +275,7 @@ class PureEffectEngine {
       evaluatedAt: DateTime.now(),
     );
   }
-  
+
   /// Pure function: calculate XP with effects applied
   static XPCalculationBreakdown calculateXPWithEffects({
     required User user,
@@ -289,10 +296,10 @@ class PureEffectEngine {
         'is_challenge': context.isPartOfChallenge,
       },
     );
-    
+
     // Evaluate effects
     final effects = evaluateEffects(user: user, context: effectContext);
-    
+
     // Create breakdown
     return XPCalculationBreakdown.fromEffects(
       baseXP: baseXP,
@@ -301,7 +308,7 @@ class PureEffectEngine {
       context: effectContext,
     );
   }
-  
+
   /// Pure function: calculate loot box chance with effects
   static double calculateLootBoxChance({
     required User user,
@@ -318,14 +325,14 @@ class PureEffectEngine {
         ...?additionalContext,
       },
     );
-    
+
     final effects = evaluateEffects(user: user, context: effectContext);
     final lootModifier = effects.getMultiplier('loot_box_chance');
-    
+
     // Apply bonus and cap at 95%
     return (baseChance * lootModifier).clamp(0.0, 0.95);
   }
-  
+
   /// Pure function: check if streak protection is available
   static bool hasStreakProtection({
     required User user,
@@ -340,13 +347,13 @@ class PureEffectEngine {
         'is_overdue': true,
       },
     );
-    
+
     final effects = evaluateEffects(user: user, context: effectContext);
     final freezeUses = effects.getConditionalValue<double>('streak_freeze');
-    
+
     return freezeUses != null && freezeUses > 0;
   }
-  
+
   /// Pure function: get effect preview for UI
   static List<String> getEffectPreview({
     required User user,
@@ -360,11 +367,11 @@ class PureEffectEngine {
         ...?additionalContext,
       },
     );
-    
+
     final effects = evaluateEffects(user: user, context: effectContext);
     return effects.effectSummary;
   }
-  
+
   /// Pure function: generate completion flow results
   static CompletionFlowResult processTaskCompletion({
     required User user,
@@ -380,27 +387,28 @@ class PureEffectEngine {
       context: context,
       baseXP: baseXP,
     );
-    
+
     // Check for level up
     final newXP = user.currentXp + xpBreakdown.totalXP;
     final oldLevel = user.level;
     final newLevel = _calculateLevel(newXP);
     final leveledUp = newLevel > oldLevel;
-    
+
     // Check for new perks
     final newPerks = <String>[];
     if (leveledUp) {
-      final availablePerks = EnhancedUserPerks.getAvailablePerksForLevel(newLevel);
+      final availablePerks =
+          EnhancedUserPerks.getAvailablePerksForLevel(newLevel);
       for (final perk in availablePerks) {
         if (perk.requiredLevel == newLevel && !user.perks.contains(perk.id)) {
           newPerks.add(perk.id);
         }
       }
     }
-    
+
     // Check if talent choice is needed
     final needsTalentChoice = leveledUp && _needsTalentChoice(newLevel);
-    
+
     // Create state delta
     final stateDelta = StateDelta.taskCompletion(
       taskId: task.id,
@@ -414,10 +422,10 @@ class PureEffectEngine {
         'has_loot_box': hasLootBox,
       },
     );
-    
+
     // Create UI events
     final uiEvents = <UiEvent>[];
-    
+
     // Task completion celebration
     uiEvents.add(CelebrationEvent.taskCompletion(
       taskTitle: task.title,
@@ -425,7 +433,7 @@ class PureEffectEngine {
       perkBonuses: xpBreakdown.explanations,
       hasLootBox: hasLootBox,
     ));
-    
+
     // Level up celebration if applicable
     if (leveledUp) {
       uiEvents.add(CelebrationEvent.levelUp(
@@ -434,7 +442,7 @@ class PureEffectEngine {
         needsTalentChoice: needsTalentChoice,
       ));
     }
-    
+
     // Talent choice dialog if needed
     if (needsTalentChoice) {
       uiEvents.add(DialogEvent.talentChoice(
@@ -442,7 +450,7 @@ class PureEffectEngine {
         talentOptions: _getTalentOptionsForLevel(newLevel),
       ));
     }
-    
+
     // Perk unlock dialogs
     for (final perkId in newPerks) {
       final perk = EnhancedUserPerks.getPerkById(perkId);
@@ -453,33 +461,34 @@ class PureEffectEngine {
         ));
       }
     }
-    
+
     return CompletionFlowResult(
       stateDelta: stateDelta,
       uiEvents: UiEventBatch.sequential(events: uiEvents),
       xpBreakdown: xpBreakdown,
     );
   }
-  
+
   /// Helper: get unlocked perks for user (same as original engine)
   static List<EnhancedUserPerk> _getUnlockedPerks(User user) {
-    final availablePerks = EnhancedUserPerks.getAvailablePerksForLevel(user.level);
+    final availablePerks =
+        EnhancedUserPerks.getAvailablePerksForLevel(user.level);
     return availablePerks.where((perk) {
       return user.perks.contains(perk.id) || perk.requiredLevel <= user.level;
     }).toList();
   }
-  
+
   /// Helper: calculate level from XP (simplified)
   static int _calculateLevel(int xp) {
     // Simplified level calculation - replace with actual formula
     return (xp / 1000).floor() + 1;
   }
-  
+
   /// Helper: check if level requires talent choice
   static bool _needsTalentChoice(int level) {
     return [5, 10, 15, 20, 25].contains(level);
   }
-  
+
   /// Helper: get talent options for level
   static List<Map<String, dynamic>> _getTalentOptionsForLevel(int level) {
     // Simplified - replace with actual talent system
@@ -495,13 +504,13 @@ class CompletionFlowResult {
   final StateDelta stateDelta;
   final UiEventBatch uiEvents;
   final XPCalculationBreakdown xpBreakdown;
-  
+
   const CompletionFlowResult({
     required this.stateDelta,
     required this.uiEvents,
     required this.xpBreakdown,
   });
-  
+
   Map<String, dynamic> toJson() {
     return {
       'stateDelta': stateDelta.toJson(),

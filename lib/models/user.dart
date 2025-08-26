@@ -75,7 +75,8 @@ class User {
       'profilePictureUrl': profilePictureUrl,
       'perks': perks,
       'talents': talents,
-      'talentChoices': talentChoices.map((key, value) => MapEntry(key.toString(), value)),
+      'talentChoices':
+          talentChoices.map((key, value) => MapEntry(key.toString(), value)),
     };
   }
 
@@ -100,7 +101,8 @@ class User {
       rank: json['rank'] as String?,
       profilePictureUrl: json['profilePictureUrl'] as String?,
       perks: json['perks'] != null ? List<String>.from(json['perks']) : [],
-      talents: json['talents'] != null ? List<String>.from(json['talents']) : [],
+      talents:
+          json['talents'] != null ? List<String>.from(json['talents']) : [],
       talentChoices: parsedTalentChoices,
     );
   }
@@ -112,17 +114,20 @@ class User {
     return talents.any((talentId) => talentId.startsWith(talentType.id));
   }
 
-  bool hasProjectManagementTalent() => hasTalentType(TalentType.projectManagement);
+  bool hasProjectManagementTalent() =>
+      hasTalentType(TalentType.projectManagement);
 
   bool hasNLPTalent() => hasTalentType(TalentType.nlpCategorization);
 
   bool needsTalentChoice() {
-    return UserTalents.isTalentLevel(level) && !talentChoices.containsKey(level);
+    return UserTalents.isTalentLevel(level) &&
+        !talentChoices.containsKey(level);
   }
 
   List<int> getPendingTalentLevels() {
     return UserTalents.talentLevels
-        .where((level) => level <= this.level && !talentChoices.containsKey(level))
+        .where(
+            (level) => level <= this.level && !talentChoices.containsKey(level))
         .toList();
   }
 
@@ -130,4 +135,4 @@ class User {
     if (!needsTalentChoice()) return null;
     return UserTalents.getTalentChoice(level);
   }
-} 
+}

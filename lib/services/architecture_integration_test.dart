@@ -11,7 +11,7 @@ import '../models/effect.dart';
 /// Service to test new architecture integration safely
 class ArchitectureIntegrationTest {
   static const String _logPrefix = 'ArchitectureIntegration';
-  
+
   /// Test the new TalentPerkController with real user data
   static Future<Map<String, dynamic>> testTalentPerkController({
     required User user,
@@ -23,39 +23,39 @@ class ArchitectureIntegrationTest {
       'comparisons': <String, dynamic>{},
       'timestamp': DateTime.now().toIso8601String(),
     };
-    
+
     try {
       _log('Testing TalentPerkController with user level ${user.level}');
-      
+
       // Test 1: Controller can handle user update
       await controller.updateUser(user);
-      
+
       if (controller.currentUser?.id != user.id) {
         results['errors'].add('Controller did not update user correctly');
         return results;
       }
-      
+
       // Test 2: Effect preview works
       final healthPreview = await controller.getEffectPreviewForContext(
         category: 'Health',
       );
-      
+
       final workPreview = await controller.getEffectPreviewForContext(
         category: 'Work',
       );
-      
+
       // Test 3: XP preview calculation
       final xpPreview = await controller.calculateXPPreview(
         baseXP: 100,
         category: 'Health',
         difficulty: 'medium',
       );
-      
+
       // Test 4: State consistency
       final state = controller.state;
       final hasActiveEffects = state.activeEffects.isNotEmpty;
       final hasUnlockedPerks = state.unlockedPerks.isNotEmpty;
-      
+
       results['comparisons'] = {
         'user_level': user.level,
         'controller_level': controller.currentUser?.level,
@@ -71,24 +71,23 @@ class ArchitectureIntegrationTest {
         'needs_talent_choice': state.needsTalentChoice,
         'talent_choice_level': state.talentChoiceLevel,
       };
-      
+
       _log('Controller test completed successfully');
       _log('Active effects: ${state.activeEffects.length}');
       _log('Unlocked perks: ${state.unlockedPerks.length}');
       _log('XP multiplier: ${(xpPreview / 100.0).toStringAsFixed(2)}x');
-      
+
       results['success'] = true;
-      
     } catch (e, stackTrace) {
       final error = 'Controller test failed: $e';
       results['errors'].add(error);
       _log('ERROR: $error');
       _log('Stack trace: $stackTrace');
     }
-    
+
     return results;
   }
-  
+
   /// Test the pure effect engine with real data
   static Map<String, dynamic> testPureEffectEngine({
     required User user,
@@ -100,28 +99,28 @@ class ArchitectureIntegrationTest {
       'effects_data': <String, dynamic>{},
       'timestamp': DateTime.now().toIso8601String(),
     };
-    
+
     try {
       _log('Testing PureEffectEngine with user level ${user.level}');
-      
+
       // Test effect context creation
       final context = EffectContext.forPreview(
         category: testCategory,
         additional: {'user_level': user.level},
       );
-      
+
       // Test effect evaluation
       final effectResults = PureEffectEngine.evaluateEffects(
         user: user,
         context: context,
       );
-      
+
       // Test effect preview
       final preview = PureEffectEngine.getEffectPreview(
         user: user,
         category: testCategory,
       );
-      
+
       results['effects_data'] = {
         'context_created': context.isNotEmpty,
         'context_keys': context.keys.toList(),
@@ -133,23 +132,22 @@ class ArchitectureIntegrationTest {
         'preview_items': preview,
         'preview_count': preview.length,
       };
-      
+
       _log('Effect engine test completed successfully');
       _log('Applied effects: ${effectResults.appliedEffects.length}');
       _log('Preview items: ${preview.length}');
-      
+
       results['success'] = true;
-      
     } catch (e, stackTrace) {
       final error = 'Effect engine test failed: $e';
       results['errors'].add(error);
       _log('ERROR: $error');
       _log('Stack trace: $stackTrace');
     }
-    
+
     return results;
   }
-  
+
   /// Compare new architecture results with existing system (when available)
   static Map<String, dynamic> compareWithExistingSystem({
     required Map<String, dynamic> newResults,
@@ -161,11 +159,11 @@ class ArchitectureIntegrationTest {
       'differences': <String, dynamic>{},
       'timestamp': DateTime.now().toIso8601String(),
     };
-    
+
     if (existingResults != null) {
       // Compare specific fields when both systems are available
       _log('Comparing new system with existing system');
-      
+
       // This is where we'd add specific comparisons
       // For now, just log that both systems are available
       comparison['differences'] = {
@@ -176,10 +174,10 @@ class ArchitectureIntegrationTest {
     } else {
       _log('Only new system tested (existing system not provided)');
     }
-    
+
     return comparison;
   }
-  
+
   /// Run a comprehensive integration test
   static Future<Map<String, dynamic>> runFullIntegrationTest({
     required User user,
@@ -191,9 +189,9 @@ class ArchitectureIntegrationTest {
       'test_results': <String, dynamic>{},
       'timestamp': DateTime.now().toIso8601String(),
     };
-    
+
     _log('Starting full integration test for user ${user.id}');
-    
+
     try {
       // Test 1: TalentPerkController
       final controllerResults = await testTalentPerkController(
@@ -201,11 +199,11 @@ class ArchitectureIntegrationTest {
         controller: controller,
       );
       results['test_results']['controller'] = controllerResults;
-      
+
       // Test 2: PureEffectEngine
       final engineResults = testPureEffectEngine(user: user);
       results['test_results']['effect_engine'] = engineResults;
-      
+
       // Test 3: Integration comparison
       final comparisonResults = compareWithExistingSystem(
         newResults: {
@@ -215,12 +213,12 @@ class ArchitectureIntegrationTest {
         },
       );
       results['test_results']['comparison'] = comparisonResults;
-      
+
       // Overall success
       final controllerSuccess = controllerResults['success'] == true;
       final engineSuccess = engineResults['success'] == true;
       results['overall_success'] = controllerSuccess && engineSuccess;
-      
+
       if (results['overall_success']) {
         _log('✅ Full integration test PASSED');
       } else {
@@ -228,11 +226,10 @@ class ArchitectureIntegrationTest {
         _log('Controller success: $controllerSuccess');
         _log('Engine success: $engineSuccess');
       }
-      
+
       if (verbose) {
         _log('Detailed results: $results');
       }
-      
     } catch (e, stackTrace) {
       results['test_results']['error'] = {
         'message': e.toString(),
@@ -240,10 +237,10 @@ class ArchitectureIntegrationTest {
       };
       _log('FATAL ERROR in integration test: $e');
     }
-    
+
     return results;
   }
-  
+
   static void _log(String message) {
     if (kDebugMode) {
       debugPrint('$_logPrefix: $message');
@@ -254,25 +251,27 @@ class ArchitectureIntegrationTest {
 /// Widget to display integration test results in debug mode
 class IntegrationTestDisplay extends StatelessWidget {
   final Map<String, dynamic> testResults;
-  
+
   const IntegrationTestDisplay({
     Key? key,
     required this.testResults,
   }) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     if (!kDebugMode) {
       return const SizedBox.shrink();
     }
-    
+
     final success = testResults['overall_success'] == true;
-    
+
     return Container(
       padding: const EdgeInsets.all(8),
       margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: success ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+        color: success
+            ? Colors.green.withOpacity(0.1)
+            : Colors.red.withOpacity(0.1),
         border: Border.all(
           color: success ? Colors.green : Colors.red,
           width: 1,
@@ -314,7 +313,7 @@ class IntegrationTestDisplay extends StatelessWidget {
       ),
     );
   }
-  
+
   String _getStatus(Map<String, dynamic>? result) {
     if (result == null) return 'Unknown';
     return result['success'] == true ? 'OK' : 'Failed';

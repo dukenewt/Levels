@@ -82,7 +82,8 @@ class RecurringTaskEditDialog extends StatelessWidget {
                     theme,
                     icon: Icons.edit_calendar,
                     title: 'Edit all future tasks',
-                    subtitle: 'Changes will apply to this and all future occurrences',
+                    subtitle:
+                        'Changes will apply to this and all future occurrences',
                     onTap: () {
                       Navigator.of(context).pop(EditScope.allFutureTasks);
                       onEditAllFuture?.call();

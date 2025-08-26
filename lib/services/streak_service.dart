@@ -22,7 +22,9 @@ class StreakService {
     if (existing == null) return 0;
 
     final lastCompletion = DateTime.parse(existing['lastCompletion']);
-    return _isStreakValid(task, lastCompletion) ? (existing['count'] as int) : 0;
+    return _isStreakValid(task, lastCompletion)
+        ? (existing['count'] as int)
+        : 0;
   }
 
   static Future<void> updateStreak(Task task, DateTime completionTime) async {

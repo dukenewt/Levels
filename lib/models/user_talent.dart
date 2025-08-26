@@ -87,7 +87,7 @@ class UserTalent {
       ),
       requiredLevel: json['requiredLevel'] as int,
       isUnlocked: json['isUnlocked'] as bool? ?? false,
-      unlockedAt: json['unlockedAt'] != null 
+      unlockedAt: json['unlockedAt'] != null
           ? DateTime.parse(json['unlockedAt'] as String)
           : null,
     );
@@ -183,12 +183,12 @@ class UserTalents {
 
   /// Get all talent choices (for talent tree display)
   static List<TalentChoice> get allTalentChoices => [
-    getTalentChoice(5),
-    getTalentChoice(10),
-    getTalentChoice(15),
-    getTalentChoice(20),
-    getTalentChoice(25),
-  ];
+        getTalentChoice(5),
+        getTalentChoice(10),
+        getTalentChoice(15),
+        getTalentChoice(20),
+        getTalentChoice(25),
+      ];
 
   static bool isTalentLevel(int level) => talentLevels.contains(level);
 }

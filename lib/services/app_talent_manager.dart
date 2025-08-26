@@ -12,17 +12,17 @@ import '../services/talent_dialog_service.dart';
 class AppTalentManager {
   static final AppTalentManager _instance = AppTalentManager._internal();
   static AppTalentManager get instance => _instance;
-  
+
   AppTalentManager._internal();
 
   BuildContext? _context;
   UserProvider? _userProvider;
-  
+
   /// Initialize the talent manager with app context and user provider
   void initialize(BuildContext context, UserProvider userProvider) {
     _context = context;
     _userProvider = userProvider;
-    
+
     // Set up talent choice callback
     userProvider.onTalentChoice = _handleTalentChoice;
     userProvider.onPerkUnlock = _handlePerkUnlock;
@@ -46,14 +46,14 @@ class AppTalentManager {
   /// Handle perk unlock notification
   void _handlePerkUnlock(EnhancedUserPerk perk) {
     if (_context == null) return;
-    
+
     _showPerkUnlockNotification(perk);
   }
 
   /// Show talent unlock success message
   void _showTalentUnlockSuccess(UserTalent talent) {
     if (_context == null) return;
-    
+
     ScaffoldMessenger.of(_context!).showSnackBar(
       SnackBar(
         content: Row(
@@ -100,7 +100,7 @@ class AppTalentManager {
   /// Show perk unlock notification
   void _showPerkUnlockNotification(EnhancedUserPerk perk) {
     if (_context == null) return;
-    
+
     ScaffoldMessenger.of(_context!).showSnackBar(
       SnackBar(
         content: Row(
@@ -147,7 +147,7 @@ class AppTalentManager {
   /// Check for pending talent choices on app start
   Future<void> checkPendingTalentChoices() async {
     if (_userProvider == null) return;
-    
+
     await _userProvider!.checkPendingTalentChoices();
   }
 

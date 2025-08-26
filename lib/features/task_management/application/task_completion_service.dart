@@ -30,15 +30,16 @@ class TaskCompletionService {
         _enhancedXpService = EnhancedXPCalculationService(),
         _context = context;
 
-    static const String _streakKey = 'task_streaks';
+  static const String _streakKey = 'task_streaks';
 
-  Future<Result<TaskCompletionResult>> completeTask(Task task, {bool isEnhanced = false}) async {
+  Future<Result<TaskCompletionResult>> completeTask(Task task,
+      {bool isEnhanced = false}) async {
     if (task.isCompleted) {
       return Result.failure(ValidationException('Task already completed'));
     }
 
-      final completionTime = DateTime.now();
-      final streak = await StreakService.getStreak(task);
+    final completionTime = DateTime.now();
+    final streak = await StreakService.getStreak(task);
     final user = _userProvider.user;
 
     if (user == null) {
@@ -52,7 +53,8 @@ class TaskCompletionService {
     );
 
     // Use enhanced XP calculation that includes perk effects
-    final enhancedBreakdown = _enhancedXpService.calculateEnhancedXP(user, task, context);
+    final enhancedBreakdown =
+        _enhancedXpService.calculateEnhancedXP(user, task, context);
     final totalXp = enhancedBreakdown.finalTotalXP;
     final perkBonusXp = enhancedBreakdown.perkBonusXP;
 
@@ -64,7 +66,7 @@ class TaskCompletionService {
       xpAmount: totalXp,
     );
 
-      // Streak update and notifications deferred to CompletionPipeline
+    // Streak update and notifications deferred to CompletionPipeline
 
     return Result.success(
       TaskCompletionResult(
@@ -74,11 +76,10 @@ class TaskCompletionService {
         leveledUp: false, // Level up detection handled by animation service
         newLevel: null,
         streakBonus: enhancedBreakdown.originalBreakdown.totalBonusXP,
-        breakdown: enhancedBreakdown.originalBreakdown, // Keep original for compatibility
+        breakdown: enhancedBreakdown
+            .originalBreakdown, // Keep original for compatibility
         enhancedBreakdown: enhancedBreakdown, // Add enhanced breakdown
       ),
     );
   }
-
-  
-} 
+}

@@ -18,13 +18,13 @@ enum EpicOperationState {
 class EpicProvider with ChangeNotifier {
   List<EpicProject> _epics = [];
   final SecureStorageService _storage;
-  
+
   // State management
   EpicOperationState _operationState = EpicOperationState.idle;
   AppException? _lastError;
   bool _isInitialized = false;
   bool _isInitializing = false;
-  
+
   // final _uuid = const Uuid(); // Unused but kept for future functionality
 
   EpicProvider({
@@ -39,13 +39,13 @@ class EpicProvider with ChangeNotifier {
   bool get isLoading => _operationState != EpicOperationState.idle;
 
   // Get epics by status
-  List<EpicProject> get activeEpics => 
+  List<EpicProject> get activeEpics =>
       _epics.where((epic) => epic.status == EpicStatus.active).toList();
-  
-  List<EpicProject> get completedEpics => 
+
+  List<EpicProject> get completedEpics =>
       _epics.where((epic) => epic.status == EpicStatus.completed).toList();
-  
-  List<EpicProject> get planningEpics => 
+
+  List<EpicProject> get planningEpics =>
       _epics.where((epic) => epic.status == EpicStatus.planning).toList();
 
   // Get epics for a specific user
@@ -61,10 +61,10 @@ class EpicProvider with ChangeNotifier {
   /// Initialize the provider
   Future<void> initialize() async {
     if (_isInitialized || _isInitializing) return;
-    
+
     _isInitializing = true;
     _setOperationState(EpicOperationState.loading);
-    
+
     try {
       await _loadEpics();
       _isInitialized = true;
@@ -80,18 +80,20 @@ class EpicProvider with ChangeNotifier {
   /// Load epics from storage
   Future<void> _loadEpics() async {
     try {
-      final result = await _storage.getData<String>('epic_projects', defaultValue: '[]');
+      final result =
+          await _storage.getData<String>('epic_projects', defaultValue: '[]');
       if (!result.isSuccess) {
         throw result.error!;
       }
-      
+
       final epicsJson = result.data!;
-      final List<dynamic> epicsList = epicsJson == '[]' ? [] : json.decode(epicsJson);
-      
+      final List<dynamic> epicsList =
+          epicsJson == '[]' ? [] : json.decode(epicsJson);
+
       _epics = epicsList
           .map((json) => EpicProject.fromJson(json as Map<String, dynamic>))
           .toList();
-      
+
       notifyListeners();
     } catch (e) {
       throw StorageException('Failed to load epic projects: $e');
@@ -121,7 +123,7 @@ class EpicProvider with ChangeNotifier {
     DateTime? dueDate,
   }) async {
     _setOperationState(EpicOperationState.saving);
-    
+
     try {
       // Validate epic creation
       final validationError = TalentManagementService.validateEpicCreation(
@@ -129,7 +131,7 @@ class EpicProvider with ChangeNotifier {
         title: title,
         taskIds: taskIds,
       );
-      
+
       if (validationError != null) {
         _setError(ValidationException(validationError));
         return null;
@@ -146,13 +148,13 @@ class EpicProvider with ChangeNotifier {
 
       // Add to local list
       _epics.add(epic);
-      
+
       // Save to storage
       await _saveEpics();
-      
+
       _clearError();
       notifyListeners();
-      
+
       return epic;
     } catch (e) {
       _setError(StorageException('Failed to create epic project: $e'));
@@ -165,7 +167,7 @@ class EpicProvider with ChangeNotifier {
   /// Start an epic project
   Future<bool> startEpic(String epicId) async {
     _setOperationState(EpicOperationState.saving);
-    
+
     try {
       final epicIndex = _epics.indexWhere((epic) => epic.id == epicId);
       if (epicIndex == -1) {
@@ -175,13 +177,13 @@ class EpicProvider with ChangeNotifier {
 
       final epic = _epics[epicIndex];
       final startedEpic = TalentManagementService.startEpic(epic);
-      
+
       _epics[epicIndex] = startedEpic;
       await _saveEpics();
-      
+
       _clearError();
       notifyListeners();
-      
+
       return true;
     } catch (e) {
       _setError(StorageException('Failed to start epic project: $e'));
@@ -197,7 +199,8 @@ class EpicProvider with ChangeNotifier {
       final epic = findEpicForTask(taskId);
       if (epic == null) return null;
 
-      final updatedEpic = TalentManagementService.updateEpicProgress(epic, taskId);
+      final updatedEpic =
+          TalentManagementService.updateEpicProgress(epic, taskId);
       if (updatedEpic == null) return null;
 
       // Update in local list
@@ -218,7 +221,7 @@ class EpicProvider with ChangeNotifier {
   /// Update an existing epic project
   Future<bool> updateEpic(EpicProject updatedEpic) async {
     _setOperationState(EpicOperationState.saving);
-    
+
     try {
       final epicIndex = _epics.indexWhere((epic) => epic.id == updatedEpic.id);
       if (epicIndex == -1) {
@@ -228,10 +231,10 @@ class EpicProvider with ChangeNotifier {
 
       _epics[epicIndex] = updatedEpic;
       await _saveEpics();
-      
+
       _clearError();
       notifyListeners();
-      
+
       return true;
     } catch (e) {
       _setError(StorageException('Failed to update epic project: $e'));
@@ -244,7 +247,7 @@ class EpicProvider with ChangeNotifier {
   /// Delete an epic project
   Future<bool> deleteEpic(String epicId) async {
     _setOperationState(EpicOperationState.deleting);
-    
+
     try {
       final epicIndex = _epics.indexWhere((epic) => epic.id == epicId);
       if (epicIndex == -1) {
@@ -254,10 +257,10 @@ class EpicProvider with ChangeNotifier {
 
       _epics.removeAt(epicIndex);
       await _saveEpics();
-      
+
       _clearError();
       notifyListeners();
-      
+
       return true;
     } catch (e) {
       _setError(StorageException('Failed to delete epic project: $e'));
@@ -270,7 +273,7 @@ class EpicProvider with ChangeNotifier {
   /// Complete an epic project manually
   Future<bool> completeEpic(String epicId) async {
     _setOperationState(EpicOperationState.completing);
-    
+
     try {
       final epicIndex = _epics.indexWhere((epic) => epic.id == epicId);
       if (epicIndex == -1) {
@@ -284,13 +287,13 @@ class EpicProvider with ChangeNotifier {
         completedAt: DateTime.now(),
         completedTasks: epic.requiredTasks,
       );
-      
+
       _epics[epicIndex] = completedEpic;
       await _saveEpics();
-      
+
       _clearError();
       notifyListeners();
-      
+
       return true;
     } catch (e) {
       _setError(StorageException('Failed to complete epic project: $e'));
@@ -312,7 +315,7 @@ class EpicProvider with ChangeNotifier {
   /// Clear all data (for testing/debugging)
   Future<void> clearAllData() async {
     _setOperationState(EpicOperationState.deleting);
-    
+
     try {
       _epics.clear();
       final result = await _storage.saveData('epic_projects', '[]');

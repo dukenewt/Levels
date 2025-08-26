@@ -5,12 +5,13 @@ import '../services/enhanced_game_experience_manager.dart';
 /// Service to handle smooth XP animations
 /// This ensures that XP gains animate smoothly in the ring progress
 class SmoothXPAnimationService {
-  static final SmoothXPAnimationService _instance = SmoothXPAnimationService._();
+  static final SmoothXPAnimationService _instance =
+      SmoothXPAnimationService._();
   static SmoothXPAnimationService get instance => _instance;
   SmoothXPAnimationService._();
 
   bool _isAnimating = false;
-  
+
   /// Add XP with smooth animation
   /// This is the preferred method for adding XP that should animate smoothly
   Future<void> addXPWithAnimation({
@@ -30,23 +31,22 @@ class SmoothXPAnimationService {
     }
 
     _isAnimating = true;
-    
+
     try {
       debugPrint('💫 Starting smooth XP animation: +$xpAmount XP');
-      
+
       // Track XP progress BEFORE adding XP
       // EnhancedGameExperienceManager.instance.trackXPProgress(userProvider);
-      
+
       // Add the XP (this will trigger the ring animation)
       await userProvider.addXp(xpAmount);
-      
+
       debugPrint('💫 XP added successfully, animation should be visible');
-      
+
       // Optional delay for visual effect
       if (animationDelay != null) {
         await Future.delayed(animationDelay);
       }
-      
     } catch (e) {
       debugPrint('💫 Error during XP animation: $e');
     } finally {
@@ -66,7 +66,7 @@ class SmoothXPAnimationService {
         userProvider: userProvider,
         xpAmount: xpAmounts[i],
       );
-      
+
       // Add stagger delay between animations (except for the last one)
       if (i < xpAmounts.length - 1) {
         await Future.delayed(staggerDelay);
@@ -75,7 +75,8 @@ class SmoothXPAnimationService {
   }
 
   /// Quick method to test XP animation (for debugging)
-  Future<void> testXPAnimation(UserProvider userProvider, {int amount = 25}) async {
+  Future<void> testXPAnimation(UserProvider userProvider,
+      {int amount = 25}) async {
     debugPrint('🧪 Testing XP animation with $amount XP');
     await addXPWithAnimation(
       userProvider: userProvider,
@@ -84,4 +85,4 @@ class SmoothXPAnimationService {
   }
 
   bool get isAnimating => _isAnimating;
-} 
+}

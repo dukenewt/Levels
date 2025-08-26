@@ -14,7 +14,7 @@ class UserProvider with ChangeNotifier {
   Function(int oldLevel, int newLevel)? onLevelUp;
   Function(TalentChoice talentChoice)? onTalentChoice;
   Function(EnhancedUserPerk perk)? onPerkUnlock;
-  
+
   app_user.User? get user => _user;
 
   int get nextLevelXp {
@@ -28,18 +28,20 @@ class UserProvider with ChangeNotifier {
 
   // Talent system getters
   bool hasTalent(String talentId) => _user?.hasTalent(talentId) ?? false;
-  bool hasProjectManagementTalent() => _user?.hasProjectManagementTalent() ?? false;
+  bool hasProjectManagementTalent() =>
+      _user?.hasProjectManagementTalent() ?? false;
   bool hasNLPTalent() => _user?.hasNLPTalent() ?? false;
   bool needsTalentChoice() => _user?.needsTalentChoice() ?? false;
-  
+
   List<EnhancedUserPerk> getActivePerks() {
     if (_user == null) return [];
     return EnhancedUserPerks.getAvailablePerksForLevel(_user!.level);
   }
-  
+
   TalentChoice? getAvailableTalentChoice() => _user?.getAvailableTalentChoice();
 
-  void updateDependencies(AuthService authService, FirestoreService firestoreService) {
+  void updateDependencies(
+      AuthService authService, FirestoreService firestoreService) {
     // This is a bit of a hack to make this work with the proxy provider
     // but since the services are singletons it's fine.
   }
@@ -81,9 +83,10 @@ class UserProvider with ChangeNotifier {
         leveledUp = true;
         requiredXp = _xpForLevel(newLevel);
       }
-      
-      List<String> newPerks = _getPerksUnlockedBetweenLevels(oldLevel, newLevel);
-      
+
+      List<String> newPerks =
+          _getPerksUnlockedBetweenLevels(oldLevel, newLevel);
+
       final updatedUser = _user!.copyWith(
         currentXp: newXp,
         level: newLevel,
@@ -91,28 +94,33 @@ class UserProvider with ChangeNotifier {
       );
       await _firestoreService.setUser(updatedUser);
       _user = updatedUser;
-      
+
       if (leveledUp && onLevelUp != null) {
         onLevelUp!(oldLevel, newLevel);
       }
-      
+
       // Check for talent choices after level up
-      if (leveledUp && updatedUser.needsTalentChoice() && onTalentChoice != null) {
+      if (leveledUp &&
+          updatedUser.needsTalentChoice() &&
+          onTalentChoice != null) {
         final talentChoice = updatedUser.getAvailableTalentChoice();
         if (talentChoice != null) {
           // Defer UI to caller; callback will handle safe timing
           onTalentChoice!(talentChoice);
         }
       }
-      
+
       // Check for new perk unlocks
-      for (final perk in EnhancedUserPerks.getAvailablePerksForLevel(newLevel)) {
-        if (perk.requiredLevel > oldLevel && perk.requiredLevel <= newLevel && onPerkUnlock != null) {
+      for (final perk
+          in EnhancedUserPerks.getAvailablePerksForLevel(newLevel)) {
+        if (perk.requiredLevel > oldLevel &&
+            perk.requiredLevel <= newLevel &&
+            onPerkUnlock != null) {
           onPerkUnlock!(perk);
         }
       }
-      
-            notifyListeners();
+
+      notifyListeners();
     }
   }
 
@@ -138,12 +146,12 @@ class UserProvider with ChangeNotifier {
   List<String> _getPerksUnlockedBetweenLevels(int oldLevel, int newLevel) {
     // Define perks unlocked at specific levels
     final perks = <String>[];
-    
+
     for (int level = oldLevel + 1; level <= newLevel; level++) {
-        switch (level) {
-          case 5:
-            // Previously unlocked 'smart_suggestions' — removed
-            break;
+      switch (level) {
+        case 5:
+          // Previously unlocked 'smart_suggestions' — removed
+          break;
         case 10:
           perks.add('custom_categories');
           break;
@@ -165,7 +173,7 @@ class UserProvider with ChangeNotifier {
           }
       }
     }
-    
+
     return perks;
   }
 
@@ -184,7 +192,8 @@ class UserProvider with ChangeNotifier {
       return TalentSelectionResult.error('No user logged in');
     }
 
-    final result = TalentManagementService.selectTalent(_user!, talentId, level);
+    final result =
+        TalentManagementService.selectTalent(_user!, talentId, level);
     if (result.success && result.updatedUser != null) {
       await _firestoreService.setUser(result.updatedUser!);
       _user = result.updatedUser;
@@ -219,15 +228,15 @@ class UserProvider with ChangeNotifier {
   List<EnhancedUserPerk> getPerksForCategory(String category) {
     if (_user == null) return [];
     return EnhancedUserPerks.getAvailablePerksForLevel(_user!.level)
-        .where((perk) => perk.effects.any((effect) => 
-            effect.effect == PerkEffect.categoryBonus && 
+        .where((perk) => perk.effects.any((effect) =>
+            effect.effect == PerkEffect.categoryBonus &&
             effect.category?.toLowerCase() == category.toLowerCase()))
         .toList();
   }
 
   Map<String, dynamic> getPerkSummary() {
     if (_user == null) return {};
-    
+
     final activePerks = getActivePerks();
     Map<String, List<String>> effectsByCategory = {};
     List<String> generalEffects = [];
@@ -236,7 +245,7 @@ class UserProvider with ChangeNotifier {
     for (final perk in activePerks) {
       for (final effect in perk.effects) {
         String description = '';
-        
+
         switch (effect.effect) {
           case PerkEffect.categoryBonus:
             description = '+${(effect.value * 100).toInt()}% XP';
@@ -244,17 +253,17 @@ class UserProvider with ChangeNotifier {
             effectsByCategory[category] = effectsByCategory[category] ?? [];
             effectsByCategory[category]!.add(description);
             break;
-            
+
           case PerkEffect.xpBonus:
             description = '+${(effect.value * 100).toInt()}% All XP';
             generalEffects.add(description);
             break;
-            
+
           case PerkEffect.lootBoxBonus:
             description = '+${(effect.value * 100).toInt()}% Loot Box Chance';
             generalEffects.add(description);
             break;
-            
+
           case PerkEffect.streakFreeze:
             description = 'Streak Protection';
             specialEffects.add(description);
@@ -270,4 +279,4 @@ class UserProvider with ChangeNotifier {
       'totalPerks': activePerks.length,
     };
   }
-} 
+}

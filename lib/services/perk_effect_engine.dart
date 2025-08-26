@@ -30,7 +30,8 @@ class PerkEffectResult {
     Map<String, String>? effectDescriptions,
   }) {
     return PerkEffectResult(
-      categoryBonusMultiplier: categoryBonusMultiplier ?? this.categoryBonusMultiplier,
+      categoryBonusMultiplier:
+          categoryBonusMultiplier ?? this.categoryBonusMultiplier,
       xpBonusMultiplier: xpBonusMultiplier ?? this.xpBonusMultiplier,
       lootBoxChanceBonus: lootBoxChanceBonus ?? this.lootBoxChanceBonus,
       hasStreakFreeze: hasStreakFreeze ?? this.hasStreakFreeze,
@@ -39,10 +40,10 @@ class PerkEffectResult {
     );
   }
 
-  bool get hasAnyEffects => 
-      categoryBonusMultiplier > 0 || 
-      xpBonusMultiplier > 0 || 
-      lootBoxChanceBonus > 0 || 
+  bool get hasAnyEffects =>
+      categoryBonusMultiplier > 0 ||
+      xpBonusMultiplier > 0 ||
+      lootBoxChanceBonus > 0 ||
       hasStreakFreeze;
 }
 
@@ -68,11 +69,12 @@ class PerkEffectEngine {
       for (final effect in perk.effects) {
         switch (effect.effect) {
           case PerkEffect.categoryBonus:
-            if (effect.category != null && 
+            if (effect.category != null &&
                 effect.category!.toLowerCase() == task.category.toLowerCase()) {
               categoryBonus += effect.value;
               appliedPerks.add(perk.name);
-              descriptions[perk.id] = '+${(effect.value * 100).toInt()}% ${effect.category} XP';
+              descriptions[perk.id] =
+                  '+${(effect.value * 100).toInt()}% ${effect.category} XP';
             }
             break;
 
@@ -85,7 +87,8 @@ class PerkEffectEngine {
           case PerkEffect.lootBoxBonus:
             lootBoxBonus += effect.value;
             appliedPerks.add(perk.name);
-            descriptions[perk.id] = '+${(effect.value * 100).toInt()}% Loot Box Chance';
+            descriptions[perk.id] =
+                '+${(effect.value * 100).toInt()}% Loot Box Chance';
             break;
 
           case PerkEffect.streakFreeze:
@@ -110,11 +113,8 @@ class PerkEffectEngine {
   }
 
   /// Calculate final XP with perk bonuses applied
-  static int applyPerkBonusesToXP(
-    int baseXP,
-    PerkEffectResult perkEffects,
-    {bool isCategoryBonus = false}
-  ) {
+  static int applyPerkBonusesToXP(int baseXP, PerkEffectResult perkEffects,
+      {bool isCategoryBonus = false}) {
     double finalXP = baseXP.toDouble();
 
     // Apply category-specific bonus if applicable
@@ -136,7 +136,7 @@ class PerkEffectEngine {
     PerkEffectResult perkEffects,
   ) {
     double enhancedChance = baseChance;
-    
+
     if (perkEffects.lootBoxChanceBonus > 0) {
       enhancedChance += perkEffects.lootBoxChanceBonus;
     }
@@ -151,11 +151,11 @@ class PerkEffectEngine {
     Task overdueTask,
   ) {
     final perkEffects = applyPerksToTask(
-      user, 
-      overdueTask, 
+      user,
+      overdueTask,
       CompletionContext.defaultContext(),
     );
-    
+
     return perkEffects.hasStreakFreeze;
   }
 
@@ -178,19 +178,21 @@ class PerkEffectEngine {
     );
 
     List<String> preview = [];
-    
+
     if (effects.categoryBonusMultiplier > 0) {
-      preview.add('+${(effects.categoryBonusMultiplier * 100).toInt()}% ${taskCategory} XP');
+      preview.add(
+          '+${(effects.categoryBonusMultiplier * 100).toInt()}% ${taskCategory} XP');
     }
-    
+
     if (effects.xpBonusMultiplier > 0) {
       preview.add('+${(effects.xpBonusMultiplier * 100).toInt()}% Base XP');
     }
-    
+
     if (effects.lootBoxChanceBonus > 0) {
-      preview.add('+${(effects.lootBoxChanceBonus * 100).toInt()}% Loot Box Chance');
+      preview.add(
+          '+${(effects.lootBoxChanceBonus * 100).toInt()}% Loot Box Chance');
     }
-    
+
     if (effects.hasStreakFreeze) {
       preview.add('Streak Protection Active');
     }
@@ -199,14 +201,14 @@ class PerkEffectEngine {
   }
 
   /// Get all perks that affect a specific category
-  static List<EnhancedUserPerk> getPerksForCategory(User user, String category) {
+  static List<EnhancedUserPerk> getPerksForCategory(
+      User user, String category) {
     final unlockedPerks = _getUnlockedPerks(user);
-    
+
     return unlockedPerks.where((perk) {
-      return perk.effects.any((effect) => 
-        effect.effect == PerkEffect.categoryBonus && 
-        effect.category?.toLowerCase() == category.toLowerCase()
-      );
+      return perk.effects.any((effect) =>
+          effect.effect == PerkEffect.categoryBonus &&
+          effect.category?.toLowerCase() == category.toLowerCase());
     }).toList();
   }
 
@@ -217,8 +219,9 @@ class PerkEffectEngine {
 
   /// Helper method to get unlocked perks for a user
   static List<EnhancedUserPerk> _getUnlockedPerks(User user) {
-    final availablePerks = EnhancedUserPerks.getAvailablePerksForLevel(user.level);
-    
+    final availablePerks =
+        EnhancedUserPerks.getAvailablePerksForLevel(user.level);
+
     return availablePerks.where((perk) {
       // Check if perk is unlocked (either automatically or explicitly)
       return user.perks.contains(perk.id) || perk.requiredLevel <= user.level;
@@ -228,18 +231,15 @@ class PerkEffectEngine {
   /// Check if user has any perks that affect epic difficulty
   static bool hasEpicPerks(User user) {
     final unlockedPerks = _getUnlockedPerks(user);
-    
-    return unlockedPerks.any((perk) => 
-      perk.effects.any((effect) => 
-        effect.metadata?['difficulty'] == 'epic'
-      )
-    );
+
+    return unlockedPerks.any((perk) =>
+        perk.effects.any((effect) => effect.metadata?['difficulty'] == 'epic'));
   }
 
   /// Get summary of all active perk effects
   static Map<String, dynamic> getPerkSummary(User user) {
     final unlockedPerks = _getUnlockedPerks(user);
-    
+
     Map<String, List<String>> effectsByCategory = {};
     List<String> generalEffects = [];
     List<String> specialEffects = [];
@@ -247,7 +247,7 @@ class PerkEffectEngine {
     for (final perk in unlockedPerks) {
       for (final effect in perk.effects) {
         String description = '';
-        
+
         switch (effect.effect) {
           case PerkEffect.categoryBonus:
             description = '+${(effect.value * 100).toInt()}% XP';
@@ -255,17 +255,17 @@ class PerkEffectEngine {
             effectsByCategory[category] = effectsByCategory[category] ?? [];
             effectsByCategory[category]!.add(description);
             break;
-            
+
           case PerkEffect.xpBonus:
             description = '+${(effect.value * 100).toInt()}% All XP';
             generalEffects.add(description);
             break;
-            
+
           case PerkEffect.lootBoxBonus:
             description = '+${(effect.value * 100).toInt()}% Loot Box Chance';
             generalEffects.add(description);
             break;
-            
+
           case PerkEffect.streakFreeze:
             description = 'Streak Protection';
             specialEffects.add(description);

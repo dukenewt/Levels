@@ -53,14 +53,16 @@ class _ExportOptionsDialogState extends State<ExportOptionsDialog> {
                     max: 365,
                     divisions: 51,
                     label: '$completedTasksDays days',
-                    onChanged: (value) => setState(() => completedTasksDays = value.round()),
+                    onChanged: (value) =>
+                        setState(() => completedTasksDays = value.round()),
                   ),
                 ],
               ),
             CheckboxListTile(
               title: const Text('Include test/debug tasks'),
               value: includeTestData,
-              onChanged: (value) => setState(() => includeTestData = value ?? false),
+              onChanged: (value) =>
+                  setState(() => includeTestData = value ?? false),
             ),
           ],
         ),
@@ -74,7 +76,10 @@ class _ExportOptionsDialogState extends State<ExportOptionsDialog> {
           onPressed: () {
             final config = ExportConfig(
               purpose: selectedPurpose,
-              completedTasksDaysLimit: selectedPurpose == ExportPurpose.fullArchive ? null : completedTasksDays,
+              completedTasksDaysLimit:
+                  selectedPurpose == ExportPurpose.fullArchive
+                      ? null
+                      : completedTasksDays,
               includeTestData: includeTestData,
             );
             Navigator.pop(context, config);
@@ -84,4 +89,4 @@ class _ExportOptionsDialogState extends State<ExportOptionsDialog> {
       ],
     );
   }
-} 
+}

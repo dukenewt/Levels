@@ -59,12 +59,13 @@ class EnhancedXPCalculationBreakdown {
     }
 
     if (originalBreakdown.lootBoxResult.wasTriggered) {
-      breakdown.add('${originalBreakdown.lootBoxResult.description}: +${originalBreakdown.lootBoxResult.bonusXP}');
+      breakdown.add(
+          '${originalBreakdown.lootBoxResult.description}: +${originalBreakdown.lootBoxResult.bonusXP}');
     }
 
     if (perkBonusXP > 0) {
       breakdown.add('Perk Bonus: +${perkBonusXP}');
-      
+
       // Add individual perk descriptions
       for (final description in perkDescriptions.values) {
         if (description.isNotEmpty) {
@@ -100,12 +101,15 @@ class EnhancedXPCalculationService {
 
     // Apply category-specific perk bonuses
     if (perkEffects.categoryBonusMultiplier > 0) {
-      perkBonusXP += (originalBreakdown.finalBaseXP * perkEffects.categoryBonusMultiplier).round();
+      perkBonusXP +=
+          (originalBreakdown.finalBaseXP * perkEffects.categoryBonusMultiplier)
+              .round();
     }
 
     // Apply general XP perk bonuses to the total original XP
     if (perkEffects.xpBonusMultiplier > 0) {
-      perkBonusXP += (originalBreakdown.totalXP * perkEffects.xpBonusMultiplier).round();
+      perkBonusXP +=
+          (originalBreakdown.totalXP * perkEffects.xpBonusMultiplier).round();
     }
 
     // Calculate final total XP
@@ -121,7 +125,6 @@ class EnhancedXPCalculationService {
     );
   }
 
-
   /// Get preview of XP calculation for task creation UI
   Map<String, dynamic> getXPPreview(
     User user,
@@ -129,7 +132,7 @@ class EnhancedXPCalculationService {
   ) {
     final context = CompletionContext.defaultContext();
     final enhancedBreakdown = calculateEnhancedXP(user, task, context);
-    
+
     return {
       'baseXP': enhancedBreakdown.originalBreakdown.finalBaseXP,
       'totalXP': enhancedBreakdown.finalTotalXP,

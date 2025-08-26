@@ -99,12 +99,14 @@ class AppBackupService {
     return {};
   }
 
-  static Future<String?> exportBackupToDownloads({ExportConfig config = ExportConfig.backup}) async {
+  static Future<String?> exportBackupToDownloads(
+      {ExportConfig config = ExportConfig.backup}) async {
     try {
       final backup = await exportAllData(config: config);
       final jsonString = json.encode(backup);
       final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/dailyxp_backup_${DateTime.now().millisecondsSinceEpoch}.json');
+      final file = File(
+          '${directory.path}/dailyxp_backup_${DateTime.now().millisecondsSinceEpoch}.json');
       await file.writeAsString(jsonString);
       return file.path;
     } catch (e) {
@@ -115,7 +117,8 @@ class AppBackupService {
 
   static Future<bool> importBackupFromFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+      final result = await FilePicker.platform
+          .pickFiles(type: FileType.custom, allowedExtensions: ['json']);
       if (result == null || result.files.single.path == null) return false;
       final file = File(result.files.single.path!);
       final jsonString = await file.readAsString();
@@ -157,12 +160,15 @@ class AppBackupService {
     debugPrint('--- End SharedPreferences ---');
   }
 
-  static Future<Map<String, dynamic>> exportAllData({ExportConfig config = ExportConfig.backup}) async {
+  static Future<Map<String, dynamic>> exportAllData(
+      {ExportConfig config = ExportConfig.backup}) async {
     final prefs = await SharedPreferences.getInstance();
     // Get all tasks
     final tasksJson = prefs.getString('tasks_data_v1');
     final List<Task> allTasks = tasksJson != null
-        ? (List<Map<String, dynamic>>.from(json.decode(tasksJson)).map((e) => Task.fromJson(e)).toList())
+        ? (List<Map<String, dynamic>>.from(json.decode(tasksJson))
+            .map((e) => Task.fromJson(e))
+            .toList())
         : [];
     // Apply intelligent filtering
     final filteredTasks = _filterTasks(allTasks, config);
@@ -191,7 +197,9 @@ class AppBackupService {
       'settings': _extractSettingsData(prefs),
       'themes': _extractThemeData(prefs),
       'economy': _extractEconomyData(prefs),
-      'skillAchievements': prefs.getString('skill_achievements') != null ? json.decode(prefs.getString('skill_achievements')!) : {},
+      'skillAchievements': prefs.getString('skill_achievements') != null
+          ? json.decode(prefs.getString('skill_achievements')!)
+          : {},
     };
   }
 
@@ -202,7 +210,8 @@ class AppBackupService {
       if (!task.isCompleted) return true;
       // Filter completed tasks by date if limit is set
       if (config.completedTasksDaysLimit != null && task.completedAt != null) {
-        final cutoffDate = now.subtract(Duration(days: config.completedTasksDaysLimit!));
+        final cutoffDate =
+            now.subtract(Duration(days: config.completedTasksDaysLimit!));
         if (task.completedAt!.isBefore(cutoffDate)) {
           return false; // Too old, exclude it
         }
@@ -218,11 +227,21 @@ class AppBackupService {
 
   static bool _isLikelyTestTask(Task task) {
     final testIndicators = [
-      'test', 'sup', 'spe', 'aaa', 'asdf', 'debug', 'temp',
-      'xxx', '123', 'sample', 'demo'
+      'test',
+      'sup',
+      'spe',
+      'aaa',
+      'asdf',
+      'debug',
+      'temp',
+      'xxx',
+      '123',
+      'sample',
+      'demo'
     ];
     final titleLower = (task.title ?? '').toLowerCase();
-    final hasTestTitle = testIndicators.any((indicator) => titleLower.contains(indicator));
+    final hasTestTitle =
+        testIndicators.any((indicator) => titleLower.contains(indicator));
     final hasVeryShortTitle = (task.title ?? '').length <= 3;
     final hasEmptyDescription = (task.description ?? '').trim().isEmpty;
     return hasTestTitle || (hasVeryShortTitle && hasEmptyDescription);
@@ -237,11 +256,11 @@ class AppBackupService {
     for (final key in allKeys) {
       final value = prefs.get(key);
       final valueType = value.runtimeType;
-      final valuePreview = value.toString().length > 100 
+      final valuePreview = value.toString().length > 100
           ? '\\${value.toString().substring(0, 100)}...'
           : value.toString();
       debugPrint('Key: "$key" | Type: $valueType | Value: $valuePreview');
     }
     debugPrint('=== END DEBUG ===');
   }
-} 
+}

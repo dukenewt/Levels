@@ -12,7 +12,7 @@ enum RecurrenceType {
 
 enum MonthlyPattern {
   dayOfMonth, // e.g., 15th of every month
-  dayOfWeek,  // e.g., 2nd Tuesday of every month
+  dayOfWeek, // e.g., 2nd Tuesday of every month
 }
 
 class RecurrenceSettings {
@@ -79,8 +79,9 @@ class RecurrenceSettings {
       case RecurrenceType.weekly:
         if (interval == 1 && weeklyDays.length == 7) {
           return 'Daily';
-        } else if (interval == 1 && weeklyDays.length == 5 && 
-                   weeklyDays.every((day) => day <= 5)) {
+        } else if (interval == 1 &&
+            weeklyDays.length == 5 &&
+            weeklyDays.every((day) => day <= 5)) {
           return 'Weekdays';
         } else if (interval == 1 && weeklyDays.length == 1) {
           return 'Weekly on ${_getDayName(weeklyDays.first)}';
@@ -125,12 +126,18 @@ class RecurrenceSettings {
 
   String _getWeekOfMonthName(int week) {
     switch (week) {
-      case 1: return 'first';
-      case 2: return 'second';
-      case 3: return 'third';
-      case 4: return 'fourth';
-      case -1: return 'last';
-      default: return '${week}th';
+      case 1:
+        return 'first';
+      case 2:
+        return 'second';
+      case 3:
+        return 'third';
+      case 4:
+        return 'fourth';
+      case -1:
+        return 'last';
+      default:
+        return '${week}th';
     }
   }
 }
@@ -146,7 +153,8 @@ class RecurrencePatternDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<RecurrencePatternDialog> createState() => _RecurrencePatternDialogState();
+  State<RecurrencePatternDialog> createState() =>
+      _RecurrencePatternDialogState();
 }
 
 class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
@@ -163,7 +171,7 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -211,7 +219,7 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
 
   Widget _buildHeader(ThemeData theme) {
     final titles = ['Repeat Pattern', 'Details', 'End Conditions'];
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -256,9 +264,8 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
                   height: 3,
                   margin: EdgeInsets.only(right: index < 2 ? 8 : 0),
                   decoration: BoxDecoration(
-                    color: isActive 
-                        ? Colors.white 
-                        : Colors.white.withOpacity(0.3),
+                    color:
+                        isActive ? Colors.white : Colors.white.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -322,11 +329,11 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isSelected 
+              color: isSelected
                   ? theme.colorScheme.primary.withOpacity(0.1)
                   : theme.colorScheme.surface,
               border: Border.all(
-                color: isSelected 
+                color: isSelected
                     ? theme.colorScheme.primary
                     : theme.colorScheme.outline.withOpacity(0.3),
                 width: isSelected ? 2 : 1,
@@ -337,7 +344,7 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
               children: [
                 Icon(
                   icon,
-                  color: isSelected 
+                  color: isSelected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -346,8 +353,9 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
                   child: Text(
                     label,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                      color: isSelected 
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected
                           ? theme.colorScheme.primary
                           : theme.colorScheme.onSurface,
                     ),
@@ -479,7 +487,7 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
 
   Widget _buildWeeklyDaysSection(ThemeData theme) {
     const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -493,57 +501,59 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
         LayoutBuilder(
           builder: (context, constraints) {
             final availableWidth = constraints.maxWidth;
-            final buttonWidth = (availableWidth - (6 * 8)) / 7; // 6 spaces between 7 buttons
-            
+            final buttonWidth =
+                (availableWidth - (6 * 8)) / 7; // 6 spaces between 7 buttons
+
             return Wrap(
               spacing: 8,
               runSpacing: 8,
               children: List.generate(7, (index) {
-            final dayNumber = index + 1;
-            final isSelected = _settings.weeklyDays.contains(dayNumber);
-            
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  final newDays = List<int>.from(_settings.weeklyDays);
-                  if (isSelected) {
-                    newDays.remove(dayNumber);
-                  } else {
-                    newDays.add(dayNumber);
-                  }
-                  newDays.sort();
-                  _settings = _settings.copyWith(weeklyDays: newDays);
-                });
-              },
-              child: Container(
-                width: buttonWidth.clamp(32.0, 44.0),
-                height: buttonWidth.clamp(32.0, 44.0),
-                decoration: BoxDecoration(
-                  color: isSelected 
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.surface,
-                  border: Border.all(
-                    color: isSelected 
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.outline.withOpacity(0.3),
-                  ),
-                  borderRadius: BorderRadius.circular(buttonWidth.clamp(16.0, 22.0)),
-                ),
-                child: Center(
-                  child: Text(
-                    dayNames[index],
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: isSelected 
-                          ? Colors.white
-                          : theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                      fontSize: (buttonWidth * 0.25).clamp(10.0, 14.0),
+                final dayNumber = index + 1;
+                final isSelected = _settings.weeklyDays.contains(dayNumber);
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      final newDays = List<int>.from(_settings.weeklyDays);
+                      if (isSelected) {
+                        newDays.remove(dayNumber);
+                      } else {
+                        newDays.add(dayNumber);
+                      }
+                      newDays.sort();
+                      _settings = _settings.copyWith(weeklyDays: newDays);
+                    });
+                  },
+                  child: Container(
+                    width: buttonWidth.clamp(32.0, 44.0),
+                    height: buttonWidth.clamp(32.0, 44.0),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.surface,
+                      border: Border.all(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outline.withOpacity(0.3),
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(buttonWidth.clamp(16.0, 22.0)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        dayNames[index],
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: isSelected
+                              ? Colors.white
+                              : theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                          fontSize: (buttonWidth * 0.25).clamp(10.0, 14.0),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            );
-          }),
+                );
+              }),
             );
           },
         ),
@@ -558,7 +568,8 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
                 });
               },
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -571,7 +582,8 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
                 });
               },
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -580,11 +592,13 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  _settings = _settings.copyWith(weeklyDays: [1, 2, 3, 4, 5, 6, 7]);
+                  _settings =
+                      _settings.copyWith(weeklyDays: [1, 2, 3, 4, 5, 6, 7]);
                 });
               },
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -598,7 +612,7 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
 
   Widget _buildMonthlyPatternSection(ThemeData theme) {
     final baseDate = widget.baseDate ?? DateTime.now();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -623,7 +637,8 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
           },
         ),
         RadioListTile<MonthlyPattern>(
-          title: Text('${_getWeekOfMonth(baseDate)} ${_getDayOfWeekName(baseDate.weekday)} of each month'),
+          title: Text(
+              '${_getWeekOfMonth(baseDate)} ${_getDayOfWeekName(baseDate.weekday)} of each month'),
           value: MonthlyPattern.dayOfWeek,
           groupValue: _settings.monthlyPattern,
           onChanged: (value) {
@@ -745,7 +760,8 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            DateFormat('MMM d, yyyy').format(_settings.endDate!),
+                            DateFormat('MMM d, yyyy')
+                                .format(_settings.endDate!),
                             style: theme.textTheme.bodyLarge,
                           ),
                         ),
@@ -778,7 +794,8 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
                               keyboardType: TextInputType.number,
                               decoration: const InputDecoration(
                                 border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                                contentPadding:
+                                    EdgeInsets.symmetric(horizontal: 8),
                               ),
                               onChanged: (value) {
                                 final count = int.tryParse(value) ?? 10;
@@ -836,7 +853,10 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
                   Navigator.of(context).pop(_settings);
                 }
               },
-              child: Text(_currentPage < 2 && _settings.type != RecurrenceType.none ? 'Next' : 'Done'),
+              child: Text(
+                  _currentPage < 2 && _settings.type != RecurrenceType.none
+                      ? 'Next'
+                      : 'Done'),
             ),
           ),
           const SizedBox(width: 16),
@@ -858,7 +878,8 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
   Future<void> _selectEndDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _settings.endDate ?? DateTime.now().add(const Duration(days: 30)),
+      initialDate:
+          _settings.endDate ?? DateTime.now().add(const Duration(days: 30)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
@@ -872,31 +893,47 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
   String _getWeekOfMonth(DateTime date) {
     final week = _calculateWeekOfMonth(date);
     switch (week) {
-      case 1: return 'First';
-      case 2: return 'Second';
-      case 3: return 'Third';
-      case 4: return 'Fourth';
-      case -1: return 'Last';
-      default: return '${week}th';
+      case 1:
+        return 'First';
+      case 2:
+        return 'Second';
+      case 3:
+        return 'Third';
+      case 4:
+        return 'Fourth';
+      case -1:
+        return 'Last';
+      default:
+        return '${week}th';
     }
   }
 
   int _calculateWeekOfMonth(DateTime date) {
     final firstDayOfMonth = DateTime(date.year, date.month, 1);
     final lastDayOfMonth = DateTime(date.year, date.month + 1, 0);
-    
+
     // Check if it's in the last week
     final daysFromEnd = lastDayOfMonth.day - date.day;
-    if (daysFromEnd < 7 && lastDayOfMonth.subtract(Duration(days: daysFromEnd)).weekday == date.weekday) {
+    if (daysFromEnd < 7 &&
+        lastDayOfMonth.subtract(Duration(days: daysFromEnd)).weekday ==
+            date.weekday) {
       return -1; // Last occurrence
     }
-    
+
     // Calculate which week (1-based)
     return ((date.day - 1) ~/ 7) + 1;
   }
 
   String _getDayOfWeekName(int weekday) {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
     return days[weekday - 1];
   }
 

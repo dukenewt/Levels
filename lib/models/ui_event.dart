@@ -11,43 +11,43 @@ enum UiEventType {
   epicCompletion,
   streakMilestone,
   lootBoxOpen,
-  
+
   // Navigation events
   showTalentDialog,
   showPerkDialog,
   showEpicDialog,
   navigateToProfile,
   navigateToEpics,
-  
+
   // Notification events
   showSnackbar,
   showToast,
   showBottomSheet,
   showDialog,
-  
+
   // Animation events
   playAnimation,
   startSequence,
-  
+
   // Feedback events
   hapticFeedback,
   soundEffect,
-  
+
   // State refresh events
   refreshTasks,
   refreshProfile,
   refreshEpics;
-  
+
   String get id => name;
 }
 
 /// Priority levels for UI events
 enum UiEventPriority {
-  low,      // Can be skipped if system is busy
-  normal,   // Standard priority
-  high,     // Should interrupt lower priority events
+  low, // Can be skipped if system is busy
+  normal, // Standard priority
+  high, // Should interrupt lower priority events
   critical; // Must be shown immediately
-  
+
   String get id => name;
 }
 
@@ -60,7 +60,7 @@ abstract class UiEvent {
   final Map<String, dynamic> data;
   final Duration? delay;
   final bool reducedMotionFallback;
-  
+
   const UiEvent({
     required this.id,
     required this.type,
@@ -70,10 +70,10 @@ abstract class UiEvent {
     this.delay,
     this.reducedMotionFallback = true,
   });
-  
+
   /// Whether this event should be shown in reduced motion mode
   bool get showInReducedMotion => reducedMotionFallback;
-  
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -94,7 +94,7 @@ class CelebrationEvent extends UiEvent {
   final String? iconPath;
   final Duration duration;
   final List<String> animations;
-  
+
   const CelebrationEvent({
     required super.id,
     required super.type,
@@ -109,7 +109,7 @@ class CelebrationEvent extends UiEvent {
     super.delay,
     super.reducedMotionFallback = true,
   });
-  
+
   factory CelebrationEvent.taskCompletion({
     required String taskTitle,
     required int xpGained,
@@ -117,17 +117,19 @@ class CelebrationEvent extends UiEvent {
     bool hasLootBox = false,
   }) {
     final id = 'task_completion_${DateTime.now().millisecondsSinceEpoch}';
-    final animations = hasLootBox 
+    final animations = hasLootBox
         ? ['checkmark', 'xp_burst', 'loot_box_reveal']
         : ['checkmark', 'xp_burst'];
-    
+
     return CelebrationEvent(
       id: id,
       type: UiEventType.taskCompletion,
       timestamp: DateTime.now(),
       title: 'Task Completed!',
-      message: '$taskTitle\n+$xpGained XP' + 
-               (perkBonuses?.isNotEmpty == true ? '\n${perkBonuses!.join(', ')}' : ''),
+      message: '$taskTitle\n+$xpGained XP' +
+          (perkBonuses?.isNotEmpty == true
+              ? '\n${perkBonuses!.join(', ')}'
+              : ''),
       animations: animations,
       data: {
         'task_title': taskTitle,
@@ -137,14 +139,14 @@ class CelebrationEvent extends UiEvent {
       },
     );
   }
-  
+
   factory CelebrationEvent.levelUp({
     required int newLevel,
     List<String>? newPerks,
     bool needsTalentChoice = false,
   }) {
     final id = 'level_up_${newLevel}_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     return CelebrationEvent(
       id: id,
       type: UiEventType.levelUp,
@@ -161,13 +163,13 @@ class CelebrationEvent extends UiEvent {
       },
     );
   }
-  
+
   factory CelebrationEvent.epicCompletion({
     required String epicTitle,
     List<String>? rewardsUnlocked,
   }) {
     final id = 'epic_completion_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     return CelebrationEvent(
       id: id,
       type: UiEventType.epicCompletion,
@@ -184,7 +186,7 @@ class CelebrationEvent extends UiEvent {
       },
     );
   }
-  
+
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();
@@ -206,7 +208,7 @@ class DialogEvent extends UiEvent {
   final List<DialogAction> actions;
   final bool dismissible;
   final String? contentWidget;
-  
+
   const DialogEvent({
     required super.id,
     required super.type,
@@ -221,13 +223,14 @@ class DialogEvent extends UiEvent {
     super.delay,
     super.reducedMotionFallback = true,
   });
-  
+
   factory DialogEvent.talentChoice({
     required int level,
     required List<Map<String, dynamic>> talentOptions,
   }) {
-    final id = 'talent_choice_${level}_${DateTime.now().millisecondsSinceEpoch}';
-    
+    final id =
+        'talent_choice_${level}_${DateTime.now().millisecondsSinceEpoch}';
+
     return DialogEvent(
       id: id,
       type: UiEventType.showTalentDialog,
@@ -243,13 +246,13 @@ class DialogEvent extends UiEvent {
       },
     );
   }
-  
+
   factory DialogEvent.perkUnlock({
     required String perkName,
     required String perkDescription,
   }) {
     final id = 'perk_unlock_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     return DialogEvent(
       id: id,
       type: UiEventType.showPerkDialog,
@@ -265,7 +268,7 @@ class DialogEvent extends UiEvent {
       },
     );
   }
-  
+
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();
@@ -287,7 +290,7 @@ class DialogAction {
   final bool isPrimary;
   final bool isDestructive;
   final Map<String, dynamic> data;
-  
+
   const DialogAction({
     required this.id,
     required this.text,
@@ -295,19 +298,19 @@ class DialogAction {
     this.isDestructive = false,
     this.data = const {},
   });
-  
+
   factory DialogAction.ok() {
     return const DialogAction(id: 'ok', text: 'OK', isPrimary: true);
   }
-  
+
   factory DialogAction.cancel() {
     return const DialogAction(id: 'cancel', text: 'Cancel');
   }
-  
+
   factory DialogAction.confirm() {
     return const DialogAction(id: 'confirm', text: 'Confirm', isPrimary: true);
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -326,7 +329,7 @@ class NotificationEvent extends UiEvent {
   final String? actionId;
   final Duration duration;
   final String? iconPath;
-  
+
   const NotificationEvent({
     required super.id,
     required super.type,
@@ -341,7 +344,7 @@ class NotificationEvent extends UiEvent {
     super.delay,
     super.reducedMotionFallback = true,
   });
-  
+
   factory NotificationEvent.snackbar({
     required String message,
     String? actionLabel,
@@ -349,7 +352,7 @@ class NotificationEvent extends UiEvent {
     Duration duration = const Duration(seconds: 4),
   }) {
     final id = 'snackbar_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     return NotificationEvent(
       id: id,
       type: UiEventType.showSnackbar,
@@ -360,7 +363,7 @@ class NotificationEvent extends UiEvent {
       duration: duration,
     );
   }
-  
+
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();
@@ -381,7 +384,7 @@ class AnimationEvent extends UiEvent {
   final String? targetWidget;
   final Duration duration;
   final Map<String, dynamic> parameters;
-  
+
   const AnimationEvent({
     required super.id,
     required super.type,
@@ -395,15 +398,16 @@ class AnimationEvent extends UiEvent {
     super.delay,
     super.reducedMotionFallback = false,
   });
-  
+
   factory AnimationEvent.playAnimation({
     required String animationName,
     String? targetWidget,
     Duration duration = const Duration(milliseconds: 500),
     Map<String, dynamic> parameters = const {},
   }) {
-    final id = 'animation_${animationName}_${DateTime.now().millisecondsSinceEpoch}';
-    
+    final id =
+        'animation_${animationName}_${DateTime.now().millisecondsSinceEpoch}';
+
     return AnimationEvent(
       id: id,
       type: UiEventType.playAnimation,
@@ -414,7 +418,7 @@ class AnimationEvent extends UiEvent {
       parameters: parameters,
     );
   }
-  
+
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();
@@ -433,15 +437,16 @@ class UiEventBatch {
   final List<UiEvent> events;
   final String batchId;
   final DateTime timestamp;
-  final bool sequential; // Whether events should be played sequentially or concurrently
-  
+  final bool
+      sequential; // Whether events should be played sequentially or concurrently
+
   const UiEventBatch({
     required this.events,
     required this.batchId,
     required this.timestamp,
     this.sequential = false,
   });
-  
+
   factory UiEventBatch.sequential({
     required List<UiEvent> events,
     String? batchId,
@@ -453,7 +458,7 @@ class UiEventBatch {
       sequential: true,
     );
   }
-  
+
   factory UiEventBatch.concurrent({
     required List<UiEvent> events,
     String? batchId,
@@ -465,15 +470,14 @@ class UiEventBatch {
       sequential: false,
     );
   }
-  
+
   /// Filter events based on reduced motion setting
   UiEventBatch filterForReducedMotion(bool reducedMotionEnabled) {
     if (!reducedMotionEnabled) return this;
-    
-    final filteredEvents = events
-        .where((event) => event.showInReducedMotion)
-        .toList();
-    
+
+    final filteredEvents =
+        events.where((event) => event.showInReducedMotion).toList();
+
     return UiEventBatch(
       events: filteredEvents,
       batchId: batchId,
@@ -481,12 +485,12 @@ class UiEventBatch {
       sequential: sequential,
     );
   }
-  
+
   /// Sort events by priority
   UiEventBatch sortByPriority() {
     final sortedEvents = [...events];
     sortedEvents.sort((a, b) => b.priority.index.compareTo(a.priority.index));
-    
+
     return UiEventBatch(
       events: sortedEvents,
       batchId: batchId,
@@ -494,7 +498,7 @@ class UiEventBatch {
       sequential: sequential,
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'events': events.map((e) => e.toJson()).toList(),
@@ -512,7 +516,7 @@ class UiEventResult {
   final String? error;
   final Map<String, dynamic>? resultData;
   final DateTime completedAt;
-  
+
   const UiEventResult({
     required this.eventId,
     required this.success,
@@ -520,7 +524,7 @@ class UiEventResult {
     this.resultData,
     required this.completedAt,
   });
-  
+
   factory UiEventResult.success({
     required String eventId,
     Map<String, dynamic>? resultData,
@@ -532,7 +536,7 @@ class UiEventResult {
       completedAt: DateTime.now(),
     );
   }
-  
+
   factory UiEventResult.failure({
     required String eventId,
     required String error,
@@ -544,7 +548,7 @@ class UiEventResult {
       completedAt: DateTime.now(),
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'eventId': eventId,

@@ -6,53 +6,56 @@ import 'package:flutter/material.dart';
 
 class FeatureFlags {
   static const String _logPrefix = 'FeatureFlags';
-  
+
   // Architecture feature flags
-  static const bool enableNewTalentPerkController = kDebugMode; // Only in debug for now
-  static const bool enablePureEffectEngine = kDebugMode;       // Only in debug for now
-  static const bool enableCompletionPipeline = false;         // Not ready yet
-  static const bool enableArchitectureTests = kDebugMode;     // Testing in debug only
-  
+  static const bool enableNewTalentPerkController =
+      kDebugMode; // Only in debug for now
+  static const bool enablePureEffectEngine =
+      kDebugMode; // Only in debug for now
+  static const bool enableCompletionPipeline = false; // Not ready yet
+  static const bool enableArchitectureTests =
+      kDebugMode; // Testing in debug only
+
   // UI feature flags
-  static const bool enableNewTalentDialog = false;            // Not ready yet
-  static const bool enableAnimationOrchestrator = false;      // Future work
-  static const bool enableReducedMotionUI = false;            // Future work
-  
+  static const bool enableNewTalentDialog = false; // Not ready yet
+  static const bool enableAnimationOrchestrator = false; // Future work
+  static const bool enableReducedMotionUI = false; // Future work
+
   // Safety feature flags
-  static const bool enableFallbackToOldSystem = true;         // Always have fallback
-  static const bool enableDetailedLogging = kDebugMode;       // Debug logging
-  static const bool enableIntegrationTesting = kDebugMode;    // Run tests in debug
-  
+  static const bool enableFallbackToOldSystem = true; // Always have fallback
+  static const bool enableDetailedLogging = kDebugMode; // Debug logging
+  static const bool enableIntegrationTesting = kDebugMode; // Run tests in debug
+
   /// Check if new talent/perk system should be used
   static bool shouldUseNewTalentSystem() {
     return enableNewTalentPerkController && kDebugMode;
   }
-  
+
   /// Check if pure effect engine should be used
   static bool shouldUsePureEffectEngine() {
     return enablePureEffectEngine && kDebugMode;
   }
-  
+
   /// Check if completion pipeline should be used
   static bool shouldUseCompletionPipeline() {
     return enableCompletionPipeline && kDebugMode;
   }
-  
+
   /// Check if architecture integration tests should run
   static bool shouldRunIntegrationTests() {
     return enableArchitectureTests && enableIntegrationTesting;
   }
-  
+
   /// Check if detailed logging should be enabled
   static bool shouldLogDetailed() {
     return enableDetailedLogging && kDebugMode;
   }
-  
+
   /// Check if fallback to old system is enabled
   static bool hasFallbackToOldSystem() {
     return enableFallbackToOldSystem;
   }
-  
+
   /// Get feature flag status for debugging
   static Map<String, dynamic> getStatus() {
     return {
@@ -66,7 +69,7 @@ class FeatureFlags {
       'timestamp': DateTime.now().toIso8601String(),
     };
   }
-  
+
   /// Log feature flag status
   static void logStatus() {
     if (shouldLogDetailed()) {
@@ -74,7 +77,7 @@ class FeatureFlags {
       debugPrint('$_logPrefix: Current feature flags: $status');
     }
   }
-  
+
   /// Check if a specific feature is enabled with fallback
   static bool isEnabled(String featureName, {bool defaultValue = false}) {
     switch (featureName) {
@@ -92,7 +95,8 @@ class FeatureFlags {
         return hasFallbackToOldSystem();
       default:
         if (shouldLogDetailed()) {
-          debugPrint('$_logPrefix: Unknown feature flag: $featureName, using default: $defaultValue');
+          debugPrint(
+              '$_logPrefix: Unknown feature flag: $featureName, using default: $defaultValue');
         }
         return defaultValue;
     }
@@ -112,15 +116,15 @@ mixin FeatureFlagMixin {
 /// Widget that shows feature flag status in debug mode
 class FeatureFlagDebugDisplay extends StatelessWidget {
   const FeatureFlagDebugDisplay({Key? key}) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     if (!kDebugMode) {
       return const SizedBox.shrink();
     }
-    
+
     final status = FeatureFlags.getStatus();
-    
+
     return Container(
       padding: const EdgeInsets.all(8),
       margin: const EdgeInsets.all(4),
@@ -142,12 +146,10 @@ class FeatureFlagDebugDisplay extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          ...status.entries
-              .where((e) => e.key != 'timestamp')
-              .map((e) => Text(
-                    '${e.key}: ${e.value}',
-                    style: const TextStyle(fontSize: 10),
-                  )),
+          ...status.entries.where((e) => e.key != 'timestamp').map((e) => Text(
+                '${e.key}: ${e.value}',
+                style: const TextStyle(fontSize: 10),
+              )),
         ],
       ),
     );
