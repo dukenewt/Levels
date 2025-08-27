@@ -94,7 +94,8 @@ class EmptyTasksPlaceholder extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                 ),
               ),
             ),
@@ -103,4 +104,4 @@ class EmptyTasksPlaceholder extends StatelessWidget {
       ),
     );
   }
-} 
+}

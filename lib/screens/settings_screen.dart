@@ -9,6 +9,7 @@ import '../services/app_backup_service.dart';
 import '../widgets/export_options_dialog.dart';
 import '../models/export_config.dart';
 import '../models/theme_model.dart';
+import '../providers/user_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -18,7 +19,7 @@ class SettingsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -48,7 +49,9 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ListTile(
                     title: const Text('App Theme'),
-                    subtitle: Text(AppTheme.getThemeByType(themeProvider.currentTheme).name),
+                    subtitle: Text(
+                        AppTheme.getThemeByType(themeProvider.currentTheme)
+                            .name),
                     leading: Icon(
                       Icons.palette,
                       color: theme.colorScheme.primary,
@@ -81,14 +84,49 @@ class SettingsScreen extends StatelessWidget {
                       );
                     },
                   ),
+                  ListTile(
+                    leading: const Icon(Icons.replay, color: Colors.red),
+                    title: const Text('Reset to Level One'),
+                    subtitle: const Text('This will reset your level and XP.'),
+                    onTap: () {
+                      // Show a confirmation dialog before resetting
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Are you sure?'),
+                            content: const Text(
+                                'This will reset your level and XP to zero.'),
+                            actions: <Widget>[
+                              TextButton(
+                                child: const Text('Cancel'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              TextButton(
+                                child: const Text('Reset'),
+                                onPressed: () {
+                                  Provider.of<UserProvider>(context,
+                                          listen: false)
+                                      .resetToLevelOne();
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
                   const Divider(),
                 ],
               ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Task Filter Settings Section
           Card(
             shape: RoundedRectangleBorder(
@@ -145,9 +183,9 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // App Info Section
           Card(
             shape: RoundedRectangleBorder(
@@ -187,7 +225,9 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificationPreferencesScreen()),
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const NotificationPreferencesScreen()),
               );
             },
           ),
@@ -225,7 +265,9 @@ class SettingsScreen extends StatelessWidget {
                               builder: (_) => const ExportOptionsDialog(),
                             );
                             if (config == null) return;
-                            final path = await AppBackupService.exportBackupToDownloads(config: config);
+                            final path =
+                                await AppBackupService.exportBackupToDownloads(
+                                    config: config);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -246,7 +288,8 @@ class SettingsScreen extends StatelessWidget {
                           icon: const Icon(Icons.upload),
                           label: const Text('Import Backup'),
                           onPressed: () async {
-                            final success = await AppBackupService.importBackupFromFile();
+                            final success =
+                                await AppBackupService.importBackupFromFile();
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -270,7 +313,9 @@ class SettingsScreen extends StatelessWidget {
                       await AppBackupService.printAllPrefs();
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('SharedPreferences printed to debug console.')),
+                          const SnackBar(
+                              content: Text(
+                                  'SharedPreferences printed to debug console.')),
                         );
                       }
                     },
@@ -284,4 +329,4 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

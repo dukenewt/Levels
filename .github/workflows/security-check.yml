@@ -1,5 +1,9 @@
 name: Security Check
 
+permissions:
+    contents: read
+    security-events: write
+
 on:
   push:
     branches: [ "**" ]
@@ -61,14 +65,138 @@ jobs:
           fi
           echo "No forbidden files detected."
 
-      - name: Gitleaks scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Gitleaks scan (filesystem via Docker)
+        shell: bash
+        run:  |
+          set -euo pipefail
+          echo "Running Gitleaks (filesystem) via Docker..."
+          
+          # For pull requests, create a temporary directory with only changed files
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+            git fetch --no-tags --prune --depth=1 origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+            CHANGED_FILES=$(git diff --name-only "$BASE"...HEAD)
+            
+            if [ -z "$CHANGED_FILES" ]; then
+              echo "No files changed, skipping Gitleaks scan."
+              touch gitleaks-results.sarif
+              echo '{"version": "2.1.0", "runs": [{"tool": {"driver": {"name": "gitleaks"}}, "results": []}]}' > gitleaks-results.sarif
+              exit 0
+            fi
+            
+            # Create temporary directory structure
+            mkdir -p /tmp/scan_files
+            echo "$CHANGED_FILES" | while read -r file; do
+              if [ -f "$file" ]; then
+                mkdir -p "/tmp/scan_files/$(dirname "$file")"
+                cp "$file" "/tmp/scan_files/$file"
+              fi
+            done
+            
+            docker run --rm \
+              -v "/tmp/scan_files":/scan \
+              -v "$PWD/.gitleaks.toml":/scan/.gitleaks.toml \
+              --net=none --cpus="1.0" --memory="512m" \
+              ghcr.io/gitleaks/gitleaks:v8.18.4 \
+              detect --no-git --source /scan -v --redact --exit-code=1 \
+              -c /scan/.gitleaks.toml \
+              --report-format sarif --report-path /scan/gitleaks-results.sarif
+            
+            # Copy results back
+            cp /tmp/scan_files/gitleaks-results.sarif ./gitleaks-results.sarif 2>/dev/null || touch gitleaks-results.sarif
+          else
+            # For push events, scan all files
+            docker run --rm \
+              -v "$PWD":/pwd \
+              -w /pwd \
+              --net=none --cpus="1.0" --memory="512m" \
+              ghcr.io/gitleaks/gitleaks:v8.18.4 \
+              detect --no-git --source /pwd -v --redact --exit-code=1 \
+              -c .gitleaks.toml \
+              --report-format sarif --report-path gitleaks-results.sarif
+          fi
+
+
+      - name: Upload Gitleaks SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+            sarif_file: gitleaks-results.sarif
 
       - name: TruffleHog scan (filesystem only)
-        uses: trufflesecurity/trufflehog@main
-        with:
-          scan: filesystem
-          path: ./
-          extra_args: --only-verified
+        shell: bash
+        run: |
+            set -euo pipefail
+
+            # File types to include (plus .env and variants)
+            FILTER_REGEX='(\.dart|\.kt|\.swift|\.ya?ml|\.json|\.plist|\.gradle|\.xml|\.properties|\.sh|\.ts|\.js|\.java|\.md|\.ini|\.toml|
+            \.cfg|\.conf)$|(^|/)\.env(\..*)?$'
+
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              BASE="origin/${{ github.base_ref }}"
+              git fetch --no-tags --prune --depth=1 origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+              CHANGED_FILES=$(git diff --name-only "$BASE"...HEAD)
+
+              if [ -z "$CHANGED_FILES" ]; then
+                echo "No files changed, skipping TruffleHog scan."
+                exit 0
+              fi
+
+              # Keep only desired file types
+              FILTERED=$(echo "$CHANGED_FILES" | grep -Ei "$FILTER_REGEX" || true)
+              if [ -z "$FILTERED" ]; then
+                echo "No relevant files (by type), skipping TruffleHog scan."
+                exit 0
+              fi
+
+              mkdir -p /tmp/trh_scan
+              echo "$FILTERED" | while read -r file; do
+                [ -f "$file" ] || continue
+                mkdir -p "/tmp/trh_scan/$(dirname "$file")"
+                cp "$file" "/tmp/trh_scan/$file"
+              done
+
+              docker run --rm \
+                -v "/tmp/trh_scan:/repo" \
+                -v "$PWD/.trufflehog.exclude:/repo/.trufflehog.exclude:ro" \
+                -w /repo \
+                --net=none --cpus="1.0" --memory="512m" \
+                trufflesecurity/trufflehog:latest \
+                filesystem --only-verified --exclude-paths /repo/.trufflehog.exclude --json .
+            else
+              # Build a filtered mirror of the repo using rsync include rules
+              mkdir -p /tmp/trh_scan_all
+              rsync -a --prune-empty-dirs \
+                --include '*/' \
+                --include '*.dart' \
+                --include '*.kt' \
+                --include '*.swift' \
+                --include '*.yaml' \
+                --include '*.yml' \
+                --include '*.json' \
+                --include '*.plist' \
+                --include '*.gradle' \
+                --include '*.xml' \
+                --include '*.properties' \
+                --include '*.sh' \
+                --include '*.ts' \
+                --include '*.js' \
+                --include '*.java' \
+                --include '*.md' \
+                --include '*.ini' \
+                --include '*.toml' \
+                --include '*.cfg' \
+                --include '*.conf' \
+                --include '.env' \
+                --include '.env.*' \
+                --exclude '*' \
+                . /tmp/trh_scan_all
+
+              docker run --rm \
+                -v "/tmp/trh_scan_all:/repo" \
+                -v "$PWD/.trufflehog.exclude:/repo/.trufflehog.exclude:ro" \
+                -w /repo \
+                --net=none --cpus="1.0" --memory="512m" \
+                trufflesecurity/trufflehog:latest \
+                filesystem --only-verified --exclude-paths /repo/.trufflehog.exclude --json .
+            fi

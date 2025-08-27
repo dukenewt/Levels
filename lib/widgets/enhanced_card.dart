@@ -56,7 +56,7 @@ class _EnhancedCardState extends State<EnhancedCard>
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    
+
     _hoverAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -64,7 +64,7 @@ class _EnhancedCardState extends State<EnhancedCard>
       parent: _hoverController,
       curve: Curves.easeOut,
     ));
-    
+
     _pressAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -83,12 +83,14 @@ class _EnhancedCardState extends State<EnhancedCard>
 
   List<BoxShadow> _getShadows(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     if (widget.isInteractive) {
       return AppDesignTokens.interactiveShadow(
         hoverFactor: _hoverAnimation.value,
-        accentColor: widget.accentColor ?? 
-                    (widget.isHighPriority ? Theme.of(context).colorScheme.primary : null),
+        accentColor: widget.accentColor ??
+            (widget.isHighPriority
+                ? Theme.of(context).colorScheme.primary
+                : null),
         isPressed: _isPressed,
       );
     }
@@ -104,13 +106,21 @@ class _EnhancedCardState extends State<EnhancedCard>
     // Standard layered shadows based on level
     switch (widget.shadowLevel) {
       case CardShadowLevel.low:
-        return isDark ? AppDesignTokens.shadowLowDark : AppDesignTokens.shadowLow;
+        return isDark
+            ? AppDesignTokens.shadowLowDark
+            : AppDesignTokens.shadowLow;
       case CardShadowLevel.medium:
-        return isDark ? AppDesignTokens.shadowMediumDark : AppDesignTokens.shadowMedium;
+        return isDark
+            ? AppDesignTokens.shadowMediumDark
+            : AppDesignTokens.shadowMedium;
       case CardShadowLevel.high:
-        return isDark ? AppDesignTokens.shadowHighDark : AppDesignTokens.shadowHigh;
+        return isDark
+            ? AppDesignTokens.shadowHighDark
+            : AppDesignTokens.shadowHigh;
       case CardShadowLevel.xHigh:
-        return isDark ? AppDesignTokens.shadowHighDark : AppDesignTokens.shadowXHigh;
+        return isDark
+            ? AppDesignTokens.shadowHighDark
+            : AppDesignTokens.shadowXHigh;
     }
   }
 
@@ -118,7 +128,8 @@ class _EnhancedCardState extends State<EnhancedCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final effectiveBackgroundColor = widget.backgroundColor ?? theme.cardColor;
-    final effectiveBorderRadius = widget.borderRadius ?? AppDesignTokens.radiusLg;
+    final effectiveBorderRadius =
+        widget.borderRadius ?? AppDesignTokens.radiusLg;
 
     return AnimatedBuilder(
       animation: Listenable.merge([_hoverAnimation, _pressAnimation]),
@@ -145,26 +156,34 @@ class _EnhancedCardState extends State<EnhancedCard>
                 borderRadius: BorderRadius.circular(effectiveBorderRadius),
                 onTap: widget.onTap,
                 onLongPress: widget.onLongPress,
-                onTapDown: widget.isInteractive ? (_) {
-                  setState(() => _isPressed = true);
-                  _pressController.forward();
-                } : null,
-                onTapUp: widget.isInteractive ? (_) {
-                  setState(() => _isPressed = false);
-                  _pressController.reverse();
-                } : null,
-                onTapCancel: widget.isInteractive ? () {
-                  setState(() => _isPressed = false);
-                  _pressController.reverse();
-                } : null,
-                onHover: widget.isInteractive ? (hovering) {
-                  setState(() => _isHovered = hovering);
-                  if (hovering) {
-                    _hoverController.forward();
-                  } else {
-                    _hoverController.reverse();
-                  }
-                } : null,
+                onTapDown: widget.isInteractive
+                    ? (_) {
+                        setState(() => _isPressed = true);
+                        _pressController.forward();
+                      }
+                    : null,
+                onTapUp: widget.isInteractive
+                    ? (_) {
+                        setState(() => _isPressed = false);
+                        _pressController.reverse();
+                      }
+                    : null,
+                onTapCancel: widget.isInteractive
+                    ? () {
+                        setState(() => _isPressed = false);
+                        _pressController.reverse();
+                      }
+                    : null,
+                onHover: widget.isInteractive
+                    ? (hovering) {
+                        setState(() => _isHovered = hovering);
+                        if (hovering) {
+                          _hoverController.forward();
+                        } else {
+                          _hoverController.reverse();
+                        }
+                      }
+                    : null,
                 child: Padding(
                   padding: widget.padding!,
                   child: widget.child,
@@ -234,11 +253,16 @@ class _EnhancedButtonState extends State<EnhancedButton>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final effectiveBackgroundColor = widget.backgroundColor ?? 
-        (widget.isPrimary ? theme.colorScheme.primary : theme.colorScheme.surface);
-    final effectiveForegroundColor = widget.foregroundColor ?? 
-        (widget.isPrimary ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface);
-    final effectiveBorderRadius = widget.borderRadius ?? AppDesignTokens.radiusMd;
+    final effectiveBackgroundColor = widget.backgroundColor ??
+        (widget.isPrimary
+            ? theme.colorScheme.primary
+            : theme.colorScheme.surface);
+    final effectiveForegroundColor = widget.foregroundColor ??
+        (widget.isPrimary
+            ? theme.colorScheme.onPrimary
+            : theme.colorScheme.onSurface);
+    final effectiveBorderRadius =
+        widget.borderRadius ?? AppDesignTokens.radiusMd;
 
     return AnimatedBuilder(
       animation: _scaleAnimation,
@@ -249,8 +273,9 @@ class _EnhancedButtonState extends State<EnhancedButton>
             decoration: BoxDecoration(
               color: effectiveBackgroundColor,
               borderRadius: BorderRadius.circular(effectiveBorderRadius),
-              boxShadow: _isPressed 
-                  ? AppDesignTokens.buttonShadowPressed(color: effectiveBackgroundColor)
+              boxShadow: _isPressed
+                  ? AppDesignTokens.buttonShadowPressed(
+                      color: effectiveBackgroundColor)
                   : AppDesignTokens.buttonShadow,
             ),
             child: Material(
@@ -272,11 +297,8 @@ class _EnhancedButtonState extends State<EnhancedButton>
                   _controller.reverse();
                 },
                 child: Padding(
-                  padding: widget.padding ?? 
-                      const EdgeInsets.symmetric(
-                        horizontal: 24, 
-                        vertical: 12
-                      ),
+                  padding: widget.padding ??
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   child: DefaultTextStyle(
                     style: theme.textTheme.titleMedium!.copyWith(
                       color: effectiveForegroundColor,
@@ -292,4 +314,4 @@ class _EnhancedButtonState extends State<EnhancedButton>
       },
     );
   }
-} 
+}

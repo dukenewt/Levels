@@ -62,9 +62,11 @@ class _XPOrbAnimationWidgetState extends State<XPOrbAnimationWidget>
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    )..addListener(() {
+    )
+      ..addListener(() {
         setState(() {});
-      })..addStatusListener((status) {
+      })
+      ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
           widget.onAnimationComplete();
         }
@@ -83,17 +85,19 @@ class _XPOrbAnimationWidgetState extends State<XPOrbAnimationWidget>
     final random = Random();
     // Create fewer orbs for small XP amounts for performance and clarity
     final orbCount = (widget.xpAmount / 5).clamp(1, 15).toInt();
-    
+
     return List.generate(orbCount, (index) {
       // Spread orbs out in an arc
-      final angle = (random.nextDouble() - 0.5) * pi * 0.8; 
+      final angle = (random.nextDouble() - 0.5) * pi * 0.8;
       final distance = random.nextDouble() * 50 + 20;
 
       return _Orb(
         startX: widget.startPosition.dx,
         startY: widget.startPosition.dy,
         controlX: widget.startPosition.dx + cos(angle) * distance * 2,
-        controlY: widget.startPosition.dy + sin(angle) * distance - 100, // Move upwards
+        controlY: widget.startPosition.dy +
+            sin(angle) * distance -
+            100, // Move upwards
         endX: 50.0, // Target X (e.g., corner of the screen)
         endY: 50.0, // Target Y (e.g., corner of the screen)
         startTime: index * 0.05, // Stagger start times
@@ -133,17 +137,17 @@ class _Orb {
   Offset getPosition(double t) {
     // Only start moving after startTime
     final progress = ((t - startTime) / (1.0 - startTime)).clamp(0.0, 1.0);
-    
+
     if (progress <= 0) return Offset(startX, startY);
 
     // Quadratic bezier curve for the path
     final oneMinusT = 1.0 - progress;
     final x = oneMinusT * oneMinusT * startX +
-              2 * oneMinusT * progress * controlX +
-              progress * progress * endX;
+        2 * oneMinusT * progress * controlX +
+        progress * progress * endX;
     final y = oneMinusT * oneMinusT * startY +
-              2 * oneMinusT * progress * controlY +
-              progress * progress * endY;
+        2 * oneMinusT * progress * controlY +
+        progress * progress * endY;
     return Offset(x, y);
   }
 }
@@ -163,9 +167,11 @@ class _OrbPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = color;
-    
+
     for (final orb in orbs) {
-      final progress = ((animationValue - orb.startTime) / (1.0 - orb.startTime)).clamp(0.0, 1.0);
+      final progress =
+          ((animationValue - orb.startTime) / (1.0 - orb.startTime))
+              .clamp(0.0, 1.0);
       if (progress > 0) {
         final position = orb.getPosition(animationValue);
         // Fade out and shrink the orb as it nears the end
@@ -180,4 +186,4 @@ class _OrbPainter extends CustomPainter {
   bool shouldRepaint(covariant _OrbPainter oldDelegate) {
     return oldDelegate.animationValue != animationValue;
   }
-} 
+}

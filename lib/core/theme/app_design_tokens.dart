@@ -12,7 +12,7 @@ extension SafeAnimationController on AnimationController {
       return null;
     }
   }
-  
+
   /// Safely calls reverse() with try-catch to handle disposed controllers
   TickerFuture? safeReverse({double? from}) {
     try {
@@ -22,9 +22,10 @@ extension SafeAnimationController on AnimationController {
       return null;
     }
   }
-  
+
   /// Safely calls repeat() with try-catch to handle disposed controllers
-  TickerFuture? safeRepeat({bool reverse = false, double? min, double? max, Duration? period}) {
+  TickerFuture? safeRepeat(
+      {bool reverse = false, double? min, double? max, Duration? period}) {
     try {
       return repeat(reverse: reverse, min: min, max: max, period: period);
     } catch (e) {
@@ -32,7 +33,7 @@ extension SafeAnimationController on AnimationController {
       return null;
     }
   }
-  
+
   /// Safely calls stop() with try-catch to handle disposed controllers
   void safeStop({bool canceled = true}) {
     try {
@@ -41,7 +42,7 @@ extension SafeAnimationController on AnimationController {
       // Controller might be disposed, ignore the call
     }
   }
-  
+
   /// Safely calls reset() with try-catch to handle disposed controllers
   void safeReset() {
     try {
@@ -84,20 +85,20 @@ class AppDesignTokens {
   static const Duration microFast = Duration(milliseconds: 100);
   static const Duration microMedium = Duration(milliseconds: 150);
   static const Duration microSlow = Duration(milliseconds: 200);
-  
+
   // Scale values for interactive elements
   static const double scaleDown = 0.95;
   static const double scaleUp = 1.05;
   static const double scaleNormal = 1.0;
-  
+
   // Haptic feedback timing
   static const Duration hapticDelay = Duration(milliseconds: 50);
-  
+
   // Spring animation curves
   static const Curve springCurve = Curves.easeOutBack;
   static const Curve dampedCurve = Curves.easeInOut;
   static const Curve bounceCurve = Curves.elasticOut;
-  
+
   // Interaction states
   static const double interactionOpacityPressed = 0.8;
   static const double interactionOpacityDisabled = 0.5;
@@ -105,151 +106,153 @@ class AppDesignTokens {
 
   // Layered Shadow System
   static List<BoxShadow> get shadowLow => [
-    // Primary depth shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      blurRadius: 10,
-      offset: const Offset(0, 4),
-      spreadRadius: 0,
-    ),
-    // Subtle ambient shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.04),
-      blurRadius: 6,
-      offset: const Offset(0, 2),
-      spreadRadius: 0,
-    ),
-  ];
+        // Primary depth shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+          spreadRadius: 0,
+        ),
+        // Subtle ambient shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+          spreadRadius: 0,
+        ),
+      ];
 
   static List<BoxShadow> get shadowMedium => [
-    // Primary depth shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.12),
-      blurRadius: 15,
-      offset: const Offset(0, 6),
-      spreadRadius: 0,
-    ),
-    // Secondary depth shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.06),
-      blurRadius: 8,
-      offset: const Offset(0, 3),
-      spreadRadius: 0,
-    ),
-  ];
+        // Primary depth shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.12),
+          blurRadius: 15,
+          offset: const Offset(0, 6),
+          spreadRadius: 0,
+        ),
+        // Secondary depth shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.06),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+          spreadRadius: 0,
+        ),
+      ];
 
   static List<BoxShadow> get shadowHigh => [
-    // Primary depth shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.16),
-      blurRadius: 20,
-      offset: const Offset(0, 8),
-      spreadRadius: 0,
-    ),
-    // Secondary depth shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      blurRadius: 12,
-      offset: const Offset(0, 4),
-      spreadRadius: 0,
-    ),
-    // Ambient shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.04),
-      blurRadius: 6,
-      offset: const Offset(0, 2),
-      spreadRadius: 0,
-    ),
-  ];
+        // Primary depth shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.16),
+          blurRadius: 20,
+          offset: const Offset(0, 8),
+          spreadRadius: 0,
+        ),
+        // Secondary depth shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+          spreadRadius: 0,
+        ),
+        // Ambient shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+          spreadRadius: 0,
+        ),
+      ];
 
   static List<BoxShadow> get shadowXHigh => [
-    // Primary depth shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.20),
-      blurRadius: 25,
-      offset: const Offset(0, 12),
-      spreadRadius: 0,
-    ),
-    // Secondary depth shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.12),
-      blurRadius: 16,
-      offset: const Offset(0, 6),
-      spreadRadius: 0,
-    ),
-    // Ambient shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.06),
-      blurRadius: 8,
-      offset: const Offset(0, 3),
-      spreadRadius: 0,
-    ),
-  ];
+        // Primary depth shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.20),
+          blurRadius: 25,
+          offset: const Offset(0, 12),
+          spreadRadius: 0,
+        ),
+        // Secondary depth shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.12),
+          blurRadius: 16,
+          offset: const Offset(0, 6),
+          spreadRadius: 0,
+        ),
+        // Ambient shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.06),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+          spreadRadius: 0,
+        ),
+      ];
 
   // Colored shadows for priority/interactive elements
-  static List<BoxShadow> coloredShadow(Color color, {double intensity = 0.15}) => [
-    // Primary depth shadow
-    BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      blurRadius: 10,
-      offset: const Offset(0, 4),
-      spreadRadius: 0,
-    ),
-    // Colored accent shadow
-    BoxShadow(
-      color: color.withOpacity(intensity),
-      blurRadius: 20,
-      offset: const Offset(0, 8),
-      spreadRadius: 0,
-    ),
-  ];
+  static List<BoxShadow> coloredShadow(Color color,
+          {double intensity = 0.15}) =>
+      [
+        // Primary depth shadow
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+          spreadRadius: 0,
+        ),
+        // Colored accent shadow
+        BoxShadow(
+          color: color.withOpacity(intensity),
+          blurRadius: 20,
+          offset: const Offset(0, 8),
+          spreadRadius: 0,
+        ),
+      ];
 
   // Button-specific shadows
   static List<BoxShadow> get buttonShadow => [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.10),
-      blurRadius: 8,
-      offset: const Offset(0, 3),
-      spreadRadius: 0,
-    ),
-    BoxShadow(
-      color: Colors.black.withOpacity(0.05),
-      blurRadius: 4,
-      offset: const Offset(0, 1),
-      spreadRadius: 0,
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withOpacity(0.10),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+          spreadRadius: 0,
+        ),
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 4,
+          offset: const Offset(0, 1),
+          spreadRadius: 0,
+        ),
+      ];
 
   static List<BoxShadow> buttonShadowPressed({Color? color}) => [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.15),
-      blurRadius: 6,
-      offset: const Offset(0, 1),
-      spreadRadius: 0,
-    ),
-    if (color != null)
-      BoxShadow(
-        color: color.withOpacity(0.08),
-        blurRadius: 10,
-        offset: const Offset(0, 2),
-        spreadRadius: 0,
-      ),
-  ];
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15),
+          blurRadius: 6,
+          offset: const Offset(0, 1),
+          spreadRadius: 0,
+        ),
+        if (color != null)
+          BoxShadow(
+            color: color.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+      ];
 
   // Interactive element shadows with hover states
   static List<BoxShadow> interactiveShadow({
-    double hoverFactor = 0.0, 
+    double hoverFactor = 0.0,
     Color? accentColor,
     bool isPressed = false,
   }) {
     if (isPressed) {
       return buttonShadowPressed(color: accentColor);
     }
-    
+
     final baseOpacity = 0.08 + (hoverFactor * 0.04);
     final baseBlur = 8.0 + (hoverFactor * 8.0);
     final baseOffset = 2.0 + (hoverFactor * 4.0);
-    
+
     return [
       BoxShadow(
         color: Colors.black.withOpacity(baseOpacity),
@@ -269,55 +272,55 @@ class AppDesignTokens {
 
   // Dark theme shadows (adjusted for dark backgrounds)
   static List<BoxShadow> get shadowLowDark => [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.15),
-      blurRadius: 10,
-      offset: const Offset(0, 4),
-      spreadRadius: 0,
-    ),
-    BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      blurRadius: 6,
-      offset: const Offset(0, 2),
-      spreadRadius: 0,
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+          spreadRadius: 0,
+        ),
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+          spreadRadius: 0,
+        ),
+      ];
 
   static List<BoxShadow> get shadowMediumDark => [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.25),
-      blurRadius: 15,
-      offset: const Offset(0, 6),
-      spreadRadius: 0,
-    ),
-    BoxShadow(
-      color: Colors.black.withOpacity(0.12),
-      blurRadius: 8,
-      offset: const Offset(0, 3),
-      spreadRadius: 0,
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withOpacity(0.25),
+          blurRadius: 15,
+          offset: const Offset(0, 6),
+          spreadRadius: 0,
+        ),
+        BoxShadow(
+          color: Colors.black.withOpacity(0.12),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+          spreadRadius: 0,
+        ),
+      ];
 
   static List<BoxShadow> get shadowHighDark => [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.35),
-      blurRadius: 20,
-      offset: const Offset(0, 8),
-      spreadRadius: 0,
-    ),
-    BoxShadow(
-      color: Colors.black.withOpacity(0.18),
-      blurRadius: 12,
-      offset: const Offset(0, 4),
-      spreadRadius: 0,
-    ),
-    BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      blurRadius: 6,
-      offset: const Offset(0, 2),
-      spreadRadius: 0,
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withOpacity(0.35),
+          blurRadius: 20,
+          offset: const Offset(0, 8),
+          spreadRadius: 0,
+        ),
+        BoxShadow(
+          color: Colors.black.withOpacity(0.18),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+          spreadRadius: 0,
+        ),
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+          spreadRadius: 0,
+        ),
+      ];
 }
 
 class ProfessionalTheme {
@@ -353,7 +356,8 @@ class ProfessionalTheme {
   };
 
   // Platform adaptivity
-  static bool get isDesktop => Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+  static bool get isDesktop =>
+      Platform.isMacOS || Platform.isWindows || Platform.isLinux;
   static bool get isMobile => Platform.isAndroid || Platform.isIOS;
 
   // Accessibility helpers
@@ -363,102 +367,151 @@ class ProfessionalTheme {
   }
 
   static ThemeData get lightTheme => ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.light,
-    colorScheme: const ColorScheme.light(
-      primary: primary,
-      secondary: secondary,
-      surface: Colors.white,
-      background: neutral50,
-      error: error,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onSurface: neutral800,
-      onBackground: neutral800,
-    ),
-    textTheme: const TextTheme(
-      displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5, height: 1.2),
-      headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.25, height: 1.3),
-      titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, letterSpacing: 0, height: 1.4),
-      bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, letterSpacing: 0.15, height: 1.5),
-      bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, letterSpacing: 0.25, height: 1.5),
-    ),
-    cardTheme: CardTheme(
-      elevation: 0, // We use custom shadows instead
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDesignTokens.radiusLg),
-      ),
-      color: Colors.white,
-      shadowColor: Colors.transparent,
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        elevation: 0, // We use custom shadows instead
-        shadowColor: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
+        useMaterial3: true,
+        brightness: Brightness.light,
+        colorScheme: const ColorScheme.light(
+          primary: primary,
+          secondary: secondary,
+          surface: Colors.white,
+          background: neutral50,
+          error: error,
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
+          onSurface: neutral800,
+          onBackground: neutral800,
         ),
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-      ),
-    ),
-    appBarTheme: const AppBarTheme(
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      foregroundColor: neutral800,
-      titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: neutral800),
-    ),
-    visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
-  );
+        textTheme: const TextTheme(
+          displayLarge: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+              height: 1.2),
+          headlineMedium: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.25,
+              height: 1.3),
+          titleLarge: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0,
+              height: 1.4),
+          bodyLarge: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.15,
+              height: 1.5),
+          bodyMedium: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.25,
+              height: 1.5),
+        ),
+        cardTheme: CardTheme(
+          elevation: 0, // We use custom shadows instead
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDesignTokens.radiusLg),
+          ),
+          color: Colors.white,
+          shadowColor: Colors.transparent,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            elevation: 0, // We use custom shadows instead
+            shadowColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
+            ),
+            backgroundColor: primary,
+            foregroundColor: Colors.white,
+          ),
+        ),
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: neutral800,
+          titleTextStyle: TextStyle(
+              fontSize: 20, fontWeight: FontWeight.w600, color: neutral800),
+        ),
+        visualDensity:
+            isDesktop ? VisualDensity.compact : VisualDensity.standard,
+      );
 
   static ThemeData get darkTheme => ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    colorScheme: const ColorScheme.dark(
-      primary: primary,
-      secondary: secondary,
-      surface: neutral800,
-      background: neutral900,
-      error: error,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onSurface: neutral100,
-      onBackground: neutral100,
-    ),
-    textTheme: const TextTheme(
-      displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5, height: 1.2, color: Colors.white),
-      headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.25, height: 1.3, color: Colors.white),
-      titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, letterSpacing: 0, height: 1.4, color: Colors.white),
-      bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, letterSpacing: 0.15, height: 1.5, color: Colors.white),
-      bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, letterSpacing: 0.25, height: 1.5, color: Colors.white),
-    ),
-    cardTheme: CardTheme(
-      elevation: 0, // We use custom shadows instead
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDesignTokens.radiusLg),
-      ),
-      color: neutral800,
-      shadowColor: Colors.transparent,
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        elevation: 0, // We use custom shadows instead
-        shadowColor: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: const ColorScheme.dark(
+          primary: primary,
+          secondary: secondary,
+          surface: neutral800,
+          background: neutral900,
+          error: error,
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
+          onSurface: neutral100,
+          onBackground: neutral100,
         ),
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-      ),
-    ),
-    appBarTheme: const AppBarTheme(
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      foregroundColor: neutral100,
-      titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: neutral100),
-    ),
-    visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
-  );
-} 
+        textTheme: const TextTheme(
+          displayLarge: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+              height: 1.2,
+              color: Colors.white),
+          headlineMedium: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.25,
+              height: 1.3,
+              color: Colors.white),
+          titleLarge: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0,
+              height: 1.4,
+              color: Colors.white),
+          bodyLarge: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.15,
+              height: 1.5,
+              color: Colors.white),
+          bodyMedium: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.25,
+              height: 1.5,
+              color: Colors.white),
+        ),
+        cardTheme: CardTheme(
+          elevation: 0, // We use custom shadows instead
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDesignTokens.radiusLg),
+          ),
+          color: neutral800,
+          shadowColor: Colors.transparent,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            elevation: 0, // We use custom shadows instead
+            shadowColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
+            ),
+            backgroundColor: primary,
+            foregroundColor: Colors.white,
+          ),
+        ),
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: neutral100,
+          titleTextStyle: TextStyle(
+              fontSize: 20, fontWeight: FontWeight.w600, color: neutral100),
+        ),
+        visualDensity:
+            isDesktop ? VisualDensity.compact : VisualDensity.standard,
+      );
+}

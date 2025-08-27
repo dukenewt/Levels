@@ -8,7 +8,7 @@ class LevelProgressCard extends StatefulWidget {
   final int level;
   final int currentXp;
   final int nextLevelXp;
-  
+
   const LevelProgressCard({
     Key? key,
     required this.level,
@@ -20,7 +20,8 @@ class LevelProgressCard extends StatefulWidget {
   State<LevelProgressCard> createState() => _LevelProgressCardState();
 }
 
-class _LevelProgressCardState extends State<LevelProgressCard> with TickerProviderStateMixin {
+class _LevelProgressCardState extends State<LevelProgressCard>
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _progressAnimation;
   late int _displayedXp;
@@ -28,18 +29,18 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
   bool _showShimmer = false;
   late AnimationController _tileScaleController;
   late Animation<double> _tileScaleAnimation;
-  
+
   @override
   void initState() {
     super.initState();
     _displayedXp = widget.currentXp;
     _displayedLevel = widget.level;
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    
+
     _progressAnimation = Tween<double>(
       begin: _displayedXp / widget.nextLevelXp,
       end: _displayedXp / widget.nextLevelXp,
@@ -47,7 +48,7 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
-    
+
     _tileScaleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -56,12 +57,13 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
       CurvedAnimation(parent: _tileScaleController, curve: Curves.easeOutBack),
     );
   }
-  
+
   @override
   void didUpdateWidget(LevelProgressCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
-    if (widget.currentXp != oldWidget.currentXp || widget.level != oldWidget.level) {
+
+    if (widget.currentXp != oldWidget.currentXp ||
+        widget.level != oldWidget.level) {
       _progressAnimation = Tween<double>(
         begin: _displayedXp / widget.nextLevelXp,
         end: widget.currentXp / widget.nextLevelXp,
@@ -93,7 +95,7 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
       });
     }
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -110,10 +112,11 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
     if (user == null) {
       return const SizedBox.shrink();
     }
-    
-    final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first);
+
+    final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank,
+        orElse: () => UserRank.ranks.first);
     final xpBarColor = theme.colorScheme.primary;
-    
+
     return ScaleTransition(
       scale: _tileScaleAnimation,
       child: InkWell(
@@ -173,7 +176,7 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
                       ],
                     ),
                     const SizedBox(width: 16),
-                    
+
                     // Level and XP Info
                     Expanded(
                       child: Column(
@@ -206,7 +209,7 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Progress Bar
                 AnimatedBuilder(
                   animation: _animationController,
@@ -234,4 +237,4 @@ class _LevelProgressCardState extends State<LevelProgressCard> with TickerProvid
       ),
     );
   }
-} 
+}

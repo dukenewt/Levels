@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
-import '../features/character_progression/application/intelligent_xp_engine.dart';
+import '../providers/user_provider.dart';
+import '../services/enhanced_xp_calculation_service.dart';
+import '../services/task_analyzer_service.dart';
+import '../services/perk_effect_engine.dart';
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
 import 'recurrence_pattern_dialog.dart';
@@ -19,7 +22,8 @@ class EnhancedTaskCreationDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<EnhancedTaskCreationDialog> createState() => _EnhancedTaskCreationDialogState();
+  State<EnhancedTaskCreationDialog> createState() =>
+      _EnhancedTaskCreationDialogState();
 }
 
 class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
@@ -27,7 +31,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  
+
   // Task properties
   TaskDifficulty _difficulty = TaskDifficulty.medium;
   String _category = 'Work';
@@ -37,24 +41,31 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   RecurrenceSettings _recurrenceSettings = const RecurrenceSettings();
   int _timeInvestmentMinutes = 30;
   bool _showTimePicker = false;
-  
+
+  // Perk and talent system properties
+  List<String> _activePerkEffects = [];
+  int _perkBonusXp = 0;
+  String? _nlpSuggestedCategory;
+  bool _showPerkEffects = false;
+
   // Animation controllers
   late AnimationController _slideController;
   late AnimationController _xpAnimationController;
-  
+
   // Animations
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _xpScaleAnimation;
-  
+
   final FocusNode _titleFocusNode = FocusNode();
 
-  final List<String> _recurrenceOptions = [
-    'None', 'Daily', 'Weekly', 'Workdays', 'Monthly'
-  ];
-
   final List<String> _categoryOptions = [
-    'Work', 'Learning', 'Health', 'Social', 'Creativity', 'Maintenance'
+    'Work',
+    'Learning',
+    'Health',
+    'Social',
+    'Creativity',
+    'Maintenance'
   ];
 
   final Map<String, IconData> _categoryIcons = {
@@ -71,10 +82,11 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
     super.initState();
     _dueDate = widget.initialDate ?? DateTime.now();
     _scheduledTime = widget.initialTime;
-    
+
     _setupAnimations();
+    _validateAndUpdateDifficulty();
     _updateEstimatedXp();
-    
+
     // Auto-focus title field after animation
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
@@ -88,12 +100,12 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _xpAnimationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
@@ -101,7 +113,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -109,7 +121,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       parent: _slideController,
       curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
     ));
-    
+
     _xpScaleAnimation = Tween<double>(
       begin: 0.8,
       end: 1.0,
@@ -117,11 +129,73 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       parent: _xpAnimationController,
       curve: Curves.elasticOut,
     ));
-    
+
     _slideController.forward();
   }
 
+  void _onTitleChanged(String title) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+
+    if (user == null) return;
+
+    // Apply NLP analysis if user has the talent
+    if (user.hasNLPTalent()) {
+      final analysis = TaskAnalyzerService.analyzeTask(
+        title,
+        hasProjectManagementTalent: user.hasProjectManagementTalent(),
+        hasNLPTalent: user.hasNLPTalent(),
+      );
+
+      setState(() {
+        // Auto-assign category if suggested
+        if (analysis.suggestedCategory != null &&
+            analysis.isHighConfidence &&
+            _categoryOptions.contains(analysis.suggestedCategory)) {
+          _category = analysis.suggestedCategory!;
+          _nlpSuggestedCategory = analysis.suggestedCategory;
+        }
+
+        // Auto-assign difficulty if suggested
+        final suggestedDifficulty =
+            TaskDifficulty.fromString(analysis.suggestedDifficulty);
+        if (suggestedDifficulty != _difficulty) {
+          _difficulty = suggestedDifficulty;
+        }
+      });
+    }
+
+    _updateEstimatedXp();
+  }
+
+  void _validateAndUpdateDifficulty() {
+    final availableDifficulties = _getAvailableDifficulties();
+
+    // If current difficulty is not available, reset to medium
+    if (!availableDifficulties.contains(_difficulty)) {
+      setState(() {
+        _difficulty = TaskDifficulty.medium;
+      });
+    }
+  }
+
+  List<TaskDifficulty> _getAvailableDifficulties() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+
+    if (user == null) return TaskDifficulty.values;
+
+    // Use enhanced XP calculation service to get available difficulties
+    final enhancedService = EnhancedXPCalculationService();
+    return enhancedService.getAvailableDifficulties(user);
+  }
+
   void _updateEstimatedXp() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+
+    if (user == null) return;
+
     final tempTask = Task(
       id: 'temp_xp_id',
       title: _titleController.text,
@@ -130,11 +204,21 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       difficulty: _difficulty,
       timeCostMinutes: _timeInvestmentMinutes,
     );
-    
-    final newXp = IntelligentXPEngine().calculateBaseXP(tempTask);
-    if (newXp != _estimatedXp) {
+
+    // Use enhanced XP calculation service with perk effects
+    final enhancedService = EnhancedXPCalculationService();
+    final xpPreview = enhancedService.getXPPreview(user, tempTask);
+
+    final newXp = xpPreview['totalXP'] as int;
+    final perkBonus = xpPreview['perkBonus'] as int;
+
+    if (newXp != _estimatedXp || perkBonus != _perkBonusXp) {
       setState(() {
         _estimatedXp = newXp;
+        _perkBonusXp = perkBonus;
+        _activePerkEffects =
+            PerkEffectEngine.getPerkEffectPreview(user, _category);
+        _showPerkEffects = _activePerkEffects.isNotEmpty;
       });
       if (mounted) {
         _xpAnimationController.safeForward(from: 0.0);
@@ -154,19 +238,19 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         xpReward: _estimatedXp,
         dueDate: _dueDate,
         scheduledTime: _showTimePicker ? _scheduledTime : null,
-        recurrencePattern: _recurrenceSettings.type == RecurrenceType.none 
-            ? null 
+        recurrencePattern: _recurrenceSettings.type == RecurrenceType.none
+            ? null
             : _recurrenceSettings.type.name,
-        weeklyDays: _recurrenceSettings.weeklyDays.isEmpty 
-            ? null 
+        weeklyDays: _recurrenceSettings.weeklyDays.isEmpty
+            ? null
             : _recurrenceSettings.weeklyDays,
-        repeatInterval: _recurrenceSettings.interval == 1 
-            ? null 
+        repeatInterval: _recurrenceSettings.interval == 1
+            ? null
             : _recurrenceSettings.interval,
         endDate: _recurrenceSettings.endDate,
         timeCostMinutes: _timeInvestmentMinutes,
       );
-      
+
       taskProvider.createTask(context, task);
       Navigator.of(context).pop();
     }
@@ -175,7 +259,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
@@ -234,6 +318,10 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
                             const SizedBox(height: 24),
                             _buildDifficultySection(theme),
                             const SizedBox(height: 24),
+                            if (_showPerkEffects) ...[
+                              _buildPerkEffectsSection(theme),
+                              const SizedBox(height: 24),
+                            ],
                             _buildTimeInvestmentSection(theme),
                             const SizedBox(height: 32),
                             _buildActionButtons(theme),
@@ -285,7 +373,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
               return Transform.scale(
                 scale: _xpScaleAnimation.value,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
@@ -337,11 +426,12 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         controller: _titleController,
         focusNode: _titleFocusNode,
         maxLength: 100,
-        onChanged: (_) => _updateEstimatedXp(),
+        onChanged: _onTitleChanged,
         decoration: InputDecoration(
           labelText: 'Task Title',
           hintText: 'What do you want to accomplish?',
-          prefixIcon: Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
+          prefixIcon:
+              Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -379,7 +469,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         decoration: InputDecoration(
           labelText: 'Description (Optional)',
           hintText: 'Add more details...',
-          prefixIcon: Icon(Icons.notes_outlined, color: theme.colorScheme.primary),
+          prefixIcon:
+              Icon(Icons.notes_outlined, color: theme.colorScheme.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -694,7 +785,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
             decoration: InputDecoration(
               prefixIcon: Icon(
                 Icons.trending_up,
-                color: difficultyColors[_difficulty] ?? theme.colorScheme.primary,
+                color:
+                    difficultyColors[_difficulty] ?? theme.colorScheme.primary,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -703,7 +795,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
               filled: true,
               fillColor: theme.colorScheme.surface,
             ),
-            items: TaskDifficulty.values.map((TaskDifficulty value) {
+            items: _getAvailableDifficulties().map((TaskDifficulty value) {
               return DropdownMenuItem<TaskDifficulty>(
                 value: value,
                 child: Row(
@@ -776,8 +868,10 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: 6,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 12),
+                  overlayShape:
+                      const RoundSliderOverlayShape(overlayRadius: 20),
                 ),
                 child: Slider(
                   value: _timeInvestmentMinutes.toDouble(),
@@ -874,6 +968,120 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
     }
   }
 
+  Widget _buildPerkEffectsSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.stars_rounded,
+              color: theme.colorScheme.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Active Perk Effects',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.primary.withOpacity(0.3),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_nlpSuggestedCategory != null) ...[
+                Row(
+                  children: [
+                    Icon(
+                      Icons.psychology_outlined,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Smart categorized as $_nlpSuggestedCategory',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              ..._activePerkEffects
+                  .map((effect) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 16,
+                              color: Colors.green,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              effect,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              if (_perkBonusXp > 0) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.amber.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add_circle_outline,
+                        size: 16,
+                        color: Colors.amber[700],
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '+$_perkBonusXp XP Bonus',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.amber[700],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _showRecurrenceDialog() async {
     final result = await showDialog<RecurrenceSettings>(
       context: context,
@@ -882,7 +1090,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         baseDate: _dueDate,
       ),
     );
-    
+
     if (result != null) {
       setState(() {
         _recurrenceSettings = result;

@@ -10,6 +10,13 @@ import 'support_screen.dart';
 import 'notification_preferences_screen.dart';
 import '../models/user_rank.dart';
 import '../widgets/professional_progress_card.dart';
+import '../widgets/talent_tree_widget.dart';
+import '../widgets/perk_summary_card.dart';
+import '../models/enhanced_user_perk.dart';
+import '../controllers/talent_perk_controller.dart';
+import '../services/architecture_integration_test.dart';
+import '../config/feature_flags.dart';
+import '../services/talent_trigger_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -58,7 +65,8 @@ class ProfileScreen extends StatelessWidget {
                   bottom: 0,
                   right: -10,
                   child: IconButton(
-                    icon: const Icon(Icons.camera_alt, color: Colors.blueAccent),
+                    icon:
+                        const Icon(Icons.camera_alt, color: Colors.blueAccent),
                     onPressed: () async {
                       final imageUploadService = ImageUploadService();
                       final String? imageUrl =
@@ -83,8 +91,8 @@ class ProfileScreen extends StatelessWidget {
             Text(
               user.email,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 32),
 
@@ -123,6 +131,18 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
+            // Talent Tree section
+            TalentTreeWidget(user: user),
+            const SizedBox(height: 24),
+
+            // Active Perks section
+            PerkSummaryCard(
+                perks: EnhancedUserPerk.getUnlockedPerks(user.level)),
+            const SizedBox(height: 32),
+
+            // DEBUG: Architecture Integration Test (only shows in debug mode)
+            _ArchitectureTestWidget(user: user),
+
             // Settings section
             const Text(
               'Settings',
@@ -140,10 +160,10 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildStatCard(
-    BuildContext context, 
-    String title, 
-    String value, 
-    IconData icon, 
+    BuildContext context,
+    String title,
+    String value,
+    IconData icon,
     Color color, {
     String? subtitle,
   }) {
@@ -170,18 +190,18 @@ class ProfileScreen extends StatelessWidget {
             Text(
               value,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                ),
+                      color: color,
+                      fontWeight: FontWeight.w500,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -221,7 +241,9 @@ class ProfileScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificationPreferencesScreen()),
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const NotificationPreferencesScreen()),
               );
             },
           ),
@@ -268,4 +290,218 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}
+
+/// Debug-only widget to test new architecture alongside existing system
+class _ArchitectureTestWidget extends StatefulWidget {
+  final dynamic user; // Using dynamic to avoid import issues
+
+  const _ArchitectureTestWidget({
+    Key? key,
+    required this.user,
+  }) : super(key: key);
+
+  @override
+  State<_ArchitectureTestWidget> createState() =>
+      _ArchitectureTestWidgetState();
+}
+
+class _ArchitectureTestWidgetState extends State<_ArchitectureTestWidget>
+    with FeatureFlagMixin {
+  Map<String, dynamic>? _testResults;
+  bool _isRunning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (shouldRunTests) {
+      _runTest();
+    }
+  }
+
+  Future<void> _runTest() async {
+    if (!shouldRunTests || _isRunning) return;
+
+    setState(() {
+      _isRunning = true;
+    });
+
+    try {
+      final controller =
+          Provider.of<TalentPerkController>(context, listen: false);
+
+      // Defer the test to post-frame to avoid setState during build
+      final results = await Future.microtask(() async {
+        return await ArchitectureIntegrationTest.runFullIntegrationTest(
+          user: widget.user,
+          controller: controller,
+          verbose: hasLogDetailed,
+        );
+      });
+
+      if (mounted) {
+        setState(() {
+          _testResults = results;
+          _isRunning = false;
+        });
+      }
+    } catch (e) {
+      if (hasLogDetailed) {
+        debugPrint('Architecture test widget error: $e');
+      }
+      if (mounted) {
+        setState(() {
+          _testResults = {
+            'overall_success': false,
+            'test_results': {
+              'error': {'message': e.toString()}
+            }
+          };
+          _isRunning = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!shouldRunTests) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      children: [
+        // Feature flag display
+        const FeatureFlagDebugDisplay(),
+        const SizedBox(height: 8),
+
+        // Integration test results
+        if (_testResults != null)
+          IntegrationTestDisplay(testResults: _testResults!)
+        else if (_isRunning)
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1),
+              border: Border.all(color: Colors.orange, width: 1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Running architecture integration test...',
+                  style: TextStyle(fontSize: 11),
+                ),
+              ],
+            ),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(8),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.1),
+              border: Border.all(color: Colors.grey, width: 1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Architecture test not run',
+                  style: TextStyle(fontSize: 11),
+                ),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: _runTest,
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                  ),
+                  child: const Text(
+                    'Run Test',
+                    style: TextStyle(fontSize: 10),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        const SizedBox(height: 8),
+
+        // Talent trigger status
+        const _TalentTriggerStatusWidget(),
+
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+/// Debug widget to show talent trigger status
+class _TalentTriggerStatusWidget extends StatelessWidget {
+  const _TalentTriggerStatusWidget({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (!FeatureFlags.shouldRunIntegrationTests()) {
+      return const SizedBox.shrink();
+    }
+
+    final status = TalentTriggerService.instance.getStatus();
+    final isWorking = status['is_monitoring'] == true &&
+        status['has_context'] == true &&
+        status['has_controller'] == true;
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: isWorking
+            ? Colors.green.withOpacity(0.1)
+            : Colors.orange.withOpacity(0.1),
+        border: Border.all(
+          color: isWorking ? Colors.green : Colors.orange,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Talent Trigger Service',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isWorking ? Colors.green : Colors.orange,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isWorking ? '✅ MONITORING' : '⚠️ NOT ACTIVE',
+            style: TextStyle(
+              color: isWorking ? Colors.green : Colors.orange,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 4),
+          ...status.entries.where((e) => e.key != 'timestamp').map((e) => Text(
+                '${e.key}: ${e.value}',
+                style: const TextStyle(fontSize: 10),
+              )),
+        ],
+      ),
+    );
+  }
+}

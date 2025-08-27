@@ -20,7 +20,8 @@ class FirestoreService {
     return _db.collection('users').doc(uid).update({'profilePictureUrl': url});
   }
 
-  Future<void> createUserFromFirebase(String uid, String? displayName, String? email) async {
+  Future<void> createUserFromFirebase(
+      String uid, String? displayName, String? email) async {
     final now = DateTime.now();
     final user = app_user.User(
       id: uid,
@@ -33,4 +34,4 @@ class FirestoreService {
     );
     await setUser(user);
   }
-} 
+}

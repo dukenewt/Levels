@@ -1,7 +1,8 @@
 import 'package:integration_test/integration_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dailyxp/main.dart' as app;  // Update this to match your app's actual name
+import 'package:dailyxp/main.dart'
+    as app; // Update this to match your app's actual name
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -14,12 +15,14 @@ void main() {
 
       // Just verify the app loads and shows some expected content
       // Look for something that should always be there, like a title or main button
-      expect(find.text('Daily XP'), findsOneWidget);  // Adjust based on your app's actual title
-      
+      expect(find.text('Daily XP'),
+          findsOneWidget); // Adjust based on your app's actual title
+
       // This test succeeds if the app starts without throwing exceptions
     });
 
-    testWidgets('Can navigate through basic app flow', (WidgetTester tester) async {
+    testWidgets('Can navigate through basic app flow',
+        (WidgetTester tester) async {
       app.main();
       await tester.pumpAndSettle();
 

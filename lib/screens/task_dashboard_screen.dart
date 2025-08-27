@@ -12,6 +12,7 @@ import '../widgets/task_editing_dialog.dart';
 import '../widgets/unified_progress_bar.dart';
 import '../widgets/wheel_of_time_progress.dart';
 import '../services/enhanced_game_experience_manager.dart';
+
 class TaskDashboardScreen extends StatefulWidget {
   const TaskDashboardScreen({Key? key}) : super(key: key);
 
@@ -19,10 +20,17 @@ class TaskDashboardScreen extends StatefulWidget {
   State<TaskDashboardScreen> createState() => _TaskDashboardScreenState();
 }
 
-class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTickerProviderStateMixin {
+class _TaskDashboardScreenState extends State<TaskDashboardScreen>
+    with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   bool _showScrollToTop = false;
-  final List<String> _defaultCategories = ['Work', 'Personal', 'Health', 'Learning', 'Other'];
+  final List<String> _defaultCategories = [
+    'Work',
+    'Personal',
+    'Health',
+    'Learning',
+    'Other'
+  ];
   List<String> _customCategories = [];
 
   DateTime _selectedDate = DateTime.now();
@@ -32,7 +40,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
-    
+
     // Initialize the enhanced game experience manager after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -64,21 +72,22 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
   // Group tasks by date for display
   Map<DateTime, List<Task>> _groupTasksByDate(List<Task> tasks) {
     final Map<DateTime, List<Task>> grouped = {};
-    
+
     for (final task in tasks) {
       DateTime dateKey;
-      
+
       if (task.dueDate != null) {
         // Use the task's due date (normalized to day only)
-        dateKey = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+        dateKey = DateTime(
+            task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
       } else {
         // Tasks without dates go to a special "No Date" category
         dateKey = DateTime(1970, 1, 1); // Epoch as placeholder for "no date"
       }
-      
+
       grouped.putIfAbsent(dateKey, () => []).add(task);
     }
-    
+
     return grouped;
   }
 
@@ -87,15 +96,16 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
     final now = DateTime.now();
     final startDate = DateTime(now.year, now.month, now.day);
     final endDate = startDate.add(const Duration(days: 7));
-    
+
     final relevant = allTasks.where((task) {
       if (task.isCompleted) return false;
       if (task.dueDate == null) return true; // Include no-date tasks
-      
-      final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+
+      final taskDate =
+          DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
       return !taskDate.isBefore(startDate) && !taskDate.isAfter(endDate);
     }).toList();
-    
+
     return _groupTasksByDate(relevant);
   }
 
@@ -110,7 +120,9 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
         slivers: [
           // App bar with view mode selector
           SliverAppBar(
-            title: Text('TaskBound', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+            title: Text('TaskBound',
+                style: theme.textTheme.headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
             floating: true,
             actions: [
               // View mode selector
@@ -141,7 +153,8 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
                     ),
                   ],
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0, vertical: 8.0),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -167,7 +180,8 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const SettingsScreen()),
                   );
                 },
               ),
@@ -215,7 +229,8 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
             ),
           FloatingActionButton(
             heroTag: 'addTask',
-            onPressed: () => showDialog(context: context, builder: (context) => TaskCreationDialog()),
+            onPressed: () => showDialog(
+                context: context, builder: (context) => TaskCreationDialog()),
             child: const Icon(Icons.add),
           ),
         ],
@@ -239,7 +254,10 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
             child: Center(
               child: Text(
                 DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -256,7 +274,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
 
   List<Widget> _buildTaskSections(List<Task> allTasks) {
     Map<DateTime, List<Task>> groupedTasks;
-    
+
     switch (_viewMode) {
       case 'today':
         groupedTasks = _getTodayTasks(allTasks);
@@ -279,14 +297,15 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
     }
 
     final sections = <Widget>[];
-    
+
     // Sort dates (but put "no date" tasks at the end)
-    final sortedDates = groupedTasks.keys.toList()..sort((a, b) {
-      // Put epoch date (no date tasks) at the end
-      if (a.year == 1970) return 1;
-      if (b.year == 1970) return -1;
-      return a.compareTo(b);
-    });
+    final sortedDates = groupedTasks.keys.toList()
+      ..sort((a, b) {
+        // Put epoch date (no date tasks) at the end
+        if (a.year == 1970) return 1;
+        if (b.year == 1970) return -1;
+        return a.compareTo(b);
+      });
 
     for (final date in sortedDates) {
       final tasks = groupedTasks[date]!;
@@ -312,7 +331,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
-    
+
     String sectionTitle;
     if (date.isAtSameMomentAs(today)) {
       sectionTitle = 'Today';
@@ -336,19 +355,19 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
     return SliverList(
       delegate: SliverChildListDelegate([
         _buildSectionHeader(sectionTitle, tasks.length),
-        
+
         // All day tasks first
         if (allDayTasks.isNotEmpty) ...[
           _buildSubSectionHeader('All Day'),
           ...allDayTasks.map((task) => _buildTaskTile(task)),
         ],
-        
+
         // Timed tasks
         if (timedTasks.isNotEmpty) ...[
           if (allDayTasks.isNotEmpty) _buildSubSectionHeader('Scheduled'),
           ...timedTasks.map((task) => _buildTaskTile(task)),
         ],
-        
+
         const SizedBox(height: 24),
       ]),
     );
@@ -361,7 +380,10 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 8),
           Container(
@@ -390,9 +412,9 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-        ),
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
       ),
     );
   }
@@ -404,15 +426,17 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
         key: ValueKey(task.id),
         task: task,
         onEdit: () => _showEditTaskDialog(context, task: task),
-        confirmDismiss: (direction) => _handleSwipeDismiss(context, task, direction),
+        confirmDismiss: (direction) =>
+            _handleSwipeDismiss(context, task, direction),
       ),
     );
   }
 
   /// Handle swipe gestures on tasks
-  Future<bool> _handleSwipeDismiss(BuildContext context, Task task, DismissDirection direction) async {
+  Future<bool> _handleSwipeDismiss(
+      BuildContext context, Task task, DismissDirection direction) async {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-    
+
     if (direction == DismissDirection.startToEnd) {
       // Swipe right to complete
       if (!task.isCompleted) {
@@ -425,7 +449,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
       _showDeleteConfirmation(context, task);
       return false; // Prevent immediate dismissal
     }
-    
+
     return false; // Default: prevent dismissal
   }
 
@@ -434,7 +458,8 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Task'),
-        content: Text('Are you sure you want to delete "${task.title}"? This action cannot be undone.'),
+        content: Text(
+            'Are you sure you want to delete "${task.title}"? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -452,7 +477,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
     if (confirmed == true && context.mounted) {
       final taskProvider = Provider.of<TaskProvider>(context, listen: false);
       await taskProvider.deleteTask(task.id);
-      
+
       // Show undo snackbar
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -482,9 +507,7 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
             'Completed (${completedTasks.length})',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          children: completedTasks
-              .map((task) => _buildTaskTile(task))
-              .toList(),
+          children: completedTasks.map((task) => _buildTaskTile(task)).toList(),
         ),
       ),
     );
@@ -496,30 +519,34 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen> with SingleTi
 
   // Helper methods for different view modes
   Map<DateTime, List<Task>> _getTodayTasks(List<Task> allTasks) {
-    final today = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    final today =
+        DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
     final relevantTasks = allTasks.where((task) {
       if (task.isCompleted) return false;
       if (task.dueDate == null) return false;
-      
-      final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+
+      final taskDate =
+          DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
       return taskDate.isAtSameMomentAs(today);
     }).toList();
-    
+
     return {today: relevantTasks};
   }
 
   Map<DateTime, List<Task>> _getWeekTasks(List<Task> allTasks) {
-    final startOfWeek = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+    final startOfWeek =
+        _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
     final endOfWeek = startOfWeek.add(const Duration(days: 6));
-    
+
     final relevantTasks = allTasks.where((task) {
       if (task.isCompleted) return false;
       if (task.dueDate == null) return false;
-      
-      final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+
+      final taskDate =
+          DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
       return !taskDate.isBefore(startOfWeek) && !taskDate.isAfter(endOfWeek);
     }).toList();
-    
+
     return _groupTasksByDate(relevantTasks);
   }
-} 
+}

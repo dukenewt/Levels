@@ -1,0 +1,62 @@
+# Firebase Configuration (contains API keys and sensitive data)
+lib/firebase_options.dart
+firebase.json
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+ios/Runner/firebase_config.swift
+
+# Environment and secrets
+.env
+.env.local
+.env.production
+.env.development
+*.env
+**/secrets.json
+**/config.json
+
+# API Keys and credentials
+**/api_keys.dart
+**/keys.dart
+**/credentials.dart
+**/*_secret.dart
+**/*_key.dart
+**/private_keys/
+
+# Build artifacts and generated files
+build/
+.dart_tool/
+.pub-cache/
+.packages
+pubspec.lock
+
+# Platform-specific build artifacts
+ios/build/
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/
+android/build/
+android/.gradle/
+android/app/build/
+
+# IDE and system files
+.vscode/
+.idea/
+*.iml
+.DS_Store
+*.log
+
+# Temporary and cache files
+**/.tmp/
+**/tmp/
+**/cache/
+**/.cache/
+
+# User data and database files
+**/database.db
+**/*.sqlite
+**/user_data/
+
+# Screenshots and sensitive media
+
+**/sensitive_images/
+**/private_media/

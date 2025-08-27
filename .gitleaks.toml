@@ -11,14 +11,16 @@ id = "generic-api-key"
 description = "Generic API key patterns"
 regex = '''(?i)(api[_-]?key|access[_-]?key|secret|token)[^\n]{0,20}[:=][^\n]{0,200}'''
 entropy = 3.5
-severity = "high"
+tags = ["generic", "apikey"]
 
 [allowlist]
-description = "Allow common directories and files that may appear sensitive but are safe"
+description = "Allow common directories that may contain false positives"
 paths = [
   '^\.git/',
   '^build/',
   '^\.dart_tool/',
   '^ios/Pods/',
   '^android/\.gradle/',
+  "(^|.*/)?Podfile\\.lock$",
+  "(^|.*/)?android/gradle\\.lockfile$",
 ]

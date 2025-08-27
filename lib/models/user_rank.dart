@@ -77,4 +77,4 @@ class UserRank {
     }
     return null;
   }
-} 
+}

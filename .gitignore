@@ -120,18 +120,58 @@ ios/Runner.xcworkspace/xcuserdata/
 *.iws
 .DS_Store
 
-# Firebase client configs (ignore, generated or sensitive)
+# Flutter/Android signing
+android/key.properties
+**/*.jks
+**/*.keystore
+
+# Firebase
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
-lib/firebase_options.dart
-ios/Runner/firebase_config.swift
-firebase.json
+ios/firebase_app_id_file.json
 
-# Environment and secrets
+# iOS provisioning/certs
+**/*.p12
+**/*.mobileprovision
+
+# Env & secrets
 .env
 .env.*
 *.pem
 *.key
+.npmrc
 
-# Firebase (generated)
+# Additional protected paths
+**/secrets/**
+**/*_secret.*
+**/*_key.*
+**/private_keys/**
+android/**/keystore*
+**/*.jks
+**/secrets.json
+**/config.json
+**/.tmp/
+**/tmp/
+**/cache/
+**/.cache/
+**/database.db
+**/*.sqlite
+**/user_data/
+**/sensitive_images/
+**/private_media/
+
+# Salesforce development cache
+.sfdx/
+
+# Firebase client config (treat as sensitive per policy)
+lib/firebase_options.dart
+firebase.json
+ios/Runner/firebase_config.swift
+
+
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+ios/Runner/firebase_config.swift
+lib/firebase_options.dart
+firebase.json
 ios/firebase_app_id_file.json

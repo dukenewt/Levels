@@ -14,26 +14,32 @@ import 'services/firestore_service.dart';
 import 'providers/user_provider.dart';
 import 'providers/task_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/epic_provider.dart';
 import 'screens/profile_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/task_dashboard_screen.dart';
+import 'screens/epic_project_screen.dart';
 import 'services/secure_storage_service.dart';
+import 'services/app_talent_manager.dart';
+import 'controllers/talent_perk_controller.dart';
+import 'services/talent_trigger_service.dart';
+import 'config/feature_flags.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   // Initialize core systems first
   AppLogger.instance.initialize();
   GlobalErrorHandler.instance.initialize(AppLogger.instance);
   OfflineManager.instance.initialize();
-  
+
   // Initialize notification service
   await TaskNotificationService.instance.initialize();
-  
+
   try {
     final prefs = await SharedPreferences.getInstance();
     final secureStorageService = SecureStorageService(prefs);
@@ -50,13 +56,15 @@ void main() async {
           ChangeNotifierProvider(
             create: (_) => ThemeProvider()..init(),
           ),
-          ChangeNotifierProxyProvider2<AuthService, FirestoreService, UserProvider>(
+          ChangeNotifierProxyProvider2<AuthService, FirestoreService,
+              UserProvider>(
             create: (context) => UserProvider(
               context.read<AuthService>(),
               context.read<FirestoreService>(),
             ),
             update: (context, authService, firestoreService, previous) =>
-                UserProvider(authService, firestoreService)..updateDependencies(authService, firestoreService),
+                UserProvider(authService, firestoreService)
+                  ..updateDependencies(authService, firestoreService),
           ),
           ChangeNotifierProxyProvider<UserProvider, TaskProvider>(
             create: (context) => TaskProvider(
@@ -67,6 +75,13 @@ void main() async {
                 previous!..updateUserProvider(userProvider),
           ),
           ChangeNotifierProvider(create: (_) => SettingsProvider()),
+          ChangeNotifierProvider(
+            create: (_) => EpicProvider(storage: secureStorageService),
+          ),
+          // NEW: TalentPerkController - added alongside existing providers
+          ChangeNotifierProvider(
+            create: (_) => TalentPerkController(),
+          ),
         ],
         child: const MyApp(),
       ),
@@ -167,12 +182,62 @@ class MainTabScaffold extends StatefulWidget {
 
 class _MainTabScaffoldState extends State<MainTabScaffold> {
   int _selectedIndex = 0;
+  bool _talentManagerInitialized = false;
 
-  static final List<Widget> _screens = <Widget>[
-    TaskDashboardScreen(),
-    StatsScreen(),
-    ProfileScreen(),
-  ];
+  List<Widget> _getScreens(bool hasProjectManagement) {
+    if (hasProjectManagement) {
+      return [
+        TaskDashboardScreen(),
+        EpicProjectScreen(),
+        StatsScreen(),
+        ProfileScreen(),
+      ];
+    } else {
+      return [
+        TaskDashboardScreen(),
+        StatsScreen(),
+        ProfileScreen(),
+      ];
+    }
+  }
+
+  List<BottomNavigationBarItem> _getNavItems(bool hasProjectManagement) {
+    if (hasProjectManagement) {
+      return const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.check_circle),
+          label: 'Tasks',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.rocket_launch),
+          label: 'Epics',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.bar_chart),
+          label: 'Stats',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'Profile',
+        ),
+      ];
+    } else {
+      return const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.check_circle),
+          label: 'Tasks',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.bar_chart),
+          label: 'Stats',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'Profile',
+        ),
+      ];
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -181,31 +246,68 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeTalentManager();
+  }
+
+  void _initializeTalentManager() {
+    if (_talentManagerInitialized) return;
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    // Always initialize the new talent trigger service (it can monitor for user changes)
+    if (FeatureFlags.shouldUseNewTalentSystem()) {
+      final talentPerkController =
+          Provider.of<TalentPerkController>(context, listen: false);
+      TalentTriggerService.instance.initialize(context, talentPerkController);
+    }
+
+    if (userProvider.user != null) {
+      AppTalentManager.instance.initialize(context, userProvider);
+      _talentManagerInitialized = true;
+
+      // Check for pending talent choices
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (FeatureFlags.shouldUseNewTalentSystem()) {
+          // Use new system
+          TalentTriggerService.instance.checkPendingTalentChoices();
+        } else {
+          // Use old system
+          AppTalentManager.instance.checkPendingTalentChoices();
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: 'Tasks',
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        final user = userProvider.user;
+        final hasProjectManagement =
+            user?.hasProjectManagementTalent() ?? false;
+        final screens = _getScreens(hasProjectManagement);
+        final navItems = _getNavItems(hasProjectManagement);
+
+        // Adjust selected index if navigation structure changed
+        if (_selectedIndex >= screens.length) {
+          _selectedIndex = 0;
+        }
+
+        return Scaffold(
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: screens,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Stats',
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            type: BottomNavigationBarType.fixed,
+            items: navItems,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

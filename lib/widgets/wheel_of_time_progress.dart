@@ -7,6 +7,8 @@ import '../providers/task_provider.dart';
 import '../models/user_rank.dart';
 import '../models/user.dart' as app;
 import '../services/smooth_xp_animation_service.dart';
+import '../providers/settings_provider.dart';
+import '../core/theme/app_design_tokens.dart';
 import '../screens/stats_screen.dart';
 
 class WheelOfTimeProgress extends StatefulWidget {
@@ -23,7 +25,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
   late AnimationController _xpRingController;
   late AnimationController _rankRingController;
   late AnimationController _taskRingController;
-  
+
   // Smooth XP animation controller
   late AnimationController _xpProgressController;
   late AnimationController _celebrationController;
@@ -33,10 +35,10 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
   late Animation<double> _xpRingAnimation;
   late Animation<double> _rankRingAnimation;
   late Animation<double> _taskRingAnimation;
-  
+
   // Smooth XP progress animation
   late Animation<double> _xpProgressAnimation;
-  
+
   // Celebration animations for task completion
   late Animation<double> _celebrationScaleAnimation;
   late Animation<double> _celebrationGlowAnimation;
@@ -48,10 +50,12 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
   int _previousNextLevelXP = 1;
   bool _isInitialized = false;
 
+  bool _reducedMotion = false;
+
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize XP tracking
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -59,51 +63,75 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
         if (userProvider.user != null) {
           _previousXP = userProvider.user!.currentXp;
           _previousNextLevelXP = userProvider.nextLevelXp;
-          _previousXPProgress = userProvider.nextLevelXp > 0 
+          _previousXPProgress = userProvider.nextLevelXp > 0
               ? userProvider.user!.currentXp / userProvider.nextLevelXp
               : 0.0;
           _currentDisplayedXPProgress = _previousXPProgress;
         }
       }
     });
-    
-    // Slow rotation for the mystical effect
+
+    // Accessibility: read reduced-motion preference
+    try {
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
+      _reducedMotion = settings.reducedMotion;
+    } catch (_) {
+      _reducedMotion = false;
+    }
+
+    // Slow rotation for the mystical effect (skip if reduced motion)
     _rotationController = AnimationController(
       duration: const Duration(seconds: 60),
       vsync: this,
-    )..repeat();
+    );
+    if (!_reducedMotion) {
+      _rotationController.safeRepeat();
+    }
 
     // Gentle pulse animation
     _pulseController = AnimationController(
-      duration: const Duration(seconds: 4),
+      duration: AppDesignTokens.slow,
       vsync: this,
-    )..repeat(reverse: true);
+    );
+    if (!_reducedMotion) {
+      _pulseController.safeRepeat(reverse: true);
+    }
 
     // Ring animations for progress changes
     _xpRingController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: _reducedMotion
+          ? AppDesignTokens.microFast
+          : const Duration(milliseconds: 1200),
       vsync: this,
     );
 
     _rankRingController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: _reducedMotion
+          ? AppDesignTokens.microFast
+          : const Duration(milliseconds: 1200),
       vsync: this,
     );
 
     _taskRingController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: _reducedMotion
+          ? AppDesignTokens.microFast
+          : const Duration(milliseconds: 1200),
       vsync: this,
     );
 
     // Smooth XP progress animation controller
     _xpProgressController = AnimationController(
-      duration: const Duration(milliseconds: 800), // Smooth but not too slow
+      duration: _reducedMotion
+          ? AppDesignTokens.microFast
+          : const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     // Celebration animation controller for task completions
     _celebrationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: _reducedMotion
+          ? AppDesignTokens.microFast
+          : const Duration(milliseconds: 800),
       vsync: this,
     );
 
@@ -173,24 +201,32 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
       curve: Curves.easeOutCirc,
     ));
 
-    // Start the ring animations with staggered delays
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _xpRingController.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) _taskRingController.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 900), () {
-      if (mounted) _rankRingController.forward();
-    });
-    
+    // Start the ring animations with staggered delays (or snap complete if reduced motion)
+    if (_reducedMotion) {
+      _xpRingController.value = 1.0;
+      _taskRingController.value = 1.0;
+      _rankRingController.value = 1.0;
+    } else {
+      Future.delayed(AppDesignTokens.microMedium, () {
+        if (mounted) _xpRingController.safeForward();
+      });
+      Future.delayed(
+          AppDesignTokens.microSlow + const Duration(milliseconds: 300), () {
+        if (mounted) _taskRingController.safeForward();
+      });
+      Future.delayed(AppDesignTokens.slow, () {
+        if (mounted) _rankRingController.safeForward();
+      });
+    }
+
     // Mark as initialized
     _isInitialized = true;
   }
 
-  void _animateXPProgress(double newProgress, {bool triggerCelebration = false}) {
+  void _animateXPProgress(double newProgress,
+      {bool triggerCelebration = false}) {
     if (!mounted || !_isInitialized) return;
-    
+
     // Update the tween to animate from current displayed progress to new progress
     _xpProgressAnimation = Tween<double>(
       begin: _currentDisplayedXPProgress,
@@ -199,25 +235,27 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
       parent: _xpProgressController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     // Reset and start the animation
-    _xpProgressController.reset();
-    _xpProgressController.forward().then((_) {
+    _xpProgressController.safeReset();
+    _xpProgressController.safeForward()?.then((_) {
       if (mounted) {
         _currentDisplayedXPProgress = newProgress;
       }
     });
 
     // Trigger celebration animation for XP gains
-    if (triggerCelebration && newProgress > _currentDisplayedXPProgress) {
-      _celebrationController.reset();
-      _celebrationController.forward().then((_) {
+    if (!_reducedMotion &&
+        triggerCelebration &&
+        newProgress > _currentDisplayedXPProgress) {
+      _celebrationController.safeReset();
+      _celebrationController.safeForward()?.then((_) {
         if (mounted) {
           // Pulse briefly to show completion satisfaction
-          _pulseController.reset();
-          _pulseController.forward().then((_) {
+          _pulseController.safeReset();
+          _pulseController.safeForward()?.then((_) {
             if (mounted) {
-              _pulseController.reverse();
+              _pulseController.safeReverse();
             }
           });
         }
@@ -258,32 +296,38 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
     }
 
     // Calculate the current XP progress
-    final currentXPProgress = userProvider.nextLevelXp > 0 
-        ? user.currentXp / userProvider.nextLevelXp 
+    final currentXPProgress = userProvider.nextLevelXp > 0
+        ? user.currentXp / userProvider.nextLevelXp
         : 0.0;
-    
+
     // Check if XP has changed and animate if needed
-    if (_isInitialized && (user.currentXp != _previousXP || userProvider.nextLevelXp != _previousNextLevelXP)) {
+    if (_isInitialized &&
+        (user.currentXp != _previousXP ||
+            userProvider.nextLevelXp != _previousNextLevelXP)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _isInitialized) {
           final xpIncreased = user.currentXp > _previousXP;
-          debugPrint('🎯 XP changed: ${_previousXP} -> ${user.currentXp}, animating from $_currentDisplayedXPProgress to $currentXPProgress');
-          _animateXPProgress(currentXPProgress, triggerCelebration: xpIncreased);
+          debugPrint(
+              '🎯 XP changed: ${_previousXP} -> ${user.currentXp}, animating from $_currentDisplayedXPProgress to $currentXPProgress');
+          _animateXPProgress(currentXPProgress,
+              triggerCelebration: xpIncreased);
           _previousXP = user.currentXp;
           _previousNextLevelXP = userProvider.nextLevelXp;
           _previousXPProgress = currentXPProgress;
         }
       });
     }
-    
-    final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first);
+
+    final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank,
+        orElse: () => UserRank.ranks.first);
     final nextRank = UserRank.getNextRank(user.level);
-    final rankProgress = nextRank != null 
-        ? (user.level - currentRank.requiredLevel) / 
-          (nextRank.requiredLevel - currentRank.requiredLevel)
+    final rankProgress = nextRank != null
+        ? (user.level - currentRank.requiredLevel) /
+            (nextRank.requiredLevel - currentRank.requiredLevel)
         : 1.0;
 
-    final completedTasks = taskProvider.tasks.where((task) => task.isCompleted).length;
+    final completedTasks =
+        taskProvider.tasks.where((task) => task.isCompleted).length;
     final totalTasks = taskProvider.tasks.length;
     final tasksProgress = totalTasks > 0 ? completedTasks / totalTasks : 0.0;
 
@@ -292,75 +336,81 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
       child: GestureDetector(
         onTap: () => _navigateToStatsScreen(context),
         child: Card(
-        elevation: 8,
-        shadowColor: theme.colorScheme.primary.withOpacity(0.3),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            
-            // Test button for XP animation (debug mode only)
-            if (kDebugMode) 
-              ElevatedButton(
-                onPressed: () => _testXPAnimation(context),
-                child: Text('Test XP Animation (+25 XP)'),
-              ),
-            
-            // The main wheel
-            AnimatedBuilder(
-              animation: Listenable.merge([
-                _rotationController,
-                _pulseController,
-                _xpRingController,
-                _rankRingController,
-                _taskRingController,
-                _xpProgressController,
-                _celebrationController, // Add celebration animation
-              ]),
-              builder: (context, child) {
-                // Use the animated XP progress value - with safety check
-                final displayedXPProgress = _xpProgressController.isAnimating 
-                    ? _xpProgressAnimation.value
-                    : currentXPProgress;
-                
-                return Transform.scale(
-                  scale: _pulseAnimation.value,
-                  child: Transform.rotate(
-                    angle: _rotationAnimation.value * 0.1, // Very slow rotation
-                    child: SizedBox(
-                      width: 200,
-                      height: 200,
-                      child: CustomPaint(
-                        painter: WheelOfTimeRingsPainter(
-                          xpProgress: displayedXPProgress * _xpRingAnimation.value,
-                          rankProgress: rankProgress * _rankRingAnimation.value,
-                          tasksProgress: tasksProgress * _taskRingAnimation.value,
-                          xpColor: theme.colorScheme.primary,
-                          rankColor: currentRank.color,
-                          tasksColor: theme.colorScheme.secondary,
-                          backgroundColor: theme.colorScheme.surfaceVariant,
-                          pulseValue: _pulseAnimation.value,
-                          // Add visual feedback for XP animation
-                          isXPAnimating: _xpProgressController.isAnimating,
+          elevation: 8,
+          shadowColor: theme.colorScheme.primary.withOpacity(0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+
+                // Test button for XP animation (debug mode only)
+                if (kDebugMode)
+                  ElevatedButton(
+                    onPressed: () => _testXPAnimation(context),
+                    child: Text('Test XP Animation (+25 XP)'),
+                  ),
+
+                // The main wheel
+                AnimatedBuilder(
+                  animation: Listenable.merge([
+                    _rotationController,
+                    _pulseController,
+                    _xpRingController,
+                    _rankRingController,
+                    _taskRingController,
+                    _xpProgressController,
+                    _celebrationController, // Add celebration animation
+                  ]),
+                  builder: (context, child) {
+                    // Use the animated XP progress value - with safety check
+                    final displayedXPProgress =
+                        _xpProgressController.isAnimating
+                            ? _xpProgressAnimation.value
+                            : currentXPProgress;
+
+                    return Transform.scale(
+                      scale: _pulseAnimation.value,
+                      child: Transform.rotate(
+                        angle: _rotationAnimation.value *
+                            0.1, // Very slow rotation
+                        child: SizedBox(
+                          width: 200,
+                          height: 200,
+                          child: CustomPaint(
+                            painter: WheelOfTimeRingsPainter(
+                              xpProgress:
+                                  displayedXPProgress * _xpRingAnimation.value,
+                              rankProgress:
+                                  rankProgress * _rankRingAnimation.value,
+                              tasksProgress:
+                                  tasksProgress * _taskRingAnimation.value,
+                              xpColor: theme.colorScheme.primary,
+                              rankColor: currentRank.color,
+                              tasksColor: theme.colorScheme.secondary,
+                              backgroundColor: theme.colorScheme.surfaceVariant,
+                              pulseValue: _pulseAnimation.value,
+                              // Add visual feedback for XP animation
+                              isXPAnimating: _xpProgressController.isAnimating,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                );
-              },
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Legend
+                _buildLegend(
+                    context, user, userProvider, completedTasks, totalTasks),
+              ],
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Legend
-            _buildLegend(context, user, userProvider, completedTasks, totalTasks),
-          ],
-        ),
-      ),
+          ),
         ),
       ),
     );
@@ -373,14 +423,15 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
     SmoothXPAnimationService.instance.testXPAnimation(userProvider);
   }
 
-  Widget _buildLegend(BuildContext context, app.User user, UserProvider userProvider, int completedTasks, int totalTasks) {
+  Widget _buildLegend(BuildContext context, app.User user,
+      UserProvider userProvider, int completedTasks, int totalTasks) {
     final theme = Theme.of(context);
-    
+
     return Column(
       children: [
         // XP Progress - now with smooth animation feedback
-                 AnimatedBuilder(
-           animation: _xpProgressController,
+        AnimatedBuilder(
+          animation: _xpProgressController,
           builder: (context, child) {
             return _buildLegendItem(
               context,
@@ -388,14 +439,17 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
               label: 'XP Progress',
               current: user.currentXp,
               max: userProvider.nextLevelXp,
-                             isAnimating: _xpProgressController.isAnimating,
+              isAnimating: _xpProgressController.isAnimating,
             );
           },
         ),
         const SizedBox(height: 8),
         _buildLegendItem(
           context,
-          color: UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first).color,
+          color: UserRank.ranks
+              .firstWhere((r) => r.name == user.rank,
+                  orElse: () => UserRank.ranks.first)
+              .color,
           label: 'Rank Progress',
           current: user.level,
           max: UserRank.getNextRank(user.level)?.requiredLevel ?? user.level,
@@ -421,7 +475,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
     bool isAnimating = false,
   }) {
     final theme = Theme.of(context);
-    
+
     return Row(
       children: [
         Container(
@@ -431,13 +485,15 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
             color: color,
             shape: BoxShape.circle,
             // Add subtle glow when animating
-            boxShadow: isAnimating ? [
-              BoxShadow(
-                color: color.withOpacity(0.6),
-                blurRadius: 8,
-                spreadRadius: 2,
-              ),
-            ] : null,
+            boxShadow: isAnimating
+                ? [
+                    BoxShadow(
+                      color: color.withOpacity(0.6),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
           ),
         ),
         const SizedBox(width: 12),
@@ -506,15 +562,20 @@ class WheelOfTimeRingsPainter extends CustomPainter {
     _drawBackgroundRing(canvas, center, innerRadius, ringWidth);
 
     // Progress rings with mystical effects
-    _drawProgressRing(canvas, center, outerRadius, ringWidth, xpProgress, xpColor, 0, isXPAnimating);
-    _drawProgressRing(canvas, center, middleRadius, ringWidth, rankProgress, rankColor, math.pi / 3, false);
-    _drawProgressRing(canvas, center, innerRadius, ringWidth, tasksProgress, tasksColor, 2 * math.pi / 3, false);
+    _drawProgressRing(canvas, center, outerRadius, ringWidth, xpProgress,
+        xpColor, 0, isXPAnimating);
+    _drawProgressRing(canvas, center, middleRadius, ringWidth, rankProgress,
+        rankColor, math.pi / 3, false);
+    _drawProgressRing(canvas, center, innerRadius, ringWidth, tasksProgress,
+        tasksColor, 2 * math.pi / 3, false);
 
     // Central mystical symbol
-    _drawCentralSymbol(canvas, center, innerRadius - ringWidth - gapBetweenRings);
+    _drawCentralSymbol(
+        canvas, center, innerRadius - ringWidth - gapBetweenRings);
   }
 
-  void _drawBackgroundRing(Canvas canvas, Offset center, double radius, double strokeWidth) {
+  void _drawBackgroundRing(
+      Canvas canvas, Offset center, double radius, double strokeWidth) {
     final paint = Paint()
       ..color = backgroundColor.withOpacity(0.3)
       ..style = PaintingStyle.stroke
@@ -524,8 +585,15 @@ class WheelOfTimeRingsPainter extends CustomPainter {
     canvas.drawCircle(center, radius, paint);
   }
 
-  void _drawProgressRing(Canvas canvas, Offset center, double radius, double strokeWidth, 
-                        double progress, Color color, double startAngleOffset, bool isAnimating) {
+  void _drawProgressRing(
+      Canvas canvas,
+      Offset center,
+      double radius,
+      double strokeWidth,
+      double progress,
+      Color color,
+      double startAngleOffset,
+      bool isAnimating) {
     if (progress <= 0) return;
 
     const startAngle = -math.pi / 2; // Start from top
@@ -577,11 +645,13 @@ class WheelOfTimeRingsPainter extends CustomPainter {
 
     // Add sparkle effect when XP is animating
     if (isAnimating && progress > 0.1) {
-      _drawSparkleEffect(canvas, center, radius, startAngle + startAngleOffset + sweepAngle, color);
+      _drawSparkleEffect(canvas, center, radius,
+          startAngle + startAngleOffset + sweepAngle, color);
     }
   }
 
-  void _drawSparkleEffect(Canvas canvas, Offset center, double radius, double angle, Color color) {
+  void _drawSparkleEffect(
+      Canvas canvas, Offset center, double radius, double angle, Color color) {
     final sparklePosition = Offset(
       center.dx + math.cos(angle) * radius,
       center.dy + math.sin(angle) * radius,
@@ -593,7 +663,7 @@ class WheelOfTimeRingsPainter extends CustomPainter {
 
     // Draw a small sparkle at the end of the progress arc
     canvas.drawCircle(sparklePosition, 3, sparklePaint);
-    
+
     // Add a subtle star effect
     final starPath = Path();
     const starSize = 8.0;
@@ -642,10 +712,9 @@ class WheelOfTimeRingsPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant WheelOfTimeRingsPainter oldDelegate) {
     return oldDelegate.xpProgress != xpProgress ||
-           oldDelegate.rankProgress != rankProgress ||
-           oldDelegate.tasksProgress != tasksProgress ||
-           oldDelegate.pulseValue != pulseValue ||
-           oldDelegate.isXPAnimating != isXPAnimating;
+        oldDelegate.rankProgress != rankProgress ||
+        oldDelegate.tasksProgress != tasksProgress ||
+        oldDelegate.pulseValue != pulseValue ||
+        oldDelegate.isXPAnimating != isXPAnimating;
   }
-} 
-  
+}

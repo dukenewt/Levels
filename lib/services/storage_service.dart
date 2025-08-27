@@ -24,13 +24,13 @@ class LocalTaskRepository implements TaskRepository {
     try {
       final tasks = await getTasks();
       final index = tasks.indexWhere((t) => t.id == task.id);
-      
+
       if (index != -1) {
         tasks[index] = task;
       } else {
         tasks.add(task);
       }
-      
+
       await saveTasks(tasks);
     } catch (e) {
       debugPrint('Error saving task: $e');
@@ -43,7 +43,7 @@ class LocalTaskRepository implements TaskRepository {
     try {
       final tasks = await getTasks();
       final index = tasks.indexWhere((t) => t.id == task.id);
-      
+
       if (index != -1) {
         tasks[index] = task;
         await saveTasks(tasks);
@@ -83,7 +83,8 @@ class LocalTaskRepository implements TaskRepository {
   @override
   Future<void> saveTasks(List<Task> tasks) async {
     try {
-      final tasksJson = json.encode(tasks.map((task) => task.toJson()).toList());
+      final tasksJson =
+          json.encode(tasks.map((task) => task.toJson()).toList());
       await _prefs.setString(_tasksKey, tasksJson);
     } catch (e) {
       debugPrint('Error saving tasks: $e');
@@ -241,4 +242,4 @@ class StorageService {
   Set<String> getKeys() {
     return _prefs.getKeys();
   }
-} 
+}

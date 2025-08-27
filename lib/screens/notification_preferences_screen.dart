@@ -36,7 +36,10 @@ class NotificationPreferencesScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
@@ -48,18 +51,22 @@ class NotificationPreferencesScreen extends StatelessWidget {
                             const SizedBox(width: 12),
                             Text(
                               'Stay on Track',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Customize your notifications to stay motivated and never miss important tasks.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                         ),
                       ],
                     ),
@@ -72,8 +79,8 @@ class NotificationPreferencesScreen extends StatelessWidget {
                 Text(
                   'Task Notifications',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 12),
                 Card(
@@ -98,7 +105,8 @@ class NotificationPreferencesScreen extends StatelessWidget {
                         'Notifications when tasks are due today',
                         Icons.today,
                         settings.enableDueDateNotifications,
-                        (value) => settings.setEnableDueDateNotifications(value),
+                        (value) =>
+                            settings.setEnableDueDateNotifications(value),
                       ),
                       _buildDivider(),
                       _buildNotificationTile(
@@ -107,7 +115,8 @@ class NotificationPreferencesScreen extends StatelessWidget {
                         'Get notified about overdue tasks',
                         Icons.warning,
                         settings.enableOverdueNotifications,
-                        (value) => settings.setEnableOverdueNotifications(value),
+                        (value) =>
+                            settings.setEnableOverdueNotifications(value),
                       ),
                     ],
                   ),
@@ -119,8 +128,8 @@ class NotificationPreferencesScreen extends StatelessWidget {
                 Text(
                   'Celebration & Motivation',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 12),
                 Card(
@@ -136,7 +145,8 @@ class NotificationPreferencesScreen extends StatelessWidget {
                         'Celebrate when you complete tasks',
                         Icons.celebration,
                         settings.enableCompletionCelebrations,
-                        (value) => settings.setEnableCompletionCelebrations(value),
+                        (value) =>
+                            settings.setEnableCompletionCelebrations(value),
                       ),
                       _buildDivider(),
                       _buildNotificationTile(
@@ -157,8 +167,8 @@ class NotificationPreferencesScreen extends StatelessWidget {
                 Text(
                   'Re-engagement',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 12),
                 Card(
@@ -174,7 +184,8 @@ class NotificationPreferencesScreen extends StatelessWidget {
                         'Gentle reminders to come back to the app',
                         Icons.favorite,
                         settings.enableReEngagementNotifications,
-                        (value) => settings.setEnableReEngagementNotifications(value),
+                        (value) =>
+                            settings.setEnableReEngagementNotifications(value),
                       ),
                     ],
                   ),
@@ -186,8 +197,8 @@ class NotificationPreferencesScreen extends StatelessWidget {
                 Text(
                   'Notification Timing',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 12),
                 Card(
@@ -210,18 +221,22 @@ class NotificationPreferencesScreen extends StatelessWidget {
                             const SizedBox(width: 12),
                             Text(
                               'Reminder Timing',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'How many minutes before a task\'s due time should you be reminded?',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<int>(
@@ -230,13 +245,15 @@ class NotificationPreferencesScreen extends StatelessWidget {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                           ),
                           items: [5, 15, 30, 60, 120, 240]
                               .map((minutes) => DropdownMenuItem(
-                            value: minutes,
-                            child: Text(_formatReminderTime(minutes)),
-                          )).toList(),
+                                    value: minutes,
+                                    child: Text(_formatReminderTime(minutes)),
+                                  ))
+                              .toList(),
                           onChanged: (value) {
                             if (value != null) {
                               settings.setReminderMinutesBefore(value);
@@ -253,7 +270,10 @@ class NotificationPreferencesScreen extends StatelessWidget {
                 // Note about permissions
                 Card(
                   elevation: 1,
-                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceVariant
+                      .withOpacity(0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -270,9 +290,10 @@ class NotificationPreferencesScreen extends StatelessWidget {
                         Expanded(
                           child: Text(
                             'Make sure to allow notifications in your device settings for the best experience.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
                           ),
                         ),
                       ],
@@ -312,14 +333,14 @@ class NotificationPreferencesScreen extends StatelessWidget {
       title: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+              fontWeight: FontWeight.w600,
+            ),
       ),
       subtitle: Text(
         subtitle,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Colors.grey[600],
-        ),
+              color: Colors.grey[600],
+            ),
       ),
       trailing: Switch(
         value: value,
@@ -341,4 +362,4 @@ class NotificationPreferencesScreen extends StatelessWidget {
       return hours == 1 ? '1 hour before' : '$hours hours before';
     }
   }
-} 
+}

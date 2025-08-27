@@ -89,7 +89,9 @@ class ThemeProvider with ChangeNotifier {
 
   // Get all available themes
   List<AppTheme> get availableThemes {
-    return AppTheme.allThemes.where((theme) => isThemeUnlocked(theme.type)).toList();
+    return AppTheme.allThemes
+        .where((theme) => isThemeUnlocked(theme.type))
+        .toList();
   }
 
   // Get premium themes
@@ -99,17 +101,19 @@ class ThemeProvider with ChangeNotifier {
 
   // Get unlocked premium themes
   List<AppTheme> get unlockedPremiumThemesList {
-    return premiumThemes.where((theme) => _unlockedPremiumThemes.contains(theme.type)).toList();
+    return premiumThemes
+        .where((theme) => _unlockedPremiumThemes.contains(theme.type))
+        .toList();
   }
 
   // Unlock all premium themes
   Future<void> unlockAllPremiumThemes() async {
     _unlockedPremiumThemes.addAll(
       AppTheme.allThemes
-        .where((theme) => theme.isPremium)
-        .map((theme) => theme.type),
+          .where((theme) => theme.isPremium)
+          .map((theme) => theme.type),
     );
     await _saveUnlockedPremiumThemes();
     notifyListeners();
   }
-} 
+}

@@ -25,20 +25,20 @@ class TaskEditingDialog extends StatefulWidget {
     print('  - parentTaskId: ${task.parentTaskId}');
     print('  - weeklyDays: ${task.weeklyDays}');
     print('  - repeatInterval: ${task.repeatInterval}');
-    
+
     // Check if this is a recurring task and show the appropriate dialog
     // Include legacy 'workdays' pattern and weeklyDays-based patterns
-    final isRecurring = task.recurrencePattern != null || 
-                       task.parentTaskId != null ||
-                       (task.weeklyDays != null && task.weeklyDays!.isNotEmpty);
+    final isRecurring = task.recurrencePattern != null ||
+        task.parentTaskId != null ||
+        (task.weeklyDays != null && task.weeklyDays!.isNotEmpty);
     print('  - isRecurring: $isRecurring');
-    
+
     if (isRecurring) {
       final editScope = await showRecurringTaskEditDialog(context, task);
-      
+
       if (editScope != null) {
         if (!context.mounted) return;
-        
+
         // Show the actual edit dialog with the chosen scope
         await showDialog(
           context: context,
@@ -66,7 +66,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
-  
+
   // Task properties
   late int _xpReward;
   late TaskDifficulty _difficulty;
@@ -76,20 +76,25 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
   late RecurrenceSettings _recurrenceSettings;
   late int _timeCostMinutes;
   bool _showTimePicker = false;
-  
+
   // Animation controllers
   AnimationController? _slideController;
   AnimationController? _xpAnimationController;
-  
+
   // Animations
   Animation<Offset>? _slideAnimation;
   Animation<double>? _fadeAnimation;
   Animation<double>? _xpScaleAnimation;
-  
+
   final FocusNode _titleFocusNode = FocusNode();
 
   final List<String> _categoryOptions = [
-    'Work', 'Learning', 'Health', 'Social', 'Creativity', 'Maintenance'
+    'Work',
+    'Learning',
+    'Health',
+    'Social',
+    'Creativity',
+    'Maintenance'
   ];
 
   final Map<String, IconData> _categoryIcons = {
@@ -105,7 +110,8 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.task.title);
-    _descriptionController = TextEditingController(text: widget.task.description);
+    _descriptionController =
+        TextEditingController(text: widget.task.description);
     _xpReward = widget.task.xpReward;
     _difficulty = widget.task.difficulty;
     _category = widget.task.category;
@@ -114,9 +120,9 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
     _showTimePicker = widget.task.scheduledTime != null;
     _recurrenceSettings = _convertTaskToRecurrenceSettings(widget.task);
     _timeCostMinutes = widget.task.timeCostMinutes;
-    
+
     _setupAnimations();
-    
+
     // Auto-focus title field after animation
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
@@ -130,12 +136,12 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _xpAnimationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
@@ -143,7 +149,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
       parent: _slideController!,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -151,7 +157,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
       parent: _slideController!,
       curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
     ));
-    
+
     _xpScaleAnimation = Tween<double>(
       begin: 0.8,
       end: 1.0,
@@ -159,7 +165,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
       parent: _xpAnimationController!,
       curve: Curves.elasticOut,
     ));
-    
+
     _slideController!.forward();
   }
 
@@ -186,14 +192,14 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
       xpReward: _xpReward,
       dueDate: _dueDate,
       scheduledTime: _showTimePicker ? _scheduledTime : null,
-      recurrencePattern: _recurrenceSettings.type == RecurrenceType.none 
-          ? null 
+      recurrencePattern: _recurrenceSettings.type == RecurrenceType.none
+          ? null
           : _recurrenceSettings.type.name,
-      weeklyDays: _recurrenceSettings.weeklyDays.isEmpty 
-          ? null 
+      weeklyDays: _recurrenceSettings.weeklyDays.isEmpty
+          ? null
           : _recurrenceSettings.weeklyDays,
-      repeatInterval: _recurrenceSettings.interval == 1 
-          ? null 
+      repeatInterval: _recurrenceSettings.interval == 1
+          ? null
           : _recurrenceSettings.interval,
       endDate: _recurrenceSettings.endDate,
       timeCostMinutes: _timeCostMinutes,
@@ -205,14 +211,14 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
     } else {
       taskProvider.updateTask(context, updatedTask);
     }
-    
+
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return _slideAnimation != null && _fadeAnimation != null
         ? SlideTransition(
             position: _slideAnimation!,
@@ -311,7 +317,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              widget.editScope != null 
+              widget.editScope != null
                   ? 'Edit ${widget.editScope == EditScope.thisTaskOnly ? 'This Task' : 'Series'}'
                   : 'Edit Task',
               style: theme.textTheme.headlineSmall?.copyWith(
@@ -320,14 +326,49 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
               ),
             ),
           ),
-          _xpScaleAnimation != null 
-            ? AnimatedBuilder(
-                animation: _xpScaleAnimation!,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _xpScaleAnimation!.value,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          _xpScaleAnimation != null
+              ? AnimatedBuilder(
+                  animation: _xpScaleAnimation!,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _xpScaleAnimation!.value,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(16),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$_xpReward',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Text(
+                              'XP',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
@@ -355,38 +396,6 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
                     ],
                   ),
                 ),
-              );
-            },
-          )
-            : Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.3)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$_xpReward',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Text(
-                      'XP',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
         ],
       ),
     );
@@ -411,7 +420,8 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
         decoration: InputDecoration(
           labelText: 'Task Title',
           hintText: 'What do you want to accomplish?',
-          prefixIcon: Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
+          prefixIcon:
+              Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -448,7 +458,8 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
         decoration: InputDecoration(
           labelText: 'Description (Optional)',
           hintText: 'Add more details...',
-          prefixIcon: Icon(Icons.notes_outlined, color: theme.colorScheme.primary),
+          prefixIcon:
+              Icon(Icons.notes_outlined, color: theme.colorScheme.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -586,7 +597,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
                   : 'All day',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: _showTimePicker 
+                color: _showTimePicker
                     ? theme.colorScheme.onSurface
                     : theme.colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -763,11 +774,10 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
               filled: true,
               fillColor: theme.colorScheme.surface,
             ),
-            items: TaskDifficulty.values.map((difficulty) => 
-              DropdownMenuItem(
-                value: difficulty, 
-                child: Text(difficulty.displayName)
-              )).toList(),
+            items: TaskDifficulty.values
+                .map((difficulty) => DropdownMenuItem(
+                    value: difficulty, child: Text(difficulty.displayName)))
+                .toList(),
             onChanged: (value) {
               setState(() {
                 _difficulty = value!;
@@ -915,7 +925,8 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
         const SizedBox(height: 16),
         TextButton.icon(
           onPressed: () {
-            final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+            final taskProvider =
+                Provider.of<TaskProvider>(context, listen: false);
             taskProvider.deleteTask(widget.task.id);
             Navigator.of(context).pop();
           },
@@ -963,7 +974,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
         baseDate: _dueDate,
       ),
     );
-    
+
     if (result != null) {
       setState(() {
         _recurrenceSettings = result;
@@ -974,7 +985,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
   RecurrenceSettings _convertTaskToRecurrenceSettings(Task task) {
     RecurrenceType type = RecurrenceType.none;
     List<int> weeklyDays = task.weeklyDays ?? [];
-    
+
     if (task.recurrencePattern != null) {
       switch (task.recurrencePattern!.toLowerCase()) {
         case 'daily':
@@ -996,7 +1007,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
           break;
       }
     }
-    
+
     return RecurrenceSettings(
       type: type,
       interval: task.repeatInterval ?? 1,

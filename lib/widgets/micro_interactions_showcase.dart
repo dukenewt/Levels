@@ -7,7 +7,8 @@ class MicroInteractionsShowcase extends StatefulWidget {
   const MicroInteractionsShowcase({Key? key}) : super(key: key);
 
   @override
-  State<MicroInteractionsShowcase> createState() => _MicroInteractionsShowcaseState();
+  State<MicroInteractionsShowcase> createState() =>
+      _MicroInteractionsShowcaseState();
 }
 
 class _MicroInteractionsShowcaseState extends State<MicroInteractionsShowcase> {
@@ -35,27 +36,19 @@ class _MicroInteractionsShowcaseState extends State<MicroInteractionsShowcase> {
             _buildSection('Interactive Scale', [
               _buildScaleExample(),
             ]),
-            
             const SizedBox(height: AppDesignTokens.space6),
-            
             _buildSection('Interactive Buttons', [
               _buildButtonExamples(),
             ]),
-            
             const SizedBox(height: AppDesignTokens.space6),
-            
             _buildSection('Interactive Cards', [
               _buildCardExamples(),
             ]),
-            
             const SizedBox(height: AppDesignTokens.space6),
-            
             _buildSection('Ripple Effects', [
               _buildRippleExamples(),
             ]),
-            
             const SizedBox(height: AppDesignTokens.space6),
-            
             _buildSection('Enhanced Components', [
               _buildEnhancedExamples(),
             ]),
@@ -101,7 +94,8 @@ class _MicroInteractionsShowcaseState extends State<MicroInteractionsShowcase> {
                         Theme.of(context).colorScheme.secondary,
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
+                    borderRadius:
+                        BorderRadius.circular(AppDesignTokens.radiusMd),
                     boxShadow: AppDesignTokens.shadowMedium,
                   ),
                   child: const Center(
@@ -133,7 +127,8 @@ class _MicroInteractionsShowcaseState extends State<MicroInteractionsShowcase> {
                         Colors.red,
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
+                    borderRadius:
+                        BorderRadius.circular(AppDesignTokens.radiusMd),
                     boxShadow: AppDesignTokens.shadowMedium,
                   ),
                   child: const Center(
@@ -305,7 +300,8 @@ class _MicroInteractionsShowcaseState extends State<MicroInteractionsShowcase> {
                   height: 80,
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
+                    borderRadius:
+                        BorderRadius.circular(AppDesignTokens.radiusMd),
                     border: Border.all(color: Colors.blue.shade200),
                   ),
                   child: const Center(
@@ -324,7 +320,8 @@ class _MicroInteractionsShowcaseState extends State<MicroInteractionsShowcase> {
                   height: 80,
                   decoration: BoxDecoration(
                     color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
+                    borderRadius:
+                        BorderRadius.circular(AppDesignTokens.radiusMd),
                     border: Border.all(color: Colors.green.shade200),
                   ),
                   child: const Center(
@@ -394,4 +391,4 @@ class _MicroInteractionsShowcaseState extends State<MicroInteractionsShowcase> {
       ],
     );
   }
-} 
+}

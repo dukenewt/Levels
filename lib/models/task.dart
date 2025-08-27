@@ -67,7 +67,8 @@ class Task {
   final DateTime? completedAt;
   final DateTime? dueDate;
   final DateTime createdAt;
-  final String? recurrencePattern; // 'daily', 'weekly', 'monthly', 'workdays', or null for no recurrence
+  final String?
+      recurrencePattern; // 'daily', 'weekly', 'monthly', 'workdays', or null for no recurrence
   final DateTime? nextOccurrence;
   final String? parentTaskId; // ID of the original recurring task
   final TimeOfDay? scheduledTime; // New field for specific time of day
@@ -153,7 +154,9 @@ class Task {
       'dueDate': dueDate?.toIso8601String(),
       'recurrencePattern': recurrencePattern,
       'parentTaskId': parentTaskId,
-      'scheduledTime': scheduledTime != null ? '${scheduledTime!.hour}:${scheduledTime!.minute}' : null,
+      'scheduledTime': scheduledTime != null
+          ? '${scheduledTime!.hour}:${scheduledTime!.minute}'
+          : null,
       'weeklyDays': weeklyDays,
       'repeatInterval': repeatInterval,
       'endDate': endDate?.toIso8601String(),
@@ -173,27 +176,28 @@ class Task {
       title: json['title'] as String,
       description: json['description'] as String,
       category: json['category'] as String,
-      difficulty: TaskDifficulty.fromString(json['difficulty'] as String? ?? 'medium'),
+      difficulty:
+          TaskDifficulty.fromString(json['difficulty'] as String? ?? 'medium'),
       xpReward: json['xpReward'] as int? ?? 50,
       isCompleted: json['isCompleted'] as bool? ?? false,
-      completedAt: json['completedAt'] != null 
+      completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'] as String)
           : null,
-      dueDate: json['dueDate'] != null 
+      dueDate: json['dueDate'] != null
           ? DateTime.parse(json['dueDate'] as String)
           : null,
       recurrencePattern: json['recurrencePattern'] as String?,
-      nextOccurrence: json['nextOccurrence'] != null 
+      nextOccurrence: json['nextOccurrence'] != null
           ? DateTime.parse(json['nextOccurrence'] as String)
           : null,
       parentTaskId: json['parentTaskId'] as String?,
       scheduledTime: parseTimeOfDay(json['scheduledTime'] as String?),
       weeklyDays: (json['weeklyDays'] as List<dynamic>?)?.cast<int>(),
       repeatInterval: json['repeatInterval'] as int?,
-      endDate: json['endDate'] != null 
+      endDate: json['endDate'] != null
           ? DateTime.parse(json['endDate'] as String)
           : null,
-      createdAt: json['createdAt'] != null 
+      createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : DateTime.now(),
       timeCostMinutes: json['timeCostMinutes'] as int? ?? 10,
@@ -207,7 +211,7 @@ class Task {
 
     DateTime nextDate = dueDate!;
     final baseDate = startDate ?? DateTime.now();
-    
+
     while (nextDate.isBefore(baseDate)) {
       switch (recurrencePattern) {
         case 'daily':
@@ -221,8 +225,8 @@ class Task {
               (day) => day > currentDay,
               orElse: () => weeklyDays!.first,
             );
-            int daysToAdd = nextDay > currentDay 
-                ? nextDay - currentDay 
+            int daysToAdd = nextDay > currentDay
+                ? nextDay - currentDay
                 : 7 - currentDay + nextDay;
             nextDate = nextDate.add(Duration(days: daysToAdd));
           } else {
@@ -231,7 +235,8 @@ class Task {
           break;
         case 'workdays':
           nextDate = nextDate.add(const Duration(days: 1));
-          while (nextDate.weekday == DateTime.saturday || nextDate.weekday == DateTime.sunday) {
+          while (nextDate.weekday == DateTime.saturday ||
+              nextDate.weekday == DateTime.sunday) {
             nextDate = nextDate.add(const Duration(days: 1));
           }
           break;
@@ -284,7 +289,8 @@ class Task {
       // Not recurring, just return the single instance
       return [template];
     }
-    while (current != null && (current.isBefore(endDate) || current.isAtSameMomentAs(endDate))) {
+    while (current != null &&
+        (current.isBefore(endDate) || current.isAtSameMomentAs(endDate))) {
       // Only add if not already completed (for safety)
       instances.add(template.copyWith(
         id: const Uuid().v4(),
@@ -317,7 +323,8 @@ class Task {
         case 'workdays':
           do {
             current = current!.add(const Duration(days: 1));
-          } while (current.weekday == DateTime.saturday || current.weekday == DateTime.sunday);
+          } while (current.weekday == DateTime.saturday ||
+              current.weekday == DateTime.sunday);
           break;
         case 'monthly':
           current = DateTime(
@@ -335,4 +342,4 @@ class Task {
     }
     return instances;
   }
-} 
+}

@@ -5,6 +5,232 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Versioning
+- Renumbering: earlier 1.x entries were internal, unreleased milestones used during TestFlight-only development. The pre-1.0 public series begins at `0.7.0` to reflect ongoing stabilization work. Build numbers will continue to increase monotonically on each platform.
+### Security
+- Added repository hardening: ignore Firebase client configs and environment files; prevent accidental commits via `.gitignore` updates.
+- Introduced Security Check CI workflow (Gitleaks + TruffleHog + forbidden-path guard) running on pushes/PRs and manual dispatch.
+- Documented rotation + history cleanup (git-filter-repo/BFG) and added helper scripts under `scripts/`.
+- Added baseline Firestore security rules (`firestore.rules`) with per-user access and ownership validation.
+- Added `scripts/bootstrap.sh` to generate `lib/firebase_options.dart` locally via FlutterFire (no secrets in git).
+
+### Tooling/Docs
+- SECURITY.md added with setup guide, incident response, App Check guidance, and cleanup playbook.
+- CI workflow triggers widened; TruffleHog action reference corrected; Gitleaks config validated for v8.
+
+
+## [1.5.0] - 2025-08-21
+
+### Fixed - Critical Talent Selection Bug 🔧
+- **🎯 Talent Dialog Now Triggers Correctly**: Fixed critical bug where talent selection dialog would not appear at levels 5, 10, 15, 20, 25
+  - Implemented new `TalentPerkController` with proper state management and change detection
+  - Added `TalentTriggerService` to bridge new architecture with existing UI
+  - Added comprehensive integration testing to verify talent system functionality
+  - Fixed race conditions and timing issues that prevented talent dialog from appearing
+
+### Enhanced - Architecture Foundation 🏗️
+- **🔧 Normalized Effect System**: Introduced unified `Effect` model for consistent perk and talent calculations
+  - Replaced scattered effect logic with single `Effect` class supporting scope, modifier, stacking, and duration
+  - Created `StateDelta` and `UiEvent` objects for clean separation of state changes and UI actions
+  - Implemented pure `PureEffectEngine` for predictable, testable effect evaluation
+  
+- **🎯 Clean State Management**: Separated persistence from effect evaluation with clear boundaries
+  - `TalentPerkController` owns effect evaluation and publishes view state
+  - Refactored `UserProvider` to focus purely on data persistence
+  - Added `CompletionPipeline` service for orchestrated task completion flow
+
+### Technical Improvements
+- **🧪 Integration Testing Framework**: Added comprehensive testing for architectural changes
+  - Real-time testing with actual user data alongside existing system
+  - Feature flag system for safe incremental rollout
+  - Debug widgets showing system status and test results in development mode
+
+- **🔒 Error Handling**: Improved provider lifecycle management and hot reload stability
+  - Fixed `setState()` during build errors
+  - Added safety checks for disposed providers during hot reload
+  - Graceful fallback handling between old and new systems
+
+### Developer Experience
+- **📊 Debug Visibility**: Added debug widgets for monitoring new architecture
+  - Feature flag status display
+  - Integration test results
+  - Talent trigger service monitoring
+  - Effect evaluation status
+
+### Backwards Compatibility
+- **♻️ Zero Breaking Changes**: New architecture runs alongside existing system
+  - Existing talent selection UI preserved and enhanced
+  - All existing functionality continues to work unchanged
+  - Incremental migration path with rollback capability
+
+### Security
+- Hardened `.gitignore` with additional protected patterns (secrets, keys, keystores, local databases, sensitive media)
+- Treated Firebase client configs as sensitive per policy and documented local regeneration via FlutterFire
+
+### Documentation
+- Added Security and Secrets Policy to README, with steps for key rotation and history cleanup
+- Roadmap updated with Talent/Perk stabilization plan and animation architecture direction
+
+### Refactor and Architecture
+- Added `AnimationOrchestrator` to serialize per-entity UI sequences and prevent animation conflicts
+- Introduced `CompletionPipeline` to centralize post-completion flow (streak update, notifications, XP snackbar, breakdown, epic update)
+- Fixed level-up XP threshold loop in `UserProvider.addXp()` (multi-level gains now correct)
+- Unified loot box logic under `IntelligentXPEngine` to avoid duplication
+- Added `StreakService` for consistent streak read/write; removed direct writes from `TaskCompletionService`
+- Added Reduced Motion support via `SettingsProvider.reducedMotion` and respected it in pipeline and Wheel of Time widget
+- Updated `WheelOfTimeProgress` to use design tokens, safe controllers, and Reduced Motion behavior
+- Moved talent dialog invocation to post-frame to avoid navigator timing races
+
+### Improvements
+- Notifications now respect user preferences: immediate completion notifications gated by `enableCompletionCelebrations`
+- Removed deprecated "Smart/Bound Suggestions" perk and references
+- Epic completion now uses an orchestrated dialog (placeholder overlay) instead of only a snackbar
+
+### Known Issues (to be addressed)
+- Notifications currently ignore user preference toggles in `SettingsProvider`
+- Talent dialog and selection flow not triggering as expected after level-up
+- Perk "Smart Suggestions"/"Bound suggestions" must be removed entirely from perks
+- Epic completion celebration is a basic snackbar; needs orchestrated overlay
+
+## [1.4.0] - 2025-08-20
+
+### Added - Epic Project Management System 🚀
+- **🎯 Complete Epic Project Management**: Full implementation of multi-task project collections for Project Management talent users
+  - **Epic Project Provider**: Complete CRUD operations with persistent storage and error handling
+  - **Dynamic Navigation**: Epic Projects tab appears automatically for Project Management talent users
+  - **Epic Creation Dialog**: Beautiful interface for creating epics with task selection and validation
+  - **Progress Tracking**: Visual progress cards with completion tracking and status management
+  - **Epic Completion Celebrations**: Automatic reward reveals and celebration dialogs
+
+- **🎨 Exclusive Theme Rewards**: Epic completion unlocks premium app themes
+  - **Ocean Depths**: Calming blue theme inspired by ocean depths
+  - **Forest Canopy**: Earthy green theme inspired by forest canopies  
+  - **Sunset Glow**: Warm orange theme inspired by golden sunsets
+  - **Automatic Unlock**: Theme rewards automatically unlocked on epic completion
+  - **Theme Integration**: Seamless integration with existing theme provider system
+
+- **📱 Enhanced Profile Display**: Complete talent and perk visualization
+  - **Talent Tree Widget**: Visual representation of user's talent path and choices
+  - **Perk Summary Cards**: Beautiful display of active perks with effect descriptions
+  - **Progress Indicators**: Shows upcoming talent choices and requirements
+  - **Achievement Display**: Showcases completed epics and unlocked rewards
+
+### Enhanced - Task Completion & Integration
+- **⚡ Seamless Epic Integration**: Epic progress updates automatically on task completion
+  - **Real-time Progress**: Epic progress bars update immediately when linked tasks are completed
+  - **Completion Detection**: Automatic epic completion when all required tasks are finished
+  - **Celebration Flow**: Epic completion celebrations trigger after task completion celebrations
+  - **Theme Unlocking**: Epic theme rewards are automatically unlocked and made available
+
+- **🎮 Dynamic User Experience**: Interface adapts based on user progression
+  - **Talent-Based Navigation**: App tabs change based on unlocked talents
+  - **Feature Gating**: Epic difficulty and projects only available to eligible users
+  - **Progressive Disclosure**: Features unlock naturally as users advance
+
+### Technical Implementation
+- **New Core Systems**:
+  - `EpicProvider` - Complete state management for epic projects with error handling
+  - `EpicProjectScreen` - Tabbed interface with Active, Planning, and Completed views
+  - `EpicCreationDialog` - Task selection and epic creation with validation
+  - `EpicProgressCard` - Reusable progress display component
+  - `TalentTreeWidget` - Visual talent progression display
+  - `PerkSummaryCard` - Active perks display with effect descriptions
+
+- **Enhanced Theme System**:
+  - Added 3 new epic reward themes to `ThemeModel`
+  - Enhanced theme provider with epic reward unlocking
+  - Automatic theme availability updates on epic completion
+
+- **Integration Improvements**:
+  - Enhanced task completion flow with epic progress updates
+  - Dynamic navigation system based on user talents
+  - Improved error handling with proper exception types
+  - Fixed compilation issues and missing method implementations
+
+### User Experience
+- **Seamless Workflow**: Epic projects integrate naturally into existing task management flow
+- **Visual Feedback**: Progress indicators, status badges, and completion celebrations
+- **Reward System**: Exclusive themes provide meaningful incentives for epic completion
+- **Progressive Enhancement**: Features unlock naturally as users advance their talents
+
+## [1.3.0] - 2025-08-20
+
+### Added - Comprehensive Perk & Talent System 🌟
+- **🎯 Talent Tree System**: Complete talent specialization with forced choices at levels 5, 10, 15, 20, 25
+  - **Project Management Path**: Unlocks Epic difficulty tasks, multi-task projects, and unique theme rewards
+  - **Smart Categorization Path**: Enables AI-powered task categorization and intelligent keyword analysis
+  - **Forced Choice UI**: Beautiful modal dialog system that prevents dismissal until talent is selected
+  - **Persistent Talent Data**: All choices saved to Firebase with offline support
+
+- **⭐ Enhanced Perk System**: 8 comprehensive perks with real gameplay impact
+  - **Level 3**: Smart Task Suggestions (existing feature enhanced)
+  - **Level 5**: Health Expert (+15% XP for Health category tasks)
+  - **Level 8**: Lucky Charm (+25% loot box bonus chance)
+  - **Level 12**: Streak Guardian (automatic streak freeze on overdue tasks)
+  - **Level 15**: Learning Master (+20% XP for Learning category tasks)
+  - **Level 18**: XP Veteran (+10% XP bonus for all tasks)
+  - **Level 22**: Work Efficiency (+25% XP for Work category tasks)
+  - **Level 25**: Grand Master (+15% all XP + 50% loot box chance)
+
+- **🧠 Natural Language Processing**: Intelligent task analysis for NLP talent holders
+  - **Smart Categorization**: Auto-assigns categories based on 80+ keyword mappings
+  - **Difficulty Suggestions**: Analyzes task titles to suggest appropriate difficulty
+  - **Confidence Scoring**: Shows reliability of AI suggestions to users
+  - **Real-time Integration**: Works seamlessly in task creation dialog
+
+- **🎮 Epic Difficulty System**: Talent-gated maximum difficulty level
+  - **Project Management Exclusive**: Only available to users with Project Management talent
+  - **Enhanced Multiplier**: 2.0x XP multiplier for epic-level tasks
+  - **Future Integration**: Foundation for Epic Project system
+
+### Enhanced - State Management & Integration
+- **🔧 Enhanced UserProvider**: Complete talent and perk management system
+  - **Talent Selection Methods**: Full CRUD operations for talent choices
+  - **Callback System**: Automatic talent choice dialogs and perk unlock notifications
+  - **Utility Methods**: Easy checking of user talents and abilities
+  - **Perk Summary Generation**: Comprehensive overview of active perk effects
+
+- **💪 Enhanced XP Calculation**: Perk effects integrated into core XP system
+  - **Passive Perk Bonuses**: Automatically applied based on user's active perks
+  - **Enhanced Notifications**: Shows perk bonus amounts in completion messages
+  - **Real-time Previews**: Task creation shows expected XP including perk effects
+  - **Detailed Breakdowns**: XP explanations include perk contribution analysis
+
+- **🎨 Enhanced Task Creation Dialog**: Live perk effects display
+  - **Active Perk Section**: Beautiful card showing current perk effects for the selected category
+  - **Smart Categorization Indicator**: Shows when NLP has auto-assigned a category
+  - **Perk Bonus Preview**: Real-time XP calculation including all perk bonuses
+  - **Dynamic Difficulty Options**: Epic difficulty appears only for eligible users
+
+### Technical Implementation
+- **New Data Models**:
+  - `UserTalent` - Comprehensive talent definition and tracking
+  - `EnhancedUserPerk` - Multi-effect perk system with configurable bonuses
+  - `EpicProject` - Foundation for future project management (model only)
+  - `TalentChoice` - Forced choice system with validation
+  - `PerkEffectData` - Flexible perk effect configuration
+
+- **New Services**:
+  - `PerkEffectEngine` - Applies passive perk bonuses to gameplay
+  - `EnhancedXPCalculationService` - Integrates perks with existing XP engine
+  - `TalentManagementService` - Handles talent selection and validation
+  - `TaskAnalyzerService` - NLP keyword analysis for smart categorization
+  - `AppTalentManager` - App-level coordination of talent system
+  - `TalentDialogService` - Manages forced talent selection UI
+
+- **Enhanced UI Components**:
+  - `TalentSelectionDialog` - Beautiful forced choice modal with animations
+  - Enhanced task creation dialog with live perk effects display
+  - Automatic talent choice detection and triggering system
+
+### Integration & Architecture
+- **Firebase Integration**: Automatic persistence of talent and perk data through enhanced User model
+- **Offline Support**: All talent/perk data works offline via existing SecureStorageService
+- **Provider Pattern**: Seamless integration with existing state management
+- **Callback System**: Event-driven talent unlocks and perk notifications
+- **Backwards Compatibility**: All existing features continue to work unchanged
+
 ## [1.2.0] - 2025-08-19
 
 ### Added

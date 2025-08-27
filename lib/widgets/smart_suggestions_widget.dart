@@ -45,9 +45,9 @@ class SmartSuggestionsWidget extends StatelessWidget {
                     Text(
                       'Bound Suggestions',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                     ),
                     const Spacer(),
                     Container(
@@ -56,7 +56,10 @@ class SmartSuggestionsWidget extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -72,10 +75,10 @@ class SmartSuggestionsWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 ...suggestions.map((suggestion) => _buildSuggestionCard(
-                  context,
-                  suggestion,
-                  taskProvider,
-                )),
+                      context,
+                      suggestion,
+                      taskProvider,
+                    )),
               ],
             ),
           ),
@@ -117,16 +120,19 @@ class SmartSuggestionsWidget extends StatelessWidget {
                 Text(
                   suggestion.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   suggestion.reason,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  ),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
+                      ),
                 ),
               ],
             ),
@@ -138,13 +144,15 @@ class SmartSuggestionsWidget extends StatelessWidget {
               Text(
                 '${suggestion.xpReward} XP',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
               ),
               IconButton(
-                icon: Icon(Icons.add_circle, color: Theme.of(context).colorScheme.primary),
-                onPressed: () => _acceptSuggestion(context, suggestion, taskProvider),
+                icon: Icon(Icons.add_circle,
+                    color: Theme.of(context).colorScheme.primary),
+                onPressed: () =>
+                    _acceptSuggestion(context, suggestion, taskProvider),
               ),
             ],
           ),
@@ -176,4 +184,4 @@ class SmartSuggestionsWidget extends StatelessWidget {
       ),
     );
   }
-} 
+}

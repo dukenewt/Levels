@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../lib/services/app_backup_service.dart';
-import '../../lib/models/export_config.dart';
+import 'package:dailyxp/services/app_backup_service.dart';
+import 'package:dailyxp/models/export_config.dart';
 
 void main() {
   setUp(() async {
@@ -17,7 +17,8 @@ void main() {
   });
 
   test('Export filtering excludes test tasks by default', () async {
-    final export = await AppBackupService.exportAllData(config: ExportConfig.backup);
+    final export =
+        await AppBackupService.exportAllData(config: ExportConfig.backup);
     final tasks = export['tasks'] as List;
     // Only the real task should be included
     expect(tasks.length, 1);
@@ -26,7 +27,11 @@ void main() {
 
   test('Export filtering includes test tasks if requested', () async {
     final export = await AppBackupService.exportAllData(
-      config: ExportConfig(includeTestData: true),
+      config: const ExportConfig(
+        includeTestData: true,
+        completedTasksDaysLimit:
+            null, // include all completed tasks regardless of age
+      ),
     );
     final tasks = export['tasks'] as List;
     // Both tasks should be included

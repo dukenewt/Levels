@@ -23,18 +23,17 @@ class LevelUpCelebration extends StatefulWidget {
 
 class _LevelUpCelebrationState extends State<LevelUpCelebration>
     with TickerProviderStateMixin {
-  
   late AnimationController _mainController;
   late AnimationController _confettiController;
   late AnimationController _pulseController;
   late AnimationController _slideController;
-  
+
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _slideAnimation;
   late Animation<double> _pulseAnimation;
   late Animation<Color?> _backgroundAnimation;
-  
+
   final List<_ConfettiParticle> _confetti = [];
   final int _confettiCount = 50;
 
@@ -52,19 +51,19 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    
+
     // Confetti animation
     _confettiController = AnimationController(
       duration: const Duration(milliseconds: 4000),
       vsync: this,
     );
-    
+
     // Pulse animation for the level text
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     // Slide animation for content
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 1200),
@@ -147,7 +146,7 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
     _mainController.forward();
     _confettiController.forward();
     _slideController.forward();
-    
+
     // Start pulse animation after a delay
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
@@ -185,7 +184,7 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenSize = MediaQuery.of(context).size;
-    
+
     return Material(
       color: Colors.transparent,
       child: AnimatedBuilder(
@@ -211,7 +210,7 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                       animationValue: _confettiController.value,
                     ),
                   ),
-                
+
                 // Main celebration content
                 Center(
                   child: Transform.scale(
@@ -256,29 +255,31 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                                   color: Colors.amber,
                                 ),
                               ),
-                              
+
                               const SizedBox(height: 24),
-                              
+
                               // Level Up text with pulse animation
                               Transform.scale(
                                 scale: _pulseAnimation.value,
                                 child: Text(
                                   'LEVEL UP!',
-                                  style: theme.textTheme.headlineLarge?.copyWith(
+                                  style:
+                                      theme.textTheme.headlineLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: theme.colorScheme.primary,
                                     letterSpacing: 2,
                                   ),
                                 ),
                               ),
-                              
+
                               const SizedBox(height: 16),
-                              
+
                               // Level progression
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _buildLevelBadge(widget.celebrationData.oldLevel, false),
+                                  _buildLevelBadge(
+                                      widget.celebrationData.oldLevel, false),
                                   const SizedBox(width: 16),
                                   Icon(
                                     Icons.arrow_forward,
@@ -286,12 +287,13 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                                     size: 32,
                                   ),
                                   const SizedBox(width: 16),
-                                  _buildLevelBadge(widget.celebrationData.newLevel, true),
+                                  _buildLevelBadge(
+                                      widget.celebrationData.newLevel, true),
                                 ],
                               ),
-                              
+
                               const SizedBox(height: 20),
-                              
+
                               // Rank information (if available)
                               if (widget.celebrationData.newRank != null) ...[
                                 Container(
@@ -300,10 +302,12 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: widget.celebrationData.rankColor.withOpacity(0.1),
+                                    color: widget.celebrationData.rankColor
+                                        .withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: widget.celebrationData.rankColor.withOpacity(0.3),
+                                      color: widget.celebrationData.rankColor
+                                          .withOpacity(0.3),
                                     ),
                                   ),
                                   child: Row(
@@ -317,8 +321,10 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                                       const SizedBox(width: 8),
                                       Text(
                                         widget.celebrationData.rankName,
-                                        style: theme.textTheme.titleMedium?.copyWith(
-                                          color: widget.celebrationData.rankColor,
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
+                                          color:
+                                              widget.celebrationData.rankColor,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -327,43 +333,50 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                                 ),
                                 const SizedBox(height: 24),
                               ],
-                              
+
                               // Show unlocked perks if any
                               if (widget.celebrationData.hasUnlockedPerks) ...[
                                 Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer.withOpacity(0.1),
+                                    color: theme.colorScheme.primaryContainer
+                                        .withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: theme.colorScheme.primary.withOpacity(0.2),
+                                      color: theme.colorScheme.primary
+                                          .withOpacity(0.2),
                                     ),
                                   ),
                                   child: Column(
                                     children: [
                                       Text(
                                         'New Perks Unlocked!',
-                                        style: theme.textTheme.titleSmall?.copyWith(
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
                                           color: theme.colorScheme.primary,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-                                      ...widget.celebrationData.unlockedPerks.map(
+                                      ...widget.celebrationData.unlockedPerks
+                                          .map(
                                         (perk) => Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 2),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
                                                 Icons.fiber_new,
                                                 size: 16,
-                                                color: theme.colorScheme.primary,
+                                                color:
+                                                    theme.colorScheme.primary,
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
                                                 perk,
-                                                style: theme.textTheme.bodyMedium,
+                                                style:
+                                                    theme.textTheme.bodyMedium,
                                               ),
                                             ],
                                           ),
@@ -374,7 +387,7 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                                 ),
                                 const SizedBox(height: 24),
                               ],
-                              
+
                               // Continue button
                               ElevatedButton(
                                 onPressed: _dismiss,
@@ -419,13 +432,15 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isNew ? theme.colorScheme.primary : Colors.grey,
-        boxShadow: isNew ? [
-          BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.5),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ] : null,
+        boxShadow: isNew
+            ? [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.5),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ]
+            : null,
       ),
       child: Center(
         child: Text(
@@ -464,7 +479,7 @@ class _ConfettiParticle {
     y += vy;
     vy += 0.0008; // Gravity
     rotation += rotationSpeed;
-    
+
     // Wind effect
     vx += (math.Random().nextDouble() - 0.5) * 0.0001;
   }
@@ -484,17 +499,18 @@ class _ConfettiPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (final particle in confetti) {
       particle.update();
-      
-      if (particle.y < 1.2) { // Only draw if still on screen
+
+      if (particle.y < 1.2) {
+        // Only draw if still on screen
         final paint = Paint()..color = particle.color;
-        
+
         canvas.save();
         canvas.translate(
           particle.x * size.width,
           particle.y * size.height,
         );
         canvas.rotate(particle.rotation);
-        
+
         // Draw confetti as small rectangles
         canvas.drawRRect(
           RRect.fromRectAndRadius(
@@ -507,7 +523,7 @@ class _ConfettiPainter extends CustomPainter {
           ),
           paint,
         );
-        
+
         canvas.restore();
       }
     }
@@ -517,4 +533,4 @@ class _ConfettiPainter extends CustomPainter {
   bool shouldRepaint(covariant _ConfettiPainter oldDelegate) {
     return oldDelegate.animationValue != animationValue;
   }
-} 
+}

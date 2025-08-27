@@ -11,16 +11,19 @@ import '../models/task.dart';
 class TaskNotificationService {
   static final TaskNotificationService _instance = TaskNotificationService._();
   static TaskNotificationService get instance => _instance;
-  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   TaskNotificationService._();
 
   /// Initialize the notification service
   Future<void> initialize() async {
     tz.initializeTimeZones();
-    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const DarwinInitializationSettings iOSSettings = DarwinInitializationSettings(
+    const DarwinInitializationSettings iOSSettings =
+        DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
@@ -107,7 +110,7 @@ class TaskNotificationService {
     String? payload,
   }) async {
     final scheduledDate = tz.TZDateTime.from(scheduledTime, tz.local);
-    
+
     const androidDetails = AndroidNotificationDetails(
       'task_reminders',
       'Task Reminders',
