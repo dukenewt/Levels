@@ -33,12 +33,12 @@ class GradientContainer extends StatelessWidget {
       margin: margin,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
-        gradient: useFullGradient 
+        gradient: useFullGradient
             ? LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: theme.gradientColors,
-                stops: theme.gradientColors.length == 3 
+                stops: theme.gradientColors.length == 3
                     ? const [0.0, 0.5, 1.0]
                     : const [0.0, 1.0],
               )
@@ -161,7 +161,8 @@ class _GradientProgressBarState extends State<GradientProgressBar>
                 AnimatedBuilder(
                   animation: _animation,
                   builder: (context, child) {
-                    final animatedValue = (_animation.value * widget.currentValue!).round();
+                    final animatedValue =
+                        (_animation.value * widget.currentValue!).round();
                     return Text(
                       '$animatedValue / ${widget.maxValue}',
                       style: TextStyle(
@@ -248,16 +249,16 @@ class GradientTaskCard extends StatelessWidget {
     Color getDifficultyColor() {
       switch (difficulty) {
         case TaskDifficulty.easy:
-          return theme.gradientColors.length > 2 
-              ? theme.gradientColors[2] 
+          return theme.gradientColors.length > 2
+              ? theme.gradientColors[2]
               : theme.gradientColors.last; // Usually the lighter color
         case TaskDifficulty.medium:
           return theme.primaryColor;
         case TaskDifficulty.hard:
           return theme.gradientColors.first;
         case TaskDifficulty.epic:
-          return theme.gradientColors.length > 2 
-              ? theme.gradientColors[1] 
+          return theme.gradientColors.length > 2
+              ? theme.gradientColors[1]
               : theme.primaryColor;
       }
     }
@@ -269,7 +270,7 @@ class GradientTaskCard extends StatelessWidget {
         color: theme.surfaceColor,
         boxShadow: [
           BoxShadow(
-            color: isCompleted 
+            color: isCompleted
                 ? Colors.green.withOpacity(0.1)
                 : getDifficultyColor().withOpacity(0.1),
             blurRadius: 8,
@@ -277,7 +278,7 @@ class GradientTaskCard extends StatelessWidget {
           ),
         ],
         border: Border.all(
-          color: isCompleted 
+          color: isCompleted
               ? Colors.green.withOpacity(0.3)
               : getDifficultyColor().withOpacity(0.2),
           width: 1,
@@ -405,7 +406,8 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
             color: theme.textColor,
           ),
         ),
-        backgroundColor: useGradient ? Colors.transparent : theme.backgroundColor,
+        backgroundColor:
+            useGradient ? Colors.transparent : theme.backgroundColor,
         elevation: 0,
         actions: actions,
         iconTheme: IconThemeData(color: theme.textColor),
@@ -415,4 +417,4 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-} 
+}

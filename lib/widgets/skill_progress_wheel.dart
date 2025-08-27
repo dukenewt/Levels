@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -52,7 +51,8 @@ class SkillProgressWheelPainter extends CustomPainter {
     _drawProgressRing(canvas, center, radius, ringWidth, progress, color);
   }
 
-  void _drawBackgroundRing(Canvas canvas, Offset center, double radius, double strokeWidth) {
+  void _drawBackgroundRing(
+      Canvas canvas, Offset center, double radius, double strokeWidth) {
     final paint = Paint()
       ..color = backgroundColor.withOpacity(0.3)
       ..style = PaintingStyle.stroke
@@ -62,7 +62,8 @@ class SkillProgressWheelPainter extends CustomPainter {
     canvas.drawCircle(center, radius, paint);
   }
 
-  void _drawProgressRing(Canvas canvas, Offset center, double radius, double strokeWidth, double progress, Color color) {
+  void _drawProgressRing(Canvas canvas, Offset center, double radius,
+      double strokeWidth, double progress, Color color) {
     if (progress <= 0) return;
 
     const startAngle = -math.pi / 2; // Start from top

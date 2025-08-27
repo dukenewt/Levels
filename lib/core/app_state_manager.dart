@@ -7,19 +7,19 @@ class AppStateManager extends ChangeNotifier {
   bool _isInitialized = false;
   bool _isOffline = false;
   final Map<String, dynamic> _sharedState = {};
-  
+
   // Getters
   bool get isInitialized => _isInitialized;
   bool get isOffline => _isOffline;
-  
+
   // Central method to update shared state
   void updateSharedState(String key, dynamic value) {
     _sharedState[key] = value;
     notifyListeners();
   }
-  
+
   T? getSharedState<T>(String key) => _sharedState[key] as T?;
-  
+
   // Initialize core app state
   Future<void> initialize() async {
     try {
@@ -31,7 +31,7 @@ class AppStateManager extends ChangeNotifier {
       rethrow;
     }
   }
-  
+
   void setOfflineMode(bool offline) {
     _isOffline = offline;
     notifyListeners();

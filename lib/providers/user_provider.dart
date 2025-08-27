@@ -9,7 +9,7 @@ class UserProvider with ChangeNotifier {
   final FirestoreService _firestoreService;
   app_user.User? _user;
   Function(int oldLevel, int newLevel)? onLevelUp;
-  
+
   app_user.User? get user => _user;
 
   int get nextLevelXp {
@@ -21,7 +21,8 @@ class UserProvider with ChangeNotifier {
     return _user?.perks.contains(perk) ?? false;
   }
 
-  void updateDependencies(AuthService authService, FirestoreService firestoreService) {
+  void updateDependencies(
+      AuthService authService, FirestoreService firestoreService) {
     // This is a bit of a hack to make this work with the proxy provider
     // but since the services are singletons it's fine.
   }
@@ -60,9 +61,10 @@ class UserProvider with ChangeNotifier {
         newLevel++;
         leveledUp = true;
       }
-      
-      List<String> newPerks = _getPerksUnlockedBetweenLevels(oldLevel, newLevel);
-      
+
+      List<String> newPerks =
+          _getPerksUnlockedBetweenLevels(oldLevel, newLevel);
+
       final updatedUser = _user!.copyWith(
         currentXp: newXp,
         level: newLevel,
@@ -70,11 +72,11 @@ class UserProvider with ChangeNotifier {
       );
       await _firestoreService.setUser(updatedUser);
       _user = updatedUser;
-      
+
       if (leveledUp && onLevelUp != null) {
         onLevelUp!(_user!.level, newLevel);
       }
-      
+
       notifyListeners();
     }
   }
@@ -82,7 +84,7 @@ class UserProvider with ChangeNotifier {
   List<String> _getPerksUnlockedBetweenLevels(int oldLevel, int newLevel) {
     // Define perks unlocked at specific levels
     final perks = <String>[];
-    
+
     for (int level = oldLevel + 1; level <= newLevel; level++) {
       switch (level) {
         case 5:
@@ -109,7 +111,7 @@ class UserProvider with ChangeNotifier {
           }
       }
     }
-    
+
     return perks;
   }
 
@@ -121,4 +123,4 @@ class UserProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-} 
+}

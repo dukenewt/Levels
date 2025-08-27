@@ -41,12 +41,12 @@ class _XPRewardSnackbarState extends State<XPRewardSnackbar>
   @override
   void initState() {
     super.initState();
-    
+
     _mainController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _xpController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -141,7 +141,7 @@ class _XPRewardSnackbarState extends State<XPRewardSnackbar>
                     ),
                   ),
                   const SizedBox(width: 16),
-                  
+
                   // Content
                   Expanded(
                     child: Column(
@@ -153,7 +153,7 @@ class _XPRewardSnackbarState extends State<XPRewardSnackbar>
                       ],
                     ),
                   ),
-                  
+
                   // Animated XP counter
                   Column(
                     mainAxisSize: MainAxisSize.min,
@@ -227,4 +227,4 @@ class _XPRewardSnackbarState extends State<XPRewardSnackbar>
       ],
     );
   }
-} 
+}

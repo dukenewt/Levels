@@ -15,7 +15,9 @@ class RankProgressCard extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        final currentRank = UserRank.ranks.firstWhere((r) => r.name == user.rank, orElse: () => UserRank.ranks.first);
+        final currentRank = UserRank.ranks.firstWhere(
+            (r) => r.name == user.rank,
+            orElse: () => UserRank.ranks.first);
         final nextRank = UserRank.getNextRank(user.level);
         final theme = Theme.of(context);
 
@@ -92,4 +94,4 @@ class RankProgressCard extends StatelessWidget {
       },
     );
   }
-} 
+}

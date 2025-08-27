@@ -19,7 +19,8 @@ class SmartSuggestionsService {
     final categoryFrequency = <String, int>{};
     final timePatterns = <int, int>{};
     for (final task in tasks.where((t) => t.isCompleted)) {
-      categoryFrequency[task.category] = (categoryFrequency[task.category] ?? 0) + 1;
+      categoryFrequency[task.category] =
+          (categoryFrequency[task.category] ?? 0) + 1;
       if (task.completedAt != null) {
         final hour = task.completedAt!.hour;
         timePatterns[hour] = (timePatterns[hour] ?? 0) + 1;
@@ -88,4 +89,4 @@ class TaskSuggestion {
     required this.reason,
     required this.xpReward,
   });
-} 
+}

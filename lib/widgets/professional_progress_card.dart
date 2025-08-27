@@ -21,7 +21,8 @@ class ProfessionalProgressCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ProfessionalProgressCard> createState() => _ProfessionalProgressCardState();
+  State<ProfessionalProgressCard> createState() =>
+      _ProfessionalProgressCardState();
 }
 
 class _ProfessionalProgressCardState extends State<ProfessionalProgressCard>
@@ -53,10 +54,12 @@ class _ProfessionalProgressCardState extends State<ProfessionalProgressCard>
   @override
   void didUpdateWidget(covariant ProfessionalProgressCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.currentValue != oldWidget.currentValue || widget.maxValue != oldWidget.maxValue) {
+    if (widget.currentValue != oldWidget.currentValue ||
+        widget.maxValue != oldWidget.maxValue) {
       // Recalculate the progress and update the animation
-      final double newEndValue = widget.maxValue > 0 ? widget.currentValue / widget.maxValue : 0.0;
-      
+      final double newEndValue =
+          widget.maxValue > 0 ? widget.currentValue / widget.maxValue : 0.0;
+
       _progressAnimation = Tween<double>(
         begin: _progressAnimation.value, // Start from the current progress
         end: newEndValue,
@@ -80,7 +83,8 @@ class _ProfessionalProgressCardState extends State<ProfessionalProgressCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+    final isDesktop =
+        Platform.isMacOS || Platform.isWindows || Platform.isLinux;
     return Semantics(
       label: widget.title,
       value: '${widget.currentValue} of ${widget.maxValue}',
@@ -145,7 +149,8 @@ class _ProfessionalProgressCardState extends State<ProfessionalProgressCard>
                     ),
                     decoration: BoxDecoration(
                       color: widget.color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
+                      borderRadius:
+                          BorderRadius.circular(AppDesignTokens.radiusMd),
                     ),
                     child: Text(
                       '${widget.currentValue}/${widget.maxValue}',
@@ -203,4 +208,4 @@ class _ProfessionalProgressCardState extends State<ProfessionalProgressCard>
       ),
     );
   }
-} 
+}

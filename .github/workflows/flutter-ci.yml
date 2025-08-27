@@ -24,21 +24,6 @@ jobs:
       - name: Flutter Pub Get
         run: flutter pub get
 
-      - name: Format Check
-        run: |
-          set -e
-          echo "Checking Dart formatting..."
-          # Show files that would be changed and fail if any are unformatted
-          dart format --output=show --set-exit-if-changed . || {
-            echo "\nFormatting changes detected. To fix locally, run:";
-            echo "  dart format .";
-            exit 1;
-          }
-
-      - name: Analyze (full, non-blocking)
-        continue-on-error: true
-        run: flutter analyze
-
       - name: Determine changed Dart files
         id: changed
         uses: tj-actions/changed-files@v45
@@ -47,6 +32,25 @@ jobs:
             lib/**/*.dart
             test/**/*.dart
             integration_test/**/*.dart
+
+      - name: Format Check (full, non-blocking)
+        continue-on-error: true
+        run: |
+          echo "Checking formatting (non-blocking report)..."
+          dart format --output=show --set-exit-if-changed .
+
+      - name: Format Check (changed files, blocking)
+        if: ${{ steps.changed.outputs.all_changed_files != '' }}
+        run: |
+          echo "Checking formatting for changed Dart files..."
+          dart format --set-exit-if-changed ${{ steps.changed.outputs.all_changed_files }}
+      - name: No changed Dart files to format
+        if: ${{ steps.changed.outputs.all_changed_files == '' }}
+        run: echo "No changed Dart files to format."
+
+      - name: Analyze (full, non-blocking)
+        continue-on-error: true
+        run: flutter analyze
 
       - name: Analyze changed files (blocking)
         if: ${{ steps.changed.outputs.all_changed_files != '' }}

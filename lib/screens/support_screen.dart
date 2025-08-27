@@ -34,7 +34,10 @@ class SupportScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -46,9 +49,10 @@ class SupportScreen extends StatelessWidget {
                         const SizedBox(width: 12),
                         Text(
                           'Send Feedback',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                       ],
                     ),
@@ -56,8 +60,8 @@ class SupportScreen extends StatelessWidget {
                     Text(
                       'Help us improve TaskBound by sharing your thoughts, suggestions, or reporting issues.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                            color: Colors.grey[600],
+                          ),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -68,7 +72,8 @@ class SupportScreen extends StatelessWidget {
                         label: const Text('Send Feedback'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -87,8 +92,8 @@ class SupportScreen extends StatelessWidget {
             Text(
               'Frequently Asked Questions',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
             _buildFAQSection(context),
@@ -99,8 +104,8 @@ class SupportScreen extends StatelessWidget {
             Text(
               'Contact Us',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
             _buildContactSection(context),
@@ -119,19 +124,23 @@ class SupportScreen extends StatelessWidget {
     final faqs = [
       {
         'question': 'How does the XP system work?',
-        'answer': 'You earn XP by completing tasks. Different difficulty levels give different amounts of XP. Easy tasks give 25 XP, Medium tasks give 50 XP, Hard tasks give 100 XP, and Epic tasks give 200 XP.'
+        'answer':
+            'You earn XP by completing tasks. Different difficulty levels give different amounts of XP. Easy tasks give 25 XP, Medium tasks give 50 XP, Hard tasks give 100 XP, and Epic tasks give 200 XP.'
       },
       {
         'question': 'What are task notifications?',
-        'answer': 'Task notifications remind you about scheduled tasks and help you stay on track with your goals. You can customize which notifications you receive in your notification settings.'
+        'answer':
+            'Task notifications remind you about scheduled tasks and help you stay on track with your goals. You can customize which notifications you receive in your notification settings.'
       },
       {
         'question': 'How do I create recurring tasks?',
-        'answer': 'When creating a task, select a recurrence pattern like Daily, Weekly, or Workdays. The app will automatically create future instances of your task.'
+        'answer':
+            'When creating a task, select a recurrence pattern like Daily, Weekly, or Workdays. The app will automatically create future instances of your task.'
       },
       {
         'question': 'Can I backup my data?',
-        'answer': 'Yes! Go to Settings > Backup & Restore to export your tasks and progress. This helps you keep your data safe and transfer it between devices.'
+        'answer':
+            'Yes! Go to Settings > Backup & Restore to export your tasks and progress. This helps you keep your data safe and transfer it between devices.'
       },
     ];
 
@@ -141,11 +150,13 @@ class SupportScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        children: faqs.map((faq) => _buildFAQItem(
-          context,
-          faq['question']!,
-          faq['answer']!,
-        )).toList(),
+        children: faqs
+            .map((faq) => _buildFAQItem(
+                  context,
+                  faq['question']!,
+                  faq['answer']!,
+                ))
+            .toList(),
       ),
     );
   }
@@ -155,8 +166,8 @@ class SupportScreen extends StatelessWidget {
       title: Text(
         question,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+              fontWeight: FontWeight.w600,
+            ),
       ),
       children: [
         Padding(
@@ -164,8 +175,8 @@ class SupportScreen extends StatelessWidget {
           child: Text(
             answer,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[600],
-            ),
+                  color: Colors.grey[600],
+                ),
           ),
         ),
       ],
@@ -228,22 +239,22 @@ class SupportScreen extends StatelessWidget {
             Text(
               'TaskBound',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'Version 1.0.1',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 12),
             Text(
               'A gamified task management app that helps you level up your productivity through XP rewards and achievement systems.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
           ],
         ),
@@ -274,14 +285,22 @@ class SupportScreen extends StatelessWidget {
                       value: feedbackType,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
-                      items: ['General', 'Bug Report', 'Feature Request', 'UI/UX Feedback']
+                      items: [
+                        'General',
+                        'Bug Report',
+                        'Feature Request',
+                        'UI/UX Feedback'
+                      ]
                           .map((type) => DropdownMenuItem(
-                        value: type,
-                        child: Text(type),
-                      )).toList(),
-                      onChanged: (value) => setState(() => feedbackType = value!),
+                                value: type,
+                                child: Text(type),
+                              ))
+                          .toList(),
+                      onChanged: (value) =>
+                          setState(() => feedbackType = value!),
                     ),
                     const SizedBox(height: 16),
                     const Text('Your Email (Optional)'),
@@ -291,7 +310,8 @@ class SupportScreen extends StatelessWidget {
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         hintText: 'your.email@example.com',
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -338,10 +358,11 @@ class SupportScreen extends StatelessWidget {
     );
   }
 
-  void _submitFeedback(BuildContext context, String type, String email, String feedback) {
+  void _submitFeedback(
+      BuildContext context, String type, String email, String feedback) {
     // In a real app, you would send this to your backend or email service
     // For now, we'll copy it to clipboard and show a success message
-    
+
     final feedbackText = '''
 Feedback Type: $type
 Email: ${email.isEmpty ? 'Not provided' : email}
@@ -349,7 +370,7 @@ Feedback: $feedback
 ''';
 
     Clipboard.setData(ClipboardData(text: feedbackText));
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Row(
@@ -357,7 +378,8 @@ Feedback: $feedback
             Icon(Icons.check_circle, color: Colors.white),
             SizedBox(width: 8),
             Expanded(
-              child: Text('Thank you for your feedback! We\'ll review it soon.'),
+              child:
+                  Text('Thank you for your feedback! We\'ll review it soon.'),
             ),
           ],
         ),
@@ -377,7 +399,7 @@ Feedback: $feedback
       path: 'support@taskbound.app',
       query: 'subject=Daily XP Support Request',
     );
-    
+
     if (await canLaunchUrl(emailUri)) {
       await launchUrl(emailUri);
     }
@@ -385,9 +407,9 @@ Feedback: $feedback
 
   void _launchWebsite() async {
     final Uri websiteUri = Uri.parse('https://taskbound.app');
-    
+
     if (await canLaunchUrl(websiteUri)) {
       await launchUrl(websiteUri);
     }
   }
-} 
+}

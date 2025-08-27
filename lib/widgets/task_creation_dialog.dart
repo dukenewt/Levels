@@ -19,7 +19,8 @@ class EnhancedTaskCreationDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<EnhancedTaskCreationDialog> createState() => _EnhancedTaskCreationDialogState();
+  State<EnhancedTaskCreationDialog> createState() =>
+      _EnhancedTaskCreationDialogState();
 }
 
 class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
@@ -27,7 +28,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  
+
   // Task properties
   TaskDifficulty _difficulty = TaskDifficulty.medium;
   String _category = 'Work';
@@ -37,24 +38,33 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   RecurrenceSettings _recurrenceSettings = const RecurrenceSettings();
   int _timeInvestmentMinutes = 30;
   bool _showTimePicker = false;
-  
+
   // Animation controllers
   late AnimationController _slideController;
   late AnimationController _xpAnimationController;
-  
+
   // Animations
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _xpScaleAnimation;
-  
+
   final FocusNode _titleFocusNode = FocusNode();
 
   final List<String> _recurrenceOptions = [
-    'None', 'Daily', 'Weekly', 'Workdays', 'Monthly'
+    'None',
+    'Daily',
+    'Weekly',
+    'Workdays',
+    'Monthly'
   ];
 
   final List<String> _categoryOptions = [
-    'Work', 'Learning', 'Health', 'Social', 'Creativity', 'Maintenance'
+    'Work',
+    'Learning',
+    'Health',
+    'Social',
+    'Creativity',
+    'Maintenance'
   ];
 
   final Map<String, IconData> _categoryIcons = {
@@ -71,10 +81,10 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
     super.initState();
     _dueDate = widget.initialDate ?? DateTime.now();
     _scheduledTime = widget.initialTime;
-    
+
     _setupAnimations();
     _updateEstimatedXp();
-    
+
     // Auto-focus title field after animation
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
@@ -88,12 +98,12 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _xpAnimationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
@@ -101,7 +111,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -109,7 +119,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       parent: _slideController,
       curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
     ));
-    
+
     _xpScaleAnimation = Tween<double>(
       begin: 0.8,
       end: 1.0,
@@ -117,7 +127,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       parent: _xpAnimationController,
       curve: Curves.elasticOut,
     ));
-    
+
     _slideController.forward();
   }
 
@@ -130,7 +140,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       difficulty: _difficulty,
       timeCostMinutes: _timeInvestmentMinutes,
     );
-    
+
     final newXp = IntelligentXPEngine().calculateBaseXP(tempTask);
     if (newXp != _estimatedXp) {
       setState(() {
@@ -154,19 +164,19 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         xpReward: _estimatedXp,
         dueDate: _dueDate,
         scheduledTime: _showTimePicker ? _scheduledTime : null,
-        recurrencePattern: _recurrenceSettings.type == RecurrenceType.none 
-            ? null 
+        recurrencePattern: _recurrenceSettings.type == RecurrenceType.none
+            ? null
             : _recurrenceSettings.type.name,
-        weeklyDays: _recurrenceSettings.weeklyDays.isEmpty 
-            ? null 
+        weeklyDays: _recurrenceSettings.weeklyDays.isEmpty
+            ? null
             : _recurrenceSettings.weeklyDays,
-        repeatInterval: _recurrenceSettings.interval == 1 
-            ? null 
+        repeatInterval: _recurrenceSettings.interval == 1
+            ? null
             : _recurrenceSettings.interval,
         endDate: _recurrenceSettings.endDate,
         timeCostMinutes: _timeInvestmentMinutes,
       );
-      
+
       taskProvider.createTask(context, task);
       Navigator.of(context).pop();
     }
@@ -175,7 +185,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
@@ -285,7 +295,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
               return Transform.scale(
                 scale: _xpScaleAnimation.value,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
@@ -341,7 +352,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         decoration: InputDecoration(
           labelText: 'Task Title',
           hintText: 'What do you want to accomplish?',
-          prefixIcon: Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
+          prefixIcon:
+              Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -379,7 +391,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         decoration: InputDecoration(
           labelText: 'Description (Optional)',
           hintText: 'Add more details...',
-          prefixIcon: Icon(Icons.notes_outlined, color: theme.colorScheme.primary),
+          prefixIcon:
+              Icon(Icons.notes_outlined, color: theme.colorScheme.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -694,7 +707,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
             decoration: InputDecoration(
               prefixIcon: Icon(
                 Icons.trending_up,
-                color: difficultyColors[_difficulty] ?? theme.colorScheme.primary,
+                color:
+                    difficultyColors[_difficulty] ?? theme.colorScheme.primary,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -776,8 +790,10 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: 6,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 12),
+                  overlayShape:
+                      const RoundSliderOverlayShape(overlayRadius: 20),
                 ),
                 child: Slider(
                   value: _timeInvestmentMinutes.toDouble(),
@@ -882,7 +898,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
         baseDate: _dueDate,
       ),
     );
-    
+
     if (result != null) {
       setState(() {
         _recurrenceSettings = result;

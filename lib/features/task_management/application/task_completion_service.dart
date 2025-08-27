@@ -28,7 +28,8 @@ class TaskCompletionService {
 
   static const String _streakKey = 'task_streaks';
 
-  Future<Result<TaskCompletionResult>> completeTask(Task task, {bool isEnhanced = false}) async {
+  Future<Result<TaskCompletionResult>> completeTask(Task task,
+      {bool isEnhanced = false}) async {
     if (task.isCompleted) {
       return Result.failure(ValidationException('Task already completed'));
     }
@@ -107,7 +108,7 @@ class TaskCompletionService {
   Future<void> _updateStreak(Task task, DateTime completionTime) async {
     final prefs = await SharedPreferences.getInstance();
     final streakData = prefs.getString(_streakKey);
-    
+
     Map<String, dynamic> streaks = {};
     if (streakData != null) {
       try {
@@ -117,10 +118,10 @@ class TaskCompletionService {
         streaks = {};
       }
     }
-    
+
     final taskKey = _getTaskStreakKey(task);
     final existingStreak = streaks[taskKey];
-    
+
     if (existingStreak == null) {
       // First completion
       streaks[taskKey] = {
@@ -130,7 +131,7 @@ class TaskCompletionService {
     } else {
       final lastCompletion = DateTime.parse(existingStreak['lastCompletion']);
       final currentCount = existingStreak['count'] as int;
-      
+
       if (_isStreakValid(task, lastCompletion)) {
         // Continue streak
         streaks[taskKey] = {
@@ -145,7 +146,7 @@ class TaskCompletionService {
         };
       }
     }
-    
+
     await prefs.setString(_streakKey, json.encode(streaks));
   }
 
@@ -155,7 +156,7 @@ class TaskCompletionService {
     if (task.recurrencePattern != null) {
       return '${task.parentTaskId ?? task.id}_${task.recurrencePattern}';
     }
-    
+
     // For regular tasks, use category + title (similar tasks)
     return '${task.category}_${task.title.toLowerCase().replaceAll(' ', '_')}';
   }
@@ -164,7 +165,7 @@ class TaskCompletionService {
   bool _isStreakValid(Task task, DateTime lastCompletion) {
     final now = DateTime.now();
     final daysSinceLastCompletion = now.difference(lastCompletion).inDays;
-    
+
     // For recurring tasks, check based on recurrence pattern
     if (task.recurrencePattern != null) {
       switch (task.recurrencePattern) {
@@ -179,14 +180,14 @@ class TaskCompletionService {
           return daysSinceLastCompletion <= 1;
       }
     }
-    
+
     // For non-recurring tasks, assume daily habits if they're health/fitness
-    if (task.category.toLowerCase().contains('health') || 
+    if (task.category.toLowerCase().contains('health') ||
         task.category.toLowerCase().contains('fitness')) {
       return daysSinceLastCompletion <= 1;
     }
-    
+
     // Default: allow up to 2 days gap
     return daysSinceLastCompletion <= 2;
   }
-} 
+}

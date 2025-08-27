@@ -3,7 +3,6 @@ import 'package:dailyxp/widgets/skill_progress_wheel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-
 import '../providers/task_provider.dart';
 import '../models/task.dart';
 
@@ -20,10 +19,12 @@ class StatsScreen extends StatelessWidget {
     final tasksCompleted = completedTasks.length;
     final currentStreak = _calculateCurrentStreak(completedTasks);
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Your Stats', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+        title: Text('Your Stats',
+            style: theme.textTheme.headlineMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
       ),
@@ -65,7 +66,7 @@ class StatsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppDesignTokens.space6),
-            
+
             // Streaks and Consistency Section
             Text(
               'Streaks & Consistency',
@@ -107,16 +108,12 @@ class StatsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
-            
-            
-            
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildEnhancedStatCard(
     BuildContext context,
     String title,
@@ -125,7 +122,7 @@ class StatsScreen extends StatelessWidget {
     Color color,
   ) {
     final theme = Theme.of(context);
-    
+
     return EnhancedCard(
       shadowLevel: CardShadowLevel.medium,
       accentColor: color,
@@ -140,8 +137,8 @@ class StatsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppDesignTokens.radiusLg),
             ),
             child: Icon(
-              icon, 
-              size: 32, 
+              icon,
+              size: 32,
               color: color,
             ),
           ),
@@ -170,7 +167,8 @@ class StatsScreen extends StatelessWidget {
   int _calculateCurrentStreak(List<Task> completedTasks) {
     if (completedTasks.isEmpty) return 0;
     final dates = completedTasks
-        .map((t) => DateTime(t.completedAt!.year, t.completedAt!.month, t.completedAt!.day))
+        .map((t) => DateTime(
+            t.completedAt!.year, t.completedAt!.month, t.completedAt!.day))
         .toSet()
         .toList()
       ..sort();
@@ -222,8 +220,6 @@ class _SkillProgressIndicator extends StatelessWidget {
   }
 }
 
-
-
 class _StreaksAndConsistencySection extends StatelessWidget {
   const _StreaksAndConsistencySection();
 
@@ -231,7 +227,8 @@ class _StreaksAndConsistencySection extends StatelessWidget {
     final map = <DateTime, int>{};
     for (final task in tasks) {
       if (task.isCompleted && task.completedAt != null) {
-        final date = DateTime(task.completedAt!.year, task.completedAt!.month, task.completedAt!.day);
+        final date = DateTime(task.completedAt!.year, task.completedAt!.month,
+            task.completedAt!.day);
         map[date] = (map[date] ?? 0) + 1;
       }
     }
@@ -249,8 +246,8 @@ class _StreaksAndConsistencySection extends StatelessWidget {
         child: Text(
           'No completions yet.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-          ),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
         ),
       );
     }
@@ -261,7 +258,9 @@ class _StreaksAndConsistencySection extends StatelessWidget {
     int longestStreak = 0;
     int daysMissed = 0;
     int streak = 0;
-    for (DateTime d = firstDate; !d.isAfter(lastDate); d = d.add(const Duration(days: 1))) {
+    for (DateTime d = firstDate;
+        !d.isAfter(lastDate);
+        d = d.add(const Duration(days: 1))) {
       if (completionMap.containsKey(d)) {
         streak++;
         if (d.isAtSameMomentAs(lastDate)) {
@@ -282,9 +281,12 @@ class _StreaksAndConsistencySection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildStreakStat('Current Streak', currentStreak, Icons.local_fire_department_rounded, Colors.orange, context),
-              _buildStreakStat('Longest Streak', longestStreak, Icons.emoji_events_rounded, Colors.amber, context),
-              _buildStreakStat('Days Missed', daysMissed, Icons.cancel_rounded, Colors.red, context),
+              _buildStreakStat('Current Streak', currentStreak,
+                  Icons.local_fire_department_rounded, Colors.orange, context),
+              _buildStreakStat('Longest Streak', longestStreak,
+                  Icons.emoji_events_rounded, Colors.amber, context),
+              _buildStreakStat('Days Missed', daysMissed, Icons.cancel_rounded,
+                  Colors.red, context),
             ],
           ),
           const SizedBox(height: AppDesignTokens.space4),
@@ -292,14 +294,18 @@ class _StreaksAndConsistencySection extends StatelessWidget {
             height: 80,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+              color:
+                  Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
               borderRadius: BorderRadius.circular(AppDesignTokens.radiusMd),
             ),
             child: Text(
-              'Calendar heatmap coming soon!', 
+              'Calendar heatmap coming soon!',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-              ),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.5),
+                  ),
             ),
           ),
         ],
@@ -307,7 +313,8 @@ class _StreaksAndConsistencySection extends StatelessWidget {
     );
   }
 
-  Widget _buildStreakStat(String label, int value, IconData icon, Color color, BuildContext context) {
+  Widget _buildStreakStat(String label, int value, IconData icon, Color color,
+      BuildContext context) {
     final theme = Theme.of(context);
     return Column(
       children: [
@@ -323,7 +330,7 @@ class _StreaksAndConsistencySection extends StatelessWidget {
         Text(
           value.toString(),
           style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold, 
+            fontWeight: FontWeight.bold,
             color: color,
           ),
         ),

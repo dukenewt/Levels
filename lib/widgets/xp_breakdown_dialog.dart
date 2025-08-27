@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../features/character_progression/application/intelligent_xp_engine.dart';
@@ -20,7 +19,8 @@ class XpBreakdownDialog extends StatefulWidget {
     required Task task,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final bool shouldShowDialog = prefs.getBool('showXpBreakdownDialog') ?? true;
+    final bool shouldShowDialog =
+        prefs.getBool('showXpBreakdownDialog') ?? true;
 
     if (shouldShowDialog && context.mounted) {
       await showDialog(
@@ -55,7 +55,7 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _fadeInAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -63,14 +63,14 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
       parent: _animationController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     // Loot box animations (only if loot box was triggered)
     if (widget.breakdown.lootBoxResult.wasTriggered) {
       _lootBoxController = AnimationController(
         duration: const Duration(milliseconds: 1200),
         vsync: this,
       );
-      
+
       _lootBoxScaleAnimation = Tween<double>(
         begin: 0.8,
         end: 1.0,
@@ -78,7 +78,7 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
         parent: _lootBoxController,
         curve: Curves.elasticOut,
       ));
-      
+
       _lootBoxShimmerAnimation = Tween<double>(
         begin: 0.0,
         end: 1.0,
@@ -86,7 +86,7 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
         parent: _lootBoxController,
         curve: Curves.easeInOut,
       ));
-      
+
       // Start loot box animation after main animation
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
@@ -94,7 +94,7 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
         }
       });
     }
-    
+
     _animationController.forward();
   }
 
@@ -110,7 +110,7 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
@@ -202,7 +202,8 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
         _buildCalculationRow(
           '${widget.task.timeCostMinutes} minutes',
           '${widget.breakdown.baseTimeXP} XP',
-          subtitle: 'Base calculation: 10 × √${widget.task.timeCostMinutes} + 5',
+          subtitle:
+              'Base calculation: 10 × √${widget.task.timeCostMinutes} + 5',
         ),
       ],
     );
@@ -230,7 +231,8 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
           'Final Base XP',
           '${widget.breakdown.finalBaseXP} XP',
           isResult: true,
-          subtitle: '${widget.breakdown.baseTimeXP} × ${widget.breakdown.categoryMultiplier.toStringAsFixed(1)} × ${widget.breakdown.difficultyMultiplier.toStringAsFixed(1)}',
+          subtitle:
+              '${widget.breakdown.baseTimeXP} × ${widget.breakdown.categoryMultiplier.toStringAsFixed(1)} × ${widget.breakdown.difficultyMultiplier.toStringAsFixed(1)}',
         ),
       ],
     );
@@ -238,7 +240,7 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
 
   Widget _buildBonuses(ThemeData theme) {
     final hasBonuses = widget.breakdown.totalBonusXP > 0;
-    
+
     return Column(
       children: [
         _buildCalculationCard(
@@ -406,7 +408,8 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
     );
   }
 
-  Widget _buildTipCard(ThemeData theme, String title, IconData icon, List<String> tips) {
+  Widget _buildTipCard(
+      ThemeData theme, String title, IconData icon, List<String> tips) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -431,26 +434,28 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
           ),
           const SizedBox(height: 8),
           ...tips.map((tip) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('• ', style: TextStyle(color: theme.colorScheme.primary)),
-                Expanded(
-                  child: Text(
-                    tip,
-                    style: theme.textTheme.bodySmall,
-                  ),
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('• ',
+                        style: TextStyle(color: theme.colorScheme.primary)),
+                    Expanded(
+                      child: Text(
+                        tip,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )),
+              )),
         ],
       ),
     );
   }
 
-  Widget _buildCalculationCard(ThemeData theme, {
+  Widget _buildCalculationCard(
+    ThemeData theme, {
     required String title,
     required IconData icon,
     required List<Widget> children,
@@ -486,12 +491,14 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
     );
   }
 
-  Widget _buildCalculationRow(String label, String value, {
+  Widget _buildCalculationRow(
+    String label,
+    String value, {
     String? subtitle,
     bool isResult = false,
   }) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Column(
@@ -537,7 +544,7 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
 
   Widget _buildLootBoxCard(ThemeData theme) {
     final lootBox = widget.breakdown.lootBoxResult;
-    
+
     return AnimatedBuilder(
       animation: _lootBoxController,
       builder: (context, child) {
@@ -548,121 +555,127 @@ class _XpBreakdownDialogState extends State<XpBreakdownDialog>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.amber.withOpacity(0.2 + _lootBoxShimmerAnimation.value * 0.1),
-                  Colors.orange.withOpacity(0.3 + _lootBoxShimmerAnimation.value * 0.1),
-                  Colors.deepOrange.withOpacity(0.2 + _lootBoxShimmerAnimation.value * 0.1),
+                  Colors.amber
+                      .withOpacity(0.2 + _lootBoxShimmerAnimation.value * 0.1),
+                  Colors.orange
+                      .withOpacity(0.3 + _lootBoxShimmerAnimation.value * 0.1),
+                  Colors.deepOrange
+                      .withOpacity(0.2 + _lootBoxShimmerAnimation.value * 0.1),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.amber.withOpacity(0.5 + _lootBoxShimmerAnimation.value * 0.3),
+                color: Colors.amber
+                    .withOpacity(0.5 + _lootBoxShimmerAnimation.value * 0.3),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.amber.withOpacity(0.3 + _lootBoxShimmerAnimation.value * 0.2),
+                  color: Colors.amber
+                      .withOpacity(0.3 + _lootBoxShimmerAnimation.value * 0.2),
                   blurRadius: 12 + _lootBoxShimmerAnimation.value * 8,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.amber, Colors.orange],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.amber.withOpacity(0.5),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.card_giftcard,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'LOOT BOX BONUS!',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber[800],
-                      ),
-                    ),
-                    Text(
-                      lootBox.description,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.amber[700],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.amber.withOpacity(0.6),
-                  ),
-                ),
-                child: Text(
-                  '+${lootBox.bonusXP} XP',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber[800],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
               children: [
-                Icon(
-                  Icons.auto_awesome,
-                  color: Colors.amber[700],
-                  size: 20,
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.amber, Colors.orange],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.amber.withOpacity(0.5),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.card_giftcard,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'LOOT BOX BONUS!',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber[800],
+                            ),
+                          ),
+                          Text(
+                            lootBox.description,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.amber[700],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.amber.withOpacity(0.6),
+                        ),
+                      ),
+                      child: Text(
+                        '+${lootBox.bonusXP} XP',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[800],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${lootBox.multiplier.toStringAsFixed(1)}x Multiplier Applied!',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.amber[800],
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        color: Colors.amber[700],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${lootBox.multiplier.toStringAsFixed(1)}x Multiplier Applied!',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.amber[800],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
           ),
         );
       },

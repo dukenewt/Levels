@@ -82,4 +82,4 @@ class User {
       perks: json['perks'] != null ? List<String>.from(json['perks']) : [],
     );
   }
-} 
+}

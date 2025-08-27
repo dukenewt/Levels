@@ -21,19 +21,19 @@ import 'services/secure_storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   // Initialize core systems first
   AppLogger.instance.initialize();
   GlobalErrorHandler.instance.initialize(AppLogger.instance);
   OfflineManager.instance.initialize();
-  
+
   // Initialize notification service
   await TaskNotificationService.instance.initialize();
-  
+
   try {
     final prefs = await SharedPreferences.getInstance();
     final secureStorageService = SecureStorageService(prefs);
@@ -50,13 +50,15 @@ void main() async {
           ChangeNotifierProvider(
             create: (_) => ThemeProvider()..init(),
           ),
-          ChangeNotifierProxyProvider2<AuthService, FirestoreService, UserProvider>(
+          ChangeNotifierProxyProvider2<AuthService, FirestoreService,
+              UserProvider>(
             create: (context) => UserProvider(
               context.read<AuthService>(),
               context.read<FirestoreService>(),
             ),
             update: (context, authService, firestoreService, previous) =>
-                UserProvider(authService, firestoreService)..updateDependencies(authService, firestoreService),
+                UserProvider(authService, firestoreService)
+                  ..updateDependencies(authService, firestoreService),
           ),
           ChangeNotifierProxyProvider<UserProvider, TaskProvider>(
             create: (context) => TaskProvider(

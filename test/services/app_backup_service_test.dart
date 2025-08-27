@@ -17,7 +17,8 @@ void main() {
   });
 
   test('Export filtering excludes test tasks by default', () async {
-    final export = await AppBackupService.exportAllData(config: ExportConfig.backup);
+    final export =
+        await AppBackupService.exportAllData(config: ExportConfig.backup);
     final tasks = export['tasks'] as List;
     // Only the real task should be included
     expect(tasks.length, 1);

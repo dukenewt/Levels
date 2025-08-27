@@ -24,33 +24,33 @@ class ThemeSelectionScreen extends StatelessWidget {
             Text(
               'Available Themes',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
             ...availableThemes.map((theme) => _buildThemeCard(
-              context,
-              theme,
-              themeProvider,
-              isSelected: theme.type == themeProvider.currentTheme,
-            )),
+                  context,
+                  theme,
+                  themeProvider,
+                  isSelected: theme.type == themeProvider.currentTheme,
+                )),
           ],
           if (premiumThemes.isNotEmpty) ...[
             const SizedBox(height: 32),
             Text(
               'Premium Themes',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
             ...premiumThemes.map((theme) => _buildThemeCard(
-              context,
-              theme,
-              themeProvider,
-              isSelected: theme.type == themeProvider.currentTheme,
-              isLocked: !themeProvider.isThemeUnlocked(theme.type),
-            )),
+                  context,
+                  theme,
+                  themeProvider,
+                  isSelected: theme.type == themeProvider.currentTheme,
+                  isLocked: !themeProvider.isThemeUnlocked(theme.type),
+                )),
           ],
         ],
       ),
@@ -81,14 +81,17 @@ class ThemeSelectionScreen extends StatelessWidget {
                     Text(
                       theme.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     Text(
                       theme.description,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                      ),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.7),
+                          ),
                     ),
                   ],
                 ),
@@ -101,7 +104,8 @@ class ThemeSelectionScreen extends StatelessWidget {
               else if (isLocked)
                 Icon(
                   Icons.lock,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
             ],
           ),
@@ -134,9 +138,9 @@ class ThemeSelectionScreen extends StatelessWidget {
                 Text(
                   'Premium Theme',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 ElevatedButton(
                   onPressed: () => _showPremiumDialog(context, theme),
@@ -172,8 +176,8 @@ class ThemeSelectionScreen extends StatelessWidget {
             Text(
               'Unlock this theme for 500 coins',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ],
         ),
@@ -210,4 +214,4 @@ class ThemeSelectionScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

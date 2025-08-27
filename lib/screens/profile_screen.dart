@@ -58,7 +58,8 @@ class ProfileScreen extends StatelessWidget {
                   bottom: 0,
                   right: -10,
                   child: IconButton(
-                    icon: const Icon(Icons.camera_alt, color: Colors.blueAccent),
+                    icon:
+                        const Icon(Icons.camera_alt, color: Colors.blueAccent),
                     onPressed: () async {
                       final imageUploadService = ImageUploadService();
                       final String? imageUrl =
@@ -83,8 +84,8 @@ class ProfileScreen extends StatelessWidget {
             Text(
               user.email,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 32),
 
@@ -140,10 +141,10 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildStatCard(
-    BuildContext context, 
-    String title, 
-    String value, 
-    IconData icon, 
+    BuildContext context,
+    String title,
+    String value,
+    IconData icon,
     Color color, {
     String? subtitle,
   }) {
@@ -170,18 +171,18 @@ class ProfileScreen extends StatelessWidget {
             Text(
               value,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                ),
+                      color: color,
+                      fontWeight: FontWeight.w500,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -221,7 +222,9 @@ class ProfileScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificationPreferencesScreen()),
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const NotificationPreferencesScreen()),
               );
             },
           ),
@@ -268,4 +271,4 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

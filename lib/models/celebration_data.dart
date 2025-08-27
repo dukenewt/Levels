@@ -24,7 +24,8 @@ class CelebrationData {
 
   /// Check if this is a major level milestone
   bool get isMajorMilestone {
-    return newLevel % 10 == 0 || (newRank != null && oldLevel < newRank!.requiredLevel);
+    return newLevel % 10 == 0 ||
+        (newRank != null && oldLevel < newRank!.requiredLevel);
   }
 
   /// Get the level difference
@@ -37,4 +38,4 @@ class CelebrationData {
   String toString() {
     return 'CelebrationData(oldLevel: $oldLevel, newLevel: $newLevel, rankName: $rankName, perks: ${unlockedPerks.length})';
   }
-} 
+}
