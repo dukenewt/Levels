@@ -16,9 +16,9 @@ severity = "high"
 [allowlist]
 description = "Allow common directories and files that may appear sensitive but are safe"
 paths = [
-  "^.git/",
-  "^build/",
-  "^\.dart_tool/",
-  "^ios/Pods/",
-  "^android/.gradle/",
+  '^\.git/',
+  '^build/',
+  '^\.dart_tool/',
+  '^ios/Pods/',
+  '^android/\.gradle/',
 ]
