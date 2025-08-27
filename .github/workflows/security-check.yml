@@ -63,9 +63,9 @@ jobs:
         with:
           args: --no-git --redact -v --exit-code=1 --report-format sarif --report-path results.sarif
 
-      - name: TruffleHog scan (filesystem only)
-        uses: trufflesecurity/trufflehog@main
-        with:
-          scan: filesystem
-          path: ./
-          extra_args: --only-verified
+      - name: TruffleHog scan (filesystem via Docker)
+              run: |
+                  set -euo pipefail
+                  echo "Running TruffleHog (filesystem) via Docker..."
+                  docker run --rm -v "$PWD":/pwd trufflesecurity/trufflehog:latest \
+                        filesystem /pwd --only-verified --fail
