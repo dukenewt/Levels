@@ -1,3 +1,0 @@
-# Exclude known noisy lockfiles (false positives for generic-api-key)
-(^|.*/)?Podfile\.lock$
-(^|.*/)?android/gradle\.lockfile$

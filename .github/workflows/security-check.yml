@@ -3,7 +3,7 @@ name: Security Check
 permissions:
     contents: read
     security-events: write
-    
+
 on:
   push:
     branches: [ "**" ]
@@ -66,17 +66,17 @@ jobs:
           echo "No forbidden files detected."
 
       - name: Gitleaks scan (filesystem via Docker)
-        run: |
-          set -euo pipefail
-          echo "Running Gitleaks (filesystem) via Docker..."
-          docker run --rm \
-            -v "$PWD":/pwd \
-            -w /pwd \
-            --net=none --cpus="1.0" --memory="512m" \
-            ghcr.io/gitleaks/gitleaks:v8.18.4 \
-            detect --no-git --source /pwd -v --redact --exit-code=1 \
-            --exclude-paths .gitleaks.exclude \
-            --report-format sarif --report-path gitleaks-results.sarif
+    run: |
+      set -euo pipefail
+      echo "Running Gitleaks (filesystem) via Docker..."
+      docker run --rm \
+        -v "$PWD":/pwd \
+        -w /pwd \
+        --net=none --cpus="1.0" --memory="512m" \
+        ghcr.io/gitleaks/gitleaks:v8.18.4 \
+        detect --no-git --source /pwd -v --redact --exit-code=1 \
+        -c .gitleaks.toml \
+        --report-format sarif --report-path gitleaks-results.sarif
 
 
       - name: Upload Gitleaks SARIF

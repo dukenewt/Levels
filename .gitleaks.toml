@@ -21,4 +21,6 @@ paths = [
   '^\.dart_tool/',
   '^ios/Pods/',
   '^android/\.gradle/',
+  "(^|.*/)?Podfile\\.lock$",
+  "(^|.*/)?android/gradle\\.lockfile$",
 ]
