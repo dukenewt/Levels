@@ -121,3 +121,4 @@ Goal: Resolve critical issues and make the talent/perk system robust, testable, 
 - [x] Regenerate local Firebase configs via bootstrap; verify no sensitive files tracked
 - [x] Ensure Security Check CI passes on integration branch
 - [ ] Open/merge PR into `main` after functional verification (Android/iOS build + smoke tests)
+tough
