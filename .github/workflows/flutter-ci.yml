@@ -45,6 +45,7 @@ jobs:
         run: echo "No changed Dart files to format."
 
       - name: Analyze (full, non-blocking)
+        if: github.event_name != 'pull_request'
         continue-on-error: true
         run: flutter analyze
 
