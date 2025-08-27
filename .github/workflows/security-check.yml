@@ -2,13 +2,17 @@ name: Security Check
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ "**" ]
   pull_request:
     branches: [ "**" ]
+  workflow_dispatch:
 
 jobs:
   secret-scan:
     name: Secret and Sensitive File Scan
+    permissions:
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -21,8 +25,25 @@ jobs:
         run: |
           set -euo pipefail
           echo "Scanning for forbidden file patterns..."
-          # Patterns of files that must never be committed
-          PATTERN_REGEX='(GoogleService-Info\.plist|google-services\.json|firebase_options\.dart|firebase_config\.swift|\.env(\..*)?$|secrets\.json|config\.json|\.p12$|\.mobileprovision$|\.jks$|keystore)'
+          # Focus on truly sensitive files/paths. Do not block common project files.
+          PATTERN_REGEX='(^|/)(
+            # Firebase client configs
+            GoogleService-Info\.plist|
+            google-services\.json|
+            firebase_options\.dart|
+            firebase_config\.swift|
+            firebase\.json|
+            
+            # Environment and secrets
+            \.env(\..*)?$|[^/]*\.env$|
+            secrets\.json|config\.json|
+            secrets/|private_keys/|
+            [^/]*_secret\.[^/]+|[^/]*_key\.[^/]+|
+            api_keys\.dart|keys\.dart|credentials\.dart|
+            
+            # Keystores and signing
+            android/[^/]*/keystore[^/]*|[^/]*\.jks|[^/]*\.p12$|[^/]*\.mobileprovision$
+          )'
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE="origin/${{ github.base_ref }}"
@@ -32,23 +53,22 @@ jobs:
             CHANGED=$(git ls-files)
           fi
 
-          echo "$CHANGED" | grep -E "$PATTERN_REGEX" && {
-            echo "Error: Sensitive configuration detected in commit or repo tree." >&2
+          MATCHES=$(echo "$CHANGED" | tr ' ' '\n' | grep -E -i "$PATTERN_REGEX" || true)
+          if [ -n "$MATCHES" ]; then
+            echo "Error: Sensitive configuration detected in commit or repo tree:" >&2
+            echo "$MATCHES" >&2
             exit 1
-          } || echo "No forbidden files detected."
+          fi
+          echo "No forbidden files detected."
 
       - name: Gitleaks scan
         uses: gitleaks/gitleaks-action@v2
-        with:
-          config-path: .gitleaks.toml
-          verbose: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: TruffleHog scan (diff against base)
-        if: github.event_name == 'pull_request'
-        uses: trufflesecurity/trufflehog@v3
+      - name: TruffleHog scan (filesystem only)
+        uses: trufflesecurity/trufflehog@main
         with:
-          base: ${{ github.event.pull_request.base.sha }}
-          head: ${{ github.sha }}
+          scan: filesystem
           path: ./
           extra_args: --only-verified
-
