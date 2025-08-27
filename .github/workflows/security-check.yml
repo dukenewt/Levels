@@ -151,6 +151,5 @@ jobs:
           else
             # For push events, scan all files with exclusions
             docker run --rm -v "$PWD:/pwd" -w /pwd trufflesecurity/trufflehog:latest filesystem --only-verified ./ \
-              --exclude-paths=".sfdx/**" --exclude-paths=".dart_tool/**" --exclude-paths="build/**" \
-              --exclude-paths="android/.gradle/**" --exclude-paths="ios/Pods/**" --exclude-paths="node_modules/**"
+              --exclude-paths=".sfdx/**,.dart_tool/**,build/**,android/.gradle/**,ios/Pods/**,node_modules/**"
           fi
