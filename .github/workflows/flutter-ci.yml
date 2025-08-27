@@ -57,8 +57,12 @@ jobs:
         if: ${{ steps.changed.outputs.all_changed_files == '' }}
         run: echo "No changed Dart files to analyze."
 
-      - name: Unit Tests
+      - name: Unit Tests (changed files only)
+        if: ${{ steps.changed.outputs.all_changed_files != '' }}
         run: flutter test --no-pub
+      - name: No Dart file changes to test
+        if: ${{ steps.changed.outputs.all_changed_files == '' }}
+        run: echo "No changed Dart files to test. Skipping flutter test."
 
       # Optional: Uncomment to build Android on CI (heavier)
       # - name: Build Android APK (optional)
