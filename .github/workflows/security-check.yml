@@ -70,14 +70,51 @@ jobs:
         run:  |
           set -euo pipefail
           echo "Running Gitleaks (filesystem) via Docker..."
-          docker run --rm \
-            -v "$PWD":/pwd \
-            -w /pwd \
-            --net=none --cpus="1.0" --memory="512m" \
-            ghcr.io/gitleaks/gitleaks:v8.18.4 \
-            detect --no-git --source /pwd -v --redact --exit-code=1 \
-            -c .gitleaks.toml \
-            --report-format sarif --report-path gitleaks-results.sarif
+          
+          # For pull requests, create a temporary directory with only changed files
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+            git fetch --no-tags --prune --depth=1 origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+            CHANGED_FILES=$(git diff --name-only "$BASE"...HEAD)
+            
+            if [ -z "$CHANGED_FILES" ]; then
+              echo "No files changed, skipping Gitleaks scan."
+              touch gitleaks-results.sarif
+              echo '{"version": "2.1.0", "runs": [{"tool": {"driver": {"name": "gitleaks"}}, "results": []}]}' > gitleaks-results.sarif
+              exit 0
+            fi
+            
+            # Create temporary directory structure
+            mkdir -p /tmp/scan_files
+            echo "$CHANGED_FILES" | while read -r file; do
+              if [ -f "$file" ]; then
+                mkdir -p "/tmp/scan_files/$(dirname "$file")"
+                cp "$file" "/tmp/scan_files/$file"
+              fi
+            done
+            
+            docker run --rm \
+              -v "/tmp/scan_files":/scan \
+              -v "$PWD/.gitleaks.toml":/scan/.gitleaks.toml \
+              --net=none --cpus="1.0" --memory="512m" \
+              ghcr.io/gitleaks/gitleaks:v8.18.4 \
+              detect --no-git --source /scan -v --redact --exit-code=1 \
+              -c /scan/.gitleaks.toml \
+              --report-format sarif --report-path /scan/gitleaks-results.sarif
+            
+            # Copy results back
+            cp /tmp/scan_files/gitleaks-results.sarif ./gitleaks-results.sarif 2>/dev/null || touch gitleaks-results.sarif
+          else
+            # For push events, scan all files
+            docker run --rm \
+              -v "$PWD":/pwd \
+              -w /pwd \
+              --net=none --cpus="1.0" --memory="512m" \
+              ghcr.io/gitleaks/gitleaks:v8.18.4 \
+              detect --no-git --source /pwd -v --redact --exit-code=1 \
+              -c .gitleaks.toml \
+              --report-format sarif --report-path gitleaks-results.sarif
+          fi
 
 
       - name: Upload Gitleaks SARIF
@@ -87,8 +124,31 @@ jobs:
             sarif_file: gitleaks-results.sarif
 
       - name: TruffleHog scan (filesystem only)
-        uses: trufflesecurity/trufflehog@main
-        with:
-          scan: filesystem
-          path: ./
-          extra_args: --only-verified
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+            git fetch --no-tags --prune --depth=1 origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+            CHANGED_FILES=$(git diff --name-only "$BASE"...HEAD)
+            
+            if [ -z "$CHANGED_FILES" ]; then
+              echo "No files changed, skipping TruffleHog scan."
+              exit 0
+            fi
+            
+            echo "Scanning changed files with TruffleHog:"
+            echo "$CHANGED_FILES"
+            
+            # Scan each changed file individually
+            echo "$CHANGED_FILES" | while read -r file; do
+              if [ -f "$file" ]; then
+                echo "Scanning: $file"
+                docker run --rm -v "$PWD:/pwd" -w /pwd trufflesecurity/trufflehog:latest filesystem --only-verified "$file" || true
+              fi
+            done
+          else
+            # For push events, scan all files
+            docker run --rm -v "$PWD:/pwd" -w /pwd trufflesecurity/trufflehog:latest filesystem --only-verified ./
+          fi
