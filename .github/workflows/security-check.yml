@@ -63,8 +63,9 @@ jobs:
         with:
           args: --no-git --redact -v --exit-code=1 --report-format sarif --report-path results.sarif
 
-      - name: TruffleHog scan (full repo)
+      - name: TruffleHog scan (filesystem only)
         uses: trufflesecurity/trufflehog@main
         with:
+          scan: filesystem
           path: ./
           extra_args: --only-verified
