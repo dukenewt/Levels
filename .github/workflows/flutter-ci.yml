@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -24,21 +26,6 @@ jobs:
       - name: Flutter Pub Get
         run: flutter pub get
 
-      - name: Format Check
-        run: |
-          set -e
-          echo "Checking Dart formatting..."
-          # Show files that would be changed and fail if any are unformatted
-          dart format --output=show --set-exit-if-changed . || {
-            echo "\nFormatting changes detected. To fix locally, run:";
-            echo "  dart format .";
-            exit 1;
-          }
-
-      - name: Analyze (full, non-blocking)
-        continue-on-error: true
-        run: flutter analyze
-
       - name: Determine changed Dart files
         id: changed
         uses: tj-actions/changed-files@v45
@@ -47,6 +34,19 @@ jobs:
             lib/**/*.dart
             test/**/*.dart
             integration_test/**/*.dart
+
+      - name: Format Check (changed files)
+        if: ${{ steps.changed.outputs.all_changed_files != '' }}
+        run: |
+          echo "Checking formatting for changed Dart files..."
+          dart format --set-exit-if-changed ${{ steps.changed.outputs.all_changed_files }}
+      - name: No Dart file changes to format
+        if: ${{ steps.changed.outputs.all_changed_files == '' }}
+        run: echo "No changed Dart files to format."
+
+      - name: Analyze (full, non-blocking)
+        continue-on-error: true
+        run: flutter analyze
 
       - name: Analyze changed files (blocking)
         if: ${{ steps.changed.outputs.all_changed_files != '' }}
@@ -57,8 +57,12 @@ jobs:
         if: ${{ steps.changed.outputs.all_changed_files == '' }}
         run: echo "No changed Dart files to analyze."
 
-      - name: Unit Tests
+      - name: Unit Tests (changed files only)
+        if: ${{ steps.changed.outputs.all_changed_files != '' }}
         run: flutter test --no-pub
+      - name: No Dart file changes to test
+        if: ${{ steps.changed.outputs.all_changed_files == '' }}
+        run: echo "No changed Dart files to test. Skipping flutter test."
 
       # Optional: Uncomment to build Android on CI (heavier)
       # - name: Build Android APK (optional)

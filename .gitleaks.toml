@@ -1,14 +1,10 @@
-# Gitleaks configuration for DailyXP
-# Purpose: catch accidental secret commits and sensitive file patterns.
-
 title = "DailyXP Gitleaks Config"
 
-# Define rules
 [[rules]]
 id = "firebase-web-api-key"
 description = "Firebase Web API Key"
-regex = '''AIza[0-9A-Za-z\-_]{35}'''
-tags = ["firebase", "apikey"]
+regex = '''(?i)AIza[0-9A-Za-z-_]{35}'''
+severity = "high"
 
 [[rules]]
 id = "generic-api-key"
@@ -20,9 +16,9 @@ tags = ["generic", "apikey"]
 [allowlist]
 description = "Allow common directories that may contain false positives"
 paths = [
-  '''^\.git/''',
-  '''^build/''',
-  '''^\.dart_tool/''',
-  '''^ios/Pods/''',
-  '''^android/\.gradle/''',
+  '^\.git/',
+  '^build/',
+  '^\.dart_tool/',
+  '^ios/Pods/',
+  '^android/\.gradle/',
 ]
