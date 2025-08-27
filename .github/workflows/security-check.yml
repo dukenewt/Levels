@@ -64,7 +64,7 @@ jobs:
           args: --no-git --redact -v --exit-code=1 --report-format sarif --report-path results.sarif
 
       - name: TruffleHog scan (filesystem via Docker)
-              run: |
+              run:|
                   set -euo pipefail
                   echo "Running TruffleHog (filesystem) via Docker..."
                   docker run --rm -v "$PWD":/pwd trufflesecurity/trufflehog:latest \
