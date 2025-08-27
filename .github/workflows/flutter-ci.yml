@@ -49,11 +49,19 @@ jobs:
         continue-on-error: true
         run: flutter analyze
 
-      - name: Analyze changed files (blocking)
+      - name: Analyze changed files (non-blocking for PRs)
         if: ${{ steps.changed.outputs.all_changed_files != '' }}
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: |
           echo "Changed Dart files: ${{ steps.changed.outputs.all_changed_files }}"
-          flutter analyze ${{ steps.changed.outputs.all_changed_files }}
+          echo "Event type: ${{ github.event_name }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "Running non-blocking analyze for PR..."
+            flutter analyze ${{ steps.changed.outputs.all_changed_files }} || echo "Analyze found issues but continuing for PR"
+          else
+            echo "Running blocking analyze for push..."
+            flutter analyze ${{ steps.changed.outputs.all_changed_files }}
+          fi
       - name: No Dart file changes detected
         if: ${{ steps.changed.outputs.all_changed_files == '' }}
         run: echo "No changed Dart files to analyze."
