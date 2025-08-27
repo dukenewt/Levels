@@ -10,6 +10,9 @@ on:
 jobs:
   secret-scan:
     name: Secret and Sensitive File Scan
+    permissions:
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -60,6 +63,8 @@ jobs:
 
       - name: Gitleaks scan
         uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: TruffleHog scan (filesystem only)
         uses: trufflesecurity/trufflehog@main
