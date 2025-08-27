@@ -57,6 +57,13 @@ jobs:
         if: ${{ steps.changed.outputs.all_changed_files == '' }}
         run: echo "No changed Dart files to analyze."
 
+      - name: Prepare test asset directories
+        run: |
+          mkdir -p assets/animations
+          mkdir -p assets/images
+          mkdir -p assets/fonts
+          echo "Ensured asset directories exist for test bundling."
+
       - name: Unit Tests (changed files only)
         if: ${{ steps.changed.outputs.all_changed_files != '' }}
         run: flutter test --no-pub
