@@ -61,10 +61,13 @@ jobs:
           fi
           echo "No forbidden files detected."
 
-      - name: Gitleaks scan (filesystem only)
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Gitleaks scan (filesystem via Docker)
+        run: |
+          set -euo pipefail
+          echo "Running Gitleaks (filesystem) via Docker..."
+          docker run --rm -v "$PWD":/pwd zricethezav/gitleaks:latest \
+            detect --no-git --redact -v --exit-code=1 \
+            --report-format sarif --report-path /pwd/gitleaks-results.sarif
 
       - name: TruffleHog scan (filesystem only)
         uses: trufflesecurity/trufflehog@main
