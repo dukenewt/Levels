@@ -141,14 +141,16 @@ jobs:
             echo "Scanning changed files with TruffleHog:"
             echo "$CHANGED_FILES"
             
-            # Scan each changed file individually
-            echo "$CHANGED_FILES" | while read -r file; do
-              if [ -f "$file" ]; then
+            # Scan each changed file individually, excluding cache/build files
+            echo "$CHANGED_FILES" | grep -vE '\.(sfdx|dart_tool|build|gradle|pods)/|node_modules/|\.git/' | while read -r file; do
+              if [ -f "$file" ] && [ -n "$file" ]; then
                 echo "Scanning: $file"
                 docker run --rm -v "$PWD:/pwd" -w /pwd trufflesecurity/trufflehog:latest filesystem --only-verified "$file" || true
               fi
             done
           else
-            # For push events, scan all files
-            docker run --rm -v "$PWD:/pwd" -w /pwd trufflesecurity/trufflehog:latest filesystem --only-verified ./
+            # For push events, scan all files with exclusions
+            docker run --rm -v "$PWD:/pwd" -w /pwd trufflesecurity/trufflehog:latest filesystem --only-verified ./ \
+              --exclude-paths=".sfdx/**" --exclude-paths=".dart_tool/**" --exclude-paths="build/**" \
+              --exclude-paths="android/.gradle/**" --exclude-paths="ios/Pods/**" --exclude-paths="node_modules/**"
           fi

@@ -160,6 +160,9 @@ android/**/keystore*
 **/sensitive_images/
 **/private_media/
 
+# Salesforce development cache
+.sfdx/
+
 # Firebase client config (treat as sensitive per policy)
 lib/firebase_options.dart
 firebase.json
