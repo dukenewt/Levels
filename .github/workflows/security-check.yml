@@ -124,42 +124,42 @@ jobs:
             sarif_file: gitleaks-results.sarif
 
       - name: TruffleHog scan (filesystem only)
-shell: bash
-run: |
-    set -euo pipefail
+        shell: bash
+        run: |
+          set -euo pipefail
 
-    if [ "${{ github.event_name }}" = "pull_request" ]; then
-      BASE="origin/${{ github.base_ref }}"
-      git fetch --no-tags --prune --depth=1 origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
-      CHANGED_FILES=$(git diff --name-only "$BASE"...HEAD)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+            git fetch --no-tags --prune --depth=1 origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+            CHANGED_FILES=$(git diff --name-only "$BASE"...HEAD)
 
-      if [ -z "$CHANGED_FILES" ]; then
-        echo "No files changed, skipping TruffleHog scan."
-        exit 0
-      fi
+            if [ -z "$CHANGED_FILES" ]; then
+              echo "No files changed, skipping TruffleHog scan."
+              exit 0
+            fi
 
-      mkdir -p /tmp/trh_scan
-      echo "$CHANGED_FILES" | while read -r file; do
-        [ -f "$file" ] || continue
-        mkdir -p "/tmp/trh_scan/$(dirname "$file")"
-        cp "$file" "/tmp/trh_scan/$file"
-      done
+            mkdir -p /tmp/trh_scan
+            echo "$CHANGED_FILES" | while read -r file; do
+              [ -f "$file" ] || continue
+              mkdir -p "/tmp/trh_scan/$(dirname "$file")"
+              cp "$file" "/tmp/trh_scan/$file"
+            done
 
-      docker run --rm \
-        -v "/tmp/trh_scan:/repo" \
-        -v "$PWD/.trufflehog.exclude:/repo/.trufflehog.exclude:ro" \
-        -w /repo \
-        --net=none --cpus="1.0" --memory="512m" \
-        trufflesecurity/trufflehog:latest \
-        filesystem --only-verified --exclude-paths /repo/.trufflehog.exclude \
-        --path-regex '.*\.(dart|kt|swift|yaml|yml|json|plist|gradle|xml|properties|sh|ts|js|java|md)$' \
-        --json .
-    else
-      docker run --rm \
-        -v "$PWD:/pwd" -w /pwd \
-        --net=none --cpus="1.0" --memory="512m" \
-        trufflesecurity/trufflehog:latest \
-        filesystem --only-verified --exclude-paths .trufflehog.exclude \
-        --path-regex '.*\.(dart|kt|swift|yaml|yml|json|plist|gradle|xml|properties|sh|ts|js|java|md)$' \
-        --json .
-    fi
+            docker run --rm \
+              -v "/tmp/trh_scan:/repo" \
+              -v "$PWD/.trufflehog.exclude:/repo/.trufflehog.exclude:ro" \
+              -w /repo \
+              --net=none --cpus="1.0" --memory="512m" \
+              trufflesecurity/trufflehog:latest \
+              filesystem --only-verified --exclude-paths /repo/.trufflehog.exclude \
+              --path-regex '.*\.(dart|kt|swift|yaml|yml|json|plist|gradle|xml|properties|sh|ts|js|java|md)$' \
+              --json .
+          else
+            docker run --rm \
+              -v "$PWD:/pwd" -w /pwd \
+              --net=none --cpus="1.0" --memory="512m" \
+              trufflesecurity/trufflehog:latest \
+              filesystem --only-verified --exclude-paths .trufflehog.exclude \
+              --path-regex '.*\.(dart|kt|swift|yaml|yml|json|plist|gradle|xml|properties|sh|ts|js|java|md)$' \
+              --json .
+          fi
