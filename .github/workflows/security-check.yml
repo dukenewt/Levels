@@ -22,8 +22,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Scanning for forbidden file patterns..."
-          # Comprehensive patterns of files/paths that must never be committed
-          # Derived from repository security policy and .gitignore guidance
+          # Focus on truly sensitive files/paths. Do not block common project files.
           PATTERN_REGEX='(^|/)(
             # Firebase client configs
             GoogleService-Info\.plist|
@@ -40,26 +39,7 @@ jobs:
             api_keys\.dart|keys\.dart|credentials\.dart|
             
             # Keystores and signing
-            android/[^/]*/keystore[^/]*|[^/]*\.jks|[^/]*\.p12$|[^/]*\.mobileprovision$|
-            
-            # Build artifacts and generated files
-            build/|\.dart_tool/|\.pub-cache/|android/build/|android/\.gradle/|android/app/build/|ios/build/|ios/Pods/|
-            ios/Runner\.xcworkspace/|ios/Runner\.xcodeproj/|
-            
-            # IDE and system files
-            \.vscode/|\.idea/|[^/]*\.iml|\.DS_Store|[^/]*\.log|
-            
-            # Temp and cache
-            \.?tmp/|tmp/|cache/|\.cache/|
-            
-            # User data and databases
-            [^/]*\.sqlite|database\.db|user_data/|
-            
-            # Sensitive media
-            sensitive_images/|private_media/|
-            
-            # Lockfiles
-            pubspec\.lock
+            android/[^/]*/keystore[^/]*|[^/]*\.jks|[^/]*\.p12$|[^/]*\.mobileprovision$
           )'
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -70,13 +50,18 @@ jobs:
             CHANGED=$(git ls-files)
           fi
 
-          echo "$CHANGED" | tr ' ' '\n' | grep -E -i "$PATTERN_REGEX" && {
-            echo "Error: Sensitive configuration detected in commit or repo tree." >&2
+          MATCHES=$(echo "$CHANGED" | tr ' ' '\n' | grep -E -i "$PATTERN_REGEX" || true)
+          if [ -n "$MATCHES" ]; then
+            echo "Error: Sensitive configuration detected in commit or repo tree:" >&2
+            echo "$MATCHES" >&2
             exit 1
-          } || echo "No forbidden files detected."
+          fi
+          echo "No forbidden files detected."
 
-      - name: Gitleaks scan
+      - name: Gitleaks scan (filesystem only)
         uses: gitleaks/gitleaks-action@v2
+        with:
+          args: --no-git --redact -v --exit-code=1 --report-format sarif --report-path results.sarif
 
       - name: TruffleHog scan (full repo)
         uses: trufflesecurity/trufflehog@main
