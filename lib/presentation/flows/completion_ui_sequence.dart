@@ -34,23 +34,18 @@ class CompletionUiSequence {
     steps.add(() async {
       await StreakService.updateStreak(task, DateTime.now());
       if (!context.mounted) return;
-      bool allowCompletionNotifs = false;
-      try {
-        final settings = Provider.of<SettingsProvider>(context, listen: false);
-        allowCompletionNotifs = settings.enableCompletionCelebrations;
-      } catch (_) {}
-
-      if (allowCompletionNotifs) {
-        final perkBonus = completion.enhancedBreakdown?.perkBonusXP ?? 0;
-        final totalXp = completion.xpGained;
-        await TaskNotificationService.instance.showImmediateNotification(
-          title: 'Task Completed! 🎉',
-          body: perkBonus > 0
-              ? '${task.title} completed! +$totalXp XP (+$perkBonus perk bonus!)'
-              : '${task.title} completed! +$totalXp XP',
-          payload: 'completion_${task.id}',
-        );
-      }
+      
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
+      final perkBonus = completion.enhancedBreakdown?.perkBonusXP ?? 0;
+      final totalXp = completion.xpGained;
+      await TaskNotificationService.instance.showImmediateNotification(
+        title: 'Task Completed! 🎉',
+        body: perkBonus > 0
+            ? '${task.title} completed! +$totalXp XP (+$perkBonus perk bonus!)'
+            : '${task.title} completed! +$totalXp XP',
+        payload: 'completion_${task.id}',
+        settings: settings,
+      );
     });
 
     // XP snackbar next

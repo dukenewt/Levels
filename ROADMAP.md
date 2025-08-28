@@ -4,12 +4,11 @@ This document outlines the strategic development priorities for TaskBound, focus
 
 ## Now / Next / Later
 - Now:
-  - Notifications: gate schedule/cancel/overdue/re‑engagement via `SettingsProvider` in `TaskNotificationService`; add a smoke test.
   - Animations & Accessibility: implement Reduced Motion in `ring_unraveling_celebration.dart` and `xp_orb_overlay.dart`; centralize timings in `AppDesignTokens`; sequence via `AnimationOrchestrator`.
   - Effects cleanup: remove `PerkEffectEngine`; migrate `PerkEffectResult` shape to a neutral model or normalized structure; sweep imports.
   - Persistence safety: use Firestore transactions for XP/level-up and talent choice persistence to avoid races.
-  - Tests: add unit tests for `CompletionPipeline` outputs (deterministic `StateDelta`/`UiEvent`), stacking/overrides for `PureEffectEngine`, and a basic notification-gating test.
-  - CI/Quality gates: require “Build & Tests” and “Security Check” on `develop`; keep `main` protected for release-only merges.
+  - Tests: add unit tests for `CompletionPipeline` outputs (deterministic `StateDelta`/`UiEvent`), stacking/overrides for `PureEffectEngine`.
+  - CI/Quality gates: require "Build & Tests" and "Security Check" on `develop`; keep `main` protected for release-only merges.
   - Branching: use `develop` as the staging branch; open feature PRs into `develop`. When release-ready, merge `develop` → `main` and tag 1.0.0.
 - Next:
   - Replace snackbar with orchestrated celebration overlay (Reduced Motion aware).
@@ -24,9 +23,11 @@ This document outlines the strategic development priorities for TaskBound, focus
 ## Consolidation Plan (Now)
 - Providers: unify on `user_provider_refactored.dart` and remove duplication.
 - Pipeline: expose a single `CompletionPipeline` that sequences analyze → compute → persist → emit; keep the feature-layer helper only as a UI façade if needed.
-- Effects: route perk/talent logic through `PureEffectEngine` only; keep the “enhanced” layer as formatting for breakdowns.
-- Notifications: centralize preference checks (schedule/cancel/immediate) inside `TaskNotificationService`.
+- Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.
 - Animations: centralize durations/curves in `AppDesignTokens`; ensure Reduced Motion across major celebratory widgets.
+
+## Recently Completed (v0.7.2)
+- Notifications: implemented user preference gating for task reminders and completion celebrations via `SettingsProvider` in `TaskNotificationService`; added smoke test for notification gating functionality.
 
 ## Recently Completed (v0.7.1)
 - Providers: canonicalized `UserProvider` and updated DI (ProxyProvider3) to include `TalentPerkController`.

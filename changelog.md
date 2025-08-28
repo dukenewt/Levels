@@ -16,6 +16,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - App Check: enable → monitor → enforce for Firestore/Storage (pending enforcement step).
 
 
+## [0.7.2] - 2025-08-28
+
+### Fixed — Notification Gating
+- **🎯 Notifications now respect user preferences**: Fixed critical issue where notifications ignored `SettingsProvider` toggles
+  - Task reminders now respect `enableTaskReminders` setting in `TaskNotificationService.scheduleTaskReminder()`
+  - Completion celebrations now respect `enableCompletionCelebrations` setting in `TaskNotificationService.showImmediateNotification()`
+  - Settings work independently - users can enable task reminders but disable celebrations, or vice versa
+  - Updated all notification call sites in `TaskProvider` (4 locations) and `CompletionUiSequence` to pass settings
+  - Added debug logging when notifications are skipped due to user preferences
+
+### Added — Tests
+- **📋 Notification Gating Smoke Test**: Added `task_notification_service_test.dart` to verify settings integration
+  - Tests that notification preferences can be independently controlled
+  - Verifies notification gating integration points exist and function correctly
+  - Ensures backward compatibility for existing notification calls
+
+### Technical
+- Enhanced `TaskNotificationService` methods to accept `SettingsProvider` parameters with proper gating logic
+- Maintained backward compatibility by making settings parameter optional in `showImmediateNotification()`
+
+
 ## [0.7.1] - 2025-08-28
 
 ### Changed — Consolidation & Effects
@@ -118,7 +139,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Epic completion now uses an orchestrated dialog (placeholder overlay) instead of only a snackbar
 
 ### Known Issues (to be addressed)
-- Notifications currently ignore user preference toggles in `SettingsProvider`.
 - Perk "Smart Suggestions"/"Bound suggestions" must be removed entirely from perks.
 - Epic completion celebration is a basic snackbar; needs orchestrated overlay.
 
