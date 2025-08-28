@@ -1,6 +1,6 @@
-# DailyXP
+# TaskBound
 
-DailyXP is a gamified task manager for iOS and Android. Complete tasks to earn XP, level up, unlock perks, and make forced talent choices that shape your experience. Build epics (multi-task projects), track streaks, and enjoy satisfying, accessible animations.
+TaskBound is a gamified task manager for iOS and Android. Complete tasks to earn XP, level up, unlock perks, and make forced talent choices that shape your experience. Build epics (multi-task projects), track streaks, and enjoy satisfying, accessible animations.
 
 ## Features
 
@@ -37,7 +37,7 @@ Prerequisites
 Clone and install
 ```
 git clone https://github.com/dukenewt/Levels.git
-cd dailyxp_1.01
+cd taskbound
 flutter pub get
 ```
 

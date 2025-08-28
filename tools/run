@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Prefer per-target directories; fallback to legacy locations if present
+OS="macos"
+ARCH="$(uname -m 2>/dev/null || echo unknown)"
+case "$ARCH" in
+  x86_64|amd64) ARCH=x86_64 ;;
+  arm64|aarch64) ARCH=arm64 ;;
+esac
+
+PREF1="$SCRIPT_DIR/bin/${OS}-${ARCH}"
+PREF2="$SCRIPT_DIR/bin/macos-$ARCH"
+LEGACY="$SCRIPT_DIR/bin"
+
+PATH_ENTRIES=()
+[ -d "$PREF1" ] && PATH_ENTRIES+=("$PREF1")
+[ -d "$PREF2" ] && PATH_ENTRIES+=("$PREF2")
+[ -d "$LEGACY" ] && PATH_ENTRIES+=("$LEGACY")
+
+export PATH="${PATH_ENTRIES[*]:-}:$PATH"
+export HERMETIC_TOOLS=1
+
+exec "$@"

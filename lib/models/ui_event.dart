@@ -1,4 +1,4 @@
-/// UI event objects for DailyXP
+/// UI event objects for TaskBound
 /// These represent UI actions that should be triggered in response to state changes
 
 /// Types of UI events that can be triggered

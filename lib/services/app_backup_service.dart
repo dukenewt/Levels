@@ -106,7 +106,7 @@ class AppBackupService {
       final jsonString = json.encode(backup);
       final directory = await getApplicationDocumentsDirectory();
       final file = File(
-          '${directory.path}/dailyxp_backup_${DateTime.now().millisecondsSinceEpoch}.json');
+          '${directory.path}/taskbound_backup_${DateTime.now().millisecondsSinceEpoch}.json');
       await file.writeAsString(jsonString);
       return file.path;
     } catch (e) {

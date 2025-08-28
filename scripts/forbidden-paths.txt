@@ -1,0 +1,40 @@
+# Regex patterns (matched against repo-relative paths). One per line.
+# Env files and secrets
+(^|/)\.env($|\.|/)
+(^|/)secrets(/|$)
+_secret\.
+_key\.
+(^|/)private_keys(/|$)
+
+# Firebase client configs
+^lib/firebase_options\.dart$
+^firebase\.json$
+^ios/Runner/GoogleService-Info\.plist$
+^android/app/google-services\.json$
+^ios/Runner/firebase_config\.swift$
+
+# Android/iOS signing
+android/.*/keystore
+\.jks$
+
+# Generated/build artifacts (examples; prefer keeping these in .gitignore)
+^build/
+^android/build/
+^android/app/build/
+^ios/build/
+^ios/Pods/
+^ios/Runner\.xcworkspace/
+^ios/Runner\.xcodeproj/
+
+# IDE/system files
+^\.vscode/
+^\.idea/
+\.iml$
+^\.DS_Store$
+\.log$
+
+# Databases and sensitive media
+\.sqlite$
+(^|/)user_data(/|$)
+(^|/)sensitive_images(/|$)
+(^|/)private_media(/|$)

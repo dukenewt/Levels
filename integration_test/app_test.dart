@@ -15,7 +15,7 @@ void main() {
 
       // Just verify the app loads and shows some expected content
       // Look for something that should always be there, like a title or main button
-      expect(find.text('Daily XP'),
+      expect(find.text('TaskBound'),
           findsOneWidget); // Adjust based on your app's actual title
 
       // This test succeeds if the app starts without throwing exceptions

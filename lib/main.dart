@@ -56,15 +56,20 @@ void main() async {
           ChangeNotifierProvider(
             create: (_) => ThemeProvider()..init(),
           ),
-          ChangeNotifierProxyProvider2<AuthService, FirestoreService,
-              UserProvider>(
+          // TalentPerkController should be available before creating UserProvider
+          ChangeNotifierProvider(
+            create: (_) => TalentPerkController(),
+          ),
+          ChangeNotifierProxyProvider3<AuthService, FirestoreService,
+              TalentPerkController, UserProvider>(
             create: (context) => UserProvider(
               context.read<AuthService>(),
               context.read<FirestoreService>(),
+              context.read<TalentPerkController>(),
             ),
-            update: (context, authService, firestoreService, previous) =>
-                UserProvider(authService, firestoreService)
-                  ..updateDependencies(authService, firestoreService),
+            update: (context, authService, firestoreService, talentPerkController, previous) =>
+                previous ??
+                UserProvider(authService, firestoreService, talentPerkController),
           ),
           ChangeNotifierProxyProvider<UserProvider, TaskProvider>(
             create: (context) => TaskProvider(
@@ -78,10 +83,7 @@ void main() async {
           ChangeNotifierProvider(
             create: (_) => EpicProvider(storage: secureStorageService),
           ),
-          // NEW: TalentPerkController - added alongside existing providers
-          ChangeNotifierProvider(
-            create: (_) => TalentPerkController(),
-          ),
+          // (moved TalentPerkController above)
         ],
         child: const MyApp(),
       ),

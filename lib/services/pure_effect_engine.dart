@@ -1,4 +1,4 @@
-/// Pure effect evaluation engine for DailyXP
+/// Pure effect evaluation engine for TaskBound
 /// This replaces PerkEffectEngine with a clean, testable design that uses the normalized Effect model
 
 import '../models/effect.dart';

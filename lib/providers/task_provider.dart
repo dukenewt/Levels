@@ -20,7 +20,8 @@ import '../widgets/xp_breakdown_dialog.dart';
 import 'epic_provider.dart';
 import 'theme_provider.dart';
 import '../models/theme_model.dart';
-import '../features/task_management/application/completion_pipeline.dart';
+// UI completion flow now lives under presentation layer (CompletionUiSequence)
+import '../presentation/flows/completion_ui_sequence.dart';
 
 /// States for async operations to provide proper loading indicators
 enum TaskOperationState {
@@ -474,7 +475,7 @@ class TaskProvider with ChangeNotifier {
 
         // Notify UI via orchestrated sequence to avoid conflicts
         if (context.mounted) {
-          await CompletionPipeline.playUiSequence(
+          await CompletionUiSequence.playUiSequence(
             context: context,
             task: task,
             completion: completionData,

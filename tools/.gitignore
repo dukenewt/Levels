@@ -1,0 +1,4 @@
+# Ignore downloaded binaries and temp files inside tools/
+bin/
+.tmp/
+

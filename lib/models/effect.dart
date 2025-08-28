@@ -1,4 +1,4 @@
-/// Normalized effect system for DailyXP
+/// Normalized effect system for TaskBound
 /// This replaces the scattered effect logic with a unified model
 
 /// Defines where an effect applies

@@ -1,12 +1,15 @@
 import '../models/task.dart';
 import '../models/user.dart';
-import '../features/character_progression/application/intelligent_xp_engine.dart';
+import '../features/character_progression/application/intelligent_xp_engine.dart'
+    as xp;
 import '../features/character_progression/domain/completion_context.dart';
-import 'perk_effect_engine.dart';
+import 'pure_effect_engine.dart' as pe;
+import '../models/effect.dart';
+import 'perk_effect_engine.dart' show PerkEffectResult;
 
 /// Enhanced XP calculation breakdown that includes perk effects
 class EnhancedXPCalculationBreakdown {
-  final XPCalculationBreakdown originalBreakdown;
+  final xp.XPCalculationBreakdown originalBreakdown;
   final PerkEffectResult perkEffects;
   final int perkBonusXP;
   final int finalTotalXP;
@@ -82,7 +85,7 @@ class EnhancedXPCalculationBreakdown {
 
 /// Service that calculates XP with perk effects integrated
 class EnhancedXPCalculationService {
-  final IntelligentXPEngine _xpEngine = IntelligentXPEngine();
+  final xp.IntelligentXPEngine _xpEngine = xp.IntelligentXPEngine();
 
   /// Calculate XP with all bonuses including perks
   EnhancedXPCalculationBreakdown calculateEnhancedXP(
@@ -93,35 +96,78 @@ class EnhancedXPCalculationService {
     // Get the original XP calculation
     final originalBreakdown = _xpEngine.calculateDetailedXP(task, context);
 
-    // Apply perk effects
-    final perkEffects = PerkEffectEngine.applyPerksToTask(user, task, context);
+    // Evaluate effects using the pure engine
+    final effectContext = CompletionContext(
+      completionTime: context.completionTime,
+      currentStreak: context.currentStreak,
+      perfectWeeksThisMonth: context.perfectWeeksThisMonth,
+      isPartOfChallenge: context.isPartOfChallenge,
+      additionalContext: context.additionalContext,
+    );
 
-    // Calculate perk bonus XP
+    final normalizedContext = {
+      'category': task.category,
+      'difficulty': task.difficulty.name,
+      'streak': effectContext.currentStreak,
+      'completion_time': effectContext.completionTime.toIso8601String(),
+      'perfect_weeks': effectContext.perfectWeeksThisMonth,
+      'is_challenge': effectContext.isPartOfChallenge,
+    };
+
+    final effects = pe.PureEffectEngine.evaluateEffects(
+      user: user,
+      context: normalizedContext,
+    );
+
+    // Compute perk bonus XP using normalized effects
+    double categoryBonusFraction = 0.0;
+    double globalXpBonusFraction = 0.0;
+
+    for (final e in effects.appliedEffects) {
+      if (e.targetProperty == 'xp') {
+        if (e.scope == EffectScope.category) {
+          // Category-specific: ensure this effect targets the task's category
+          final matchesCategory = e.conditions.any(
+            (c) => c.type == 'category' && c.value == task.category,
+          );
+          if (matchesCategory) {
+            categoryBonusFraction += e.value;
+          }
+        } else if (e.scope == EffectScope.global) {
+          globalXpBonusFraction += e.value;
+        }
+      }
+    }
+
     int perkBonusXP = 0;
-
-    // Apply category-specific perk bonuses
-    if (perkEffects.categoryBonusMultiplier > 0) {
+    if (categoryBonusFraction > 0) {
       perkBonusXP +=
-          (originalBreakdown.finalBaseXP * perkEffects.categoryBonusMultiplier)
-              .round();
+          (originalBreakdown.finalBaseXP * categoryBonusFraction).round();
+    }
+    if (globalXpBonusFraction > 0) {
+      perkBonusXP +=
+          (originalBreakdown.totalXP * globalXpBonusFraction).round();
     }
 
-    // Apply general XP perk bonuses to the total original XP
-    if (perkEffects.xpBonusMultiplier > 0) {
-      perkBonusXP +=
-          (originalBreakdown.totalXP * perkEffects.xpBonusMultiplier).round();
-    }
-
-    // Calculate final total XP
     final finalTotalXP = originalBreakdown.totalXP + perkBonusXP;
 
     return EnhancedXPCalculationBreakdown(
       originalBreakdown: originalBreakdown,
-      perkEffects: perkEffects,
+      perkEffects: PerkEffectResult(
+        categoryBonusMultiplier: categoryBonusFraction,
+        xpBonusMultiplier: globalXpBonusFraction,
+        lootBoxChanceBonus: effects.getMultiplier('loot_box_chance') - 1.0,
+        hasStreakFreeze:
+            (effects.getConditionalValue<double>('streak_freeze') ?? 0) > 0,
+        appliedPerkNames:
+            effects.appliedEffects.map((e) => e.name).toSet().toList(),
+        effectDescriptions: effects.effectDescriptions,
+      ),
       perkBonusXP: perkBonusXP,
       finalTotalXP: finalTotalXP,
-      activePerkNames: perkEffects.appliedPerkNames,
-      perkDescriptions: perkEffects.effectDescriptions,
+      activePerkNames:
+          effects.appliedEffects.map((e) => e.name).toSet().toList(),
+      perkDescriptions: effects.effectDescriptions,
     );
   }
 
@@ -166,12 +212,15 @@ class EnhancedXPCalculationService {
 
   /// Apply streak freeze if user has the perk and task is overdue
   bool tryApplyStreakFreeze(User user, Task overdueTask) {
-    return PerkEffectEngine.shouldApplyStreakFreeze(user, overdueTask);
+    return pe.PureEffectEngine.hasStreakProtection(
+      user: user,
+      overdueTask: overdueTask,
+    );
   }
 
   /// Get effects that will be applied to a task based on category
   List<String> getPerkEffectsForCategory(User user, String category) {
-    return PerkEffectEngine.getPerkEffectPreview(user, category);
+    return pe.PureEffectEngine.getEffectPreview(user: user, category: category);
   }
 
   // Note: Loot box logic is handled by IntelligentXPEngine within the

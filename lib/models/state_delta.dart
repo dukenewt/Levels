@@ -1,4 +1,4 @@
-/// State change objects for DailyXP
+/// State change objects for TaskBound
 /// These represent atomic changes to application state
 
 /// Represents a change to user data

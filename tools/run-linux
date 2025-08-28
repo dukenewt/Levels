@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Prefer per-target directories for Linux; include both common arches
+PREF1="$SCRIPT_DIR/bin/linux-x86_64"
+PREF2="$SCRIPT_DIR/bin/linux-arm64"
+LEGACY="$SCRIPT_DIR/bin-linux"
+
+PATH_ENTRIES=()
+[ -d "$PREF1" ] && PATH_ENTRIES+=("$PREF1")
+[ -d "$PREF2" ] && PATH_ENTRIES+=("$PREF2")
+[ -d "$LEGACY" ] && PATH_ENTRIES+=("$LEGACY")
+
+export PATH="${PATH_ENTRIES[*]:-}:$PATH"
+export HERMETIC_TOOLS=1
+
+exec "$@"
