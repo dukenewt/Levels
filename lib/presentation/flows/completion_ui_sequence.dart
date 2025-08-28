@@ -34,7 +34,7 @@ class CompletionUiSequence {
     steps.add(() async {
       await StreakService.updateStreak(task, DateTime.now());
       if (!context.mounted) return;
-      
+
       final settings = Provider.of<SettingsProvider>(context, listen: false);
       final perkBonus = completion.enhancedBreakdown?.perkBonusXP ?? 0;
       final totalXp = completion.xpGained;
@@ -82,7 +82,8 @@ class CompletionUiSequence {
         if (!context.mounted) return;
         bool allowCelebrations = false;
         try {
-          final settings = Provider.of<SettingsProvider>(context, listen: false);
+          final settings =
+              Provider.of<SettingsProvider>(context, listen: false);
           allowCelebrations = settings.enableCompletionCelebrations;
         } catch (_) {}
 

@@ -40,9 +40,11 @@ class TaskNotificationService {
   }
 
   /// Schedule a reminder notification for a task
-  Future<void> scheduleTaskReminder(BuildContext context, Task task, SettingsProvider settings) async {
+  Future<void> scheduleTaskReminder(
+      BuildContext context, Task task, SettingsProvider settings) async {
     if (!settings.enableTaskReminders) {
-      debugPrint('📢 Task reminders disabled, skipping notification for "${task.title}"');
+      debugPrint(
+          '📢 Task reminders disabled, skipping notification for "${task.title}"');
       return;
     }
 
@@ -81,7 +83,8 @@ class TaskNotificationService {
     SettingsProvider? settings,
   }) async {
     if (settings != null && !settings.enableCompletionCelebrations) {
-      debugPrint('📢 Completion celebrations disabled, skipping immediate notification');
+      debugPrint(
+          '📢 Completion celebrations disabled, skipping immediate notification');
       return;
     }
 

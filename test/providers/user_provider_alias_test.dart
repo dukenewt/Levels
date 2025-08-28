@@ -7,4 +7,3 @@ void main() {
     expect(canonical.UserProvider, isNotNull);
   });
 }
-

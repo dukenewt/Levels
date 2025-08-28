@@ -67,9 +67,11 @@ void main() async {
               context.read<FirestoreService>(),
               context.read<TalentPerkController>(),
             ),
-            update: (context, authService, firestoreService, talentPerkController, previous) =>
+            update: (context, authService, firestoreService,
+                    talentPerkController, previous) =>
                 previous ??
-                UserProvider(authService, firestoreService, talentPerkController),
+                UserProvider(
+                    authService, firestoreService, talentPerkController),
           ),
           ChangeNotifierProxyProvider<UserProvider, TaskProvider>(
             create: (context) => TaskProvider(

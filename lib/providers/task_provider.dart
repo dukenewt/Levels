@@ -223,7 +223,8 @@ class TaskProvider with ChangeNotifier {
         debugPrint('✅ TaskProvider: Task created successfully');
         _lastError = null;
         for (final newTask in tasksToAdd) {
-          final settings = Provider.of<SettingsProvider>(context, listen: false);
+          final settings =
+              Provider.of<SettingsProvider>(context, listen: false);
           TaskNotificationService.instance
               .scheduleTaskReminder(context, newTask, settings);
         }
