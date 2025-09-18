@@ -67,7 +67,7 @@ class EnhancedXPCalculationBreakdown {
     }
 
     if (perkBonusXP > 0) {
-      breakdown.add('Perk Bonus: +${perkBonusXP}');
+      breakdown.add('Perk Bonus: +$perkBonusXP');
 
       // Add individual perk descriptions
       for (final description in perkDescriptions.values) {
@@ -77,7 +77,7 @@ class EnhancedXPCalculationBreakdown {
       }
     }
 
-    breakdown.add('Total XP: ${finalTotalXP}');
+    breakdown.add('Total XP: $finalTotalXP');
 
     return breakdown;
   }

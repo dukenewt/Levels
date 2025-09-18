@@ -11,7 +11,7 @@ import '../features/character_progression/domain/completion_context.dart';
 import '../services/pure_effect_engine.dart';
 import '../providers/user_provider_refactored.dart';
 import '../controllers/talent_perk_controller.dart';
-import '../services/intelligent_xp_engine.dart';
+import '../features/character_progression/application/intelligent_xp_engine.dart' as xp;
 
 /// Result of the completion pipeline execution
 class PipelineExecutionResult {
@@ -111,7 +111,7 @@ class PipelineSettings {
 class CompletionPipeline {
   final UserProvider _userProvider;
   final TalentPerkController _talentPerkController;
-  final IntelligentXPEngine _xpEngine;
+  final xp.IntelligentXPEngine _xpEngine;
 
   // Event handlers
   final Function(UiEventBatch)? onUiEvents;
@@ -121,7 +121,7 @@ class CompletionPipeline {
   CompletionPipeline({
     required UserProvider userProvider,
     required TalentPerkController talentPerkController,
-    required IntelligentXPEngine xpEngine,
+    required xp.IntelligentXPEngine xpEngine,
     this.onUiEvents,
     this.onError,
     this.onDebugLog,
@@ -250,17 +250,23 @@ class CompletionPipeline {
         'streak': context.currentStreak,
       });
 
-      // Calculate base XP using the existing intelligent engine
-      final baseXP = _xpEngine.calculateXP(task, context);
-
-      // Determine if loot box should be awarded
-      final hasLootBox = _xpEngine.shouldAwardLootBox(task);
+      // Calculate the detailed XP breakdown using the intelligent engine
+      final detailedBreakdown = _xpEngine.calculateDetailedXP(task, context);
+      final baseXP = detailedBreakdown.finalBaseXP;
+      final hasLootBox = detailedBreakdown.lootBoxResult.wasTriggered;
 
       debugInfo['analysis'] = {
         'base_xp': baseXP,
         'has_loot_box': hasLootBox,
-        'difficulty_multiplier': task.difficulty.multiplier,
+        'difficulty_multiplier': detailedBreakdown.difficultyMultiplier,
+        'category_multiplier': detailedBreakdown.categoryMultiplier,
+        'loot_box_multiplier': detailedBreakdown.lootBoxResult.multiplier,
         'time_minutes': task.timeCostMinutes,
+      };
+      debugInfo['analysis_breakdown'] = {
+        'category_reason': detailedBreakdown.categoryReason,
+        'difficulty_reason': detailedBreakdown.difficultyReason,
+        'total_bonus_xp': detailedBreakdown.totalBonusXP,
       };
 
       return _PhaseResult.success(
