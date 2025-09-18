@@ -484,7 +484,7 @@ class ProfessionalTheme {
               height: 1.5,
               color: Colors.white),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0, // We use custom shadows instead
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDesignTokens.radiusLg),

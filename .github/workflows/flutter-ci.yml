@@ -23,6 +23,21 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Stub Firebase options for CI builds
+        run: |
+          mkdir -p lib
+          cat > lib/firebase_options.dart << 'EOF'
+          import 'package:firebase_core/firebase_core.dart';
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform => const FirebaseOptions(
+              apiKey: 'test',
+              appId: 'test',
+              messagingSenderId: 'test',
+              projectId: 'test',
+            );
+          }
+          EOF
+
       - name: Flutter Pub Get
         run: flutter pub get
 

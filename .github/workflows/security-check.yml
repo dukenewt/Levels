@@ -79,5 +79,6 @@ jobs:
 
       - name: TruffleHog Scan
         run: |
+          pip install --upgrade pip
           pip install trufflehog
-          trufflehog filesystem --no-update --only-verified .
+          trufflehog filesystem --only-verified --fail .
