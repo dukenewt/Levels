@@ -77,8 +77,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: TruffleHog Scan
+      - name: TruffleHog Scan (container)
         run: |
-          pip install --upgrade pip
-          pip install trufflehog
-          trufflehog filesystem --only-verified --fail .
+          docker run --rm \
+            -v "$PWD":/repo \
+            trufflesecurity/trufflehog:latest \
+            filesystem --only-verified --fail /repo
