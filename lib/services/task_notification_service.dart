@@ -6,6 +6,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/task.dart';
+import '../providers/settings_provider.dart';
 
 /// Service for handling all task-related notifications
 class TaskNotificationService {
@@ -39,7 +40,14 @@ class TaskNotificationService {
   }
 
   /// Schedule a reminder notification for a task
-  Future<void> scheduleTaskReminder(BuildContext context, Task task) async {
+  Future<void> scheduleTaskReminder(
+      BuildContext context, Task task, SettingsProvider settings) async {
+    if (!settings.enableTaskReminders) {
+      debugPrint(
+          '📢 Task reminders disabled, skipping notification for "${task.title}"');
+      return;
+    }
+
     if (task.dueDate == null || task.scheduledTime == null) {
       return;
     }
@@ -72,7 +80,14 @@ class TaskNotificationService {
     required String title,
     required String body,
     String? payload,
+    SettingsProvider? settings,
   }) async {
+    if (settings != null && !settings.enableCompletionCelebrations) {
+      debugPrint(
+          '📢 Completion celebrations disabled, skipping immediate notification');
+      return;
+    }
+
     const androidDetails = AndroidNotificationDetails(
       'immediate_notifications',
       'Immediate Notifications',

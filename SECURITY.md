@@ -9,7 +9,7 @@ This document describes how we protect secrets/configuration and how to set up t
 - `ios/Runner/firebase_config.swift`
 - Any `*.env*`, `*.p12`, `*.mobileprovision`, `*.jks`, `*keystore*`, private keys, or credentials
 
-These are blocked by `.gitignore` and CI. If you accidentally commit any, rotate and run history cleanup.
+These are blocked by `.gitignore` and CI. CI enforces a shared list in `scripts/forbidden-paths.txt`. If you accidentally commit any, rotate and run history cleanup.
 
 ## Local Setup
 1. Ensure you have Flutter, Dart, Firebase CLI, and FlutterFire CLI installed.
@@ -54,4 +54,3 @@ If secrets ever hit history:
 - Remove secrets from code and history.
 - Audit access logs where possible.
 - Post-mortem: add rules/tests to prevent repeat.
-

@@ -137,12 +137,18 @@ class UserProvider with ChangeNotifier {
               // This would be handled by a separate streak tracking system
               break;
             case 'talentChoices':
-              if (entry.value is Map<String, dynamic>) {
-                final newChoices = {
-                  ...updatedUser.talentChoices,
-                  ...entry.value as Map<String, dynamic>
-                };
-                updatedUser = updatedUser.copyWith(talentChoices: newChoices);
+              // Merge incoming map into the strongly-typed Map<int, String>
+              final incoming = entry.value;
+              if (incoming is Map) {
+                final merged = Map<int, String>.from(updatedUser.talentChoices);
+                incoming.forEach((k, v) {
+                  final key = k is int ? k : int.tryParse(k.toString());
+                  final value = v?.toString();
+                  if (key != null && value != null) {
+                    merged[key] = value;
+                  }
+                });
+                updatedUser = updatedUser.copyWith(talentChoices: merged);
               }
               break;
             // Add other fields as needed

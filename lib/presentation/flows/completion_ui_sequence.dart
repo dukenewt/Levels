@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
-
-import '../../../models/task.dart';
-import '../../../models/task_results.dart';
-import '../../../widgets/xp_reward_snackbar.dart';
-import '../../../widgets/xp_breakdown_dialog.dart';
-import '../../../core/animation/animation_orchestrator.dart';
-import '../../../services/streak_service.dart';
-import '../../../services/task_notification_service.dart';
 import 'package:provider/provider.dart';
-import '../../../providers/settings_provider.dart';
-import '../../../providers/epic_provider.dart';
-import '../../../models/epic_project.dart';
 
-/// Lightweight pipeline facade to standardize the post-completion UI sequence.
-/// This does not replace existing domain logic yet; it sequences UI safely.
-class CompletionPipeline {
-  /// Play a conflict-free UI sequence for task completion using AnimationOrchestrator.
+import 'package:dailyxp/models/task.dart';
+import 'package:dailyxp/models/task_results.dart';
+import 'package:dailyxp/widgets/xp_reward_snackbar.dart';
+import 'package:dailyxp/widgets/xp_breakdown_dialog.dart';
+import 'package:dailyxp/core/animation/animation_orchestrator.dart';
+import 'package:dailyxp/services/streak_service.dart';
+import 'package:dailyxp/services/task_notification_service.dart';
+import 'package:dailyxp/providers/settings_provider.dart';
+import 'package:dailyxp/providers/epic_provider.dart';
+
+/// UI-only completion sequence for presentation layer.
+/// Sequences safe UI actions post-completion via AnimationOrchestrator.
+class CompletionUiSequence {
   static Future<void> playUiSequence({
     required BuildContext context,
     required Task task,
@@ -24,13 +22,11 @@ class CompletionPipeline {
     final orchestrator = AnimationOrchestrator.instance;
     final key = 'task:${task.id}';
 
-    // Wire reduced motion from settings
+    // Wire reduced motion from settings if available
     try {
       final settings = Provider.of<SettingsProvider>(context, listen: false);
       orchestrator.setReducedMotion(settings.reducedMotion);
-    } catch (_) {
-      // If settings provider is not in scope, keep existing orchestrator state.
-    }
+    } catch (_) {}
 
     final List<Future<void> Function()> steps = [];
 
@@ -38,24 +34,18 @@ class CompletionPipeline {
     steps.add(() async {
       await StreakService.updateStreak(task, DateTime.now());
       if (!context.mounted) return;
-      // Only send if user allows completion celebrations/notifications
-      bool allowCompletionNotifs = false;
-      try {
-        final settings = Provider.of<SettingsProvider>(context, listen: false);
-        allowCompletionNotifs = settings.enableCompletionCelebrations;
-      } catch (_) {}
 
-      if (allowCompletionNotifs) {
-        final perkBonus = completion.enhancedBreakdown?.perkBonusXP ?? 0;
-        final totalXp = completion.xpGained;
-        await TaskNotificationService.instance.showImmediateNotification(
-          title: 'Task Completed! 🎉',
-          body: perkBonus > 0
-              ? '${task.title} completed! +$totalXp XP (+$perkBonus perk bonus!)'
-              : '${task.title} completed! +$totalXp XP',
-          payload: 'completion_${task.id}',
-        );
-      }
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
+      final perkBonus = completion.enhancedBreakdown?.perkBonusXP ?? 0;
+      final totalXp = completion.xpGained;
+      await TaskNotificationService.instance.showImmediateNotification(
+        title: 'Task Completed! 🎉',
+        body: perkBonus > 0
+            ? '${task.title} completed! +$totalXp XP (+$perkBonus perk bonus!)'
+            : '${task.title} completed! +$totalXp XP',
+        payload: 'completion_${task.id}',
+        settings: settings,
+      );
     });
 
     // XP snackbar next
@@ -66,7 +56,6 @@ class CompletionPipeline {
         completion.xpGained,
         completion.streakBonus,
       );
-      // Small breathing room to avoid immediate overlap
       await Future.delayed(orchestrator.reducedMotion
           ? const Duration(milliseconds: 0)
           : const Duration(milliseconds: 300));
@@ -91,7 +80,6 @@ class CompletionPipeline {
       final updatedEpic = await epicProvider.updateEpicProgress(task.id);
       if (updatedEpic != null && updatedEpic.isCompleted) {
         if (!context.mounted) return;
-        // Respect Reduced Motion and user preference for celebrations
         bool allowCelebrations = false;
         try {
           final settings =
@@ -100,7 +88,6 @@ class CompletionPipeline {
         } catch (_) {}
 
         if (allowCelebrations) {
-          // Lightweight celebratory dialog; can be swapped for richer overlay
           await showDialog<void>(
             context: context,
             barrierDismissible: true,

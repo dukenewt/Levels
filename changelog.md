@@ -6,19 +6,70 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Versioning
-- Renumbering: earlier 1.x entries were internal, unreleased milestones used during TestFlight-only development. The pre-1.0 public series begins at `0.7.0` to reflect ongoing stabilization work. Build numbers will continue to increase monotonically on each platform.
-### Security
-- Added repository hardening: ignore Firebase client configs and environment files; prevent accidental commits via `.gitignore` updates.
-- Introduced Security Check CI workflow (Gitleaks + TruffleHog + forbidden-path guard) running on pushes/PRs and manual dispatch.
-- Documented rotation + history cleanup (git-filter-repo/BFG) and added helper scripts under `scripts/`.
-- Added baseline Firestore security rules (`firestore.rules`) with per-user access and ownership validation.
-- Added `scripts/bootstrap.sh` to generate `lib/firebase_options.dart` locally via FlutterFire (no secrets in git).
+### Planning
+- Roadmap consolidated with a Now/Next/Later section; `TODO.md` reduced to a pointer.
 
-### Tooling/Docs
-- SECURITY.md added with setup guide, incident response, App Check guidance, and cleanup playbook.
-- CI workflow triggers widened; TruffleHog action reference corrected; Gitleaks config validated for v8.
+### ADRs
+- Added ADR index and stubs for core architecture decisions (Effect model, CompletionPipeline, AnimationOrchestrator, Provider boundaries).
 
+### Security (ongoing)
+- App Check: enable → monitor → enforce for Firestore/Storage (pending enforcement step).
+
+
+## [0.7.2] - 2025-08-28
+
+### Fixed — Notification Gating
+- **🎯 Notifications now respect user preferences**: Fixed critical issue where notifications ignored `SettingsProvider` toggles
+  - Task reminders now respect `enableTaskReminders` setting in `TaskNotificationService.scheduleTaskReminder()`
+  - Completion celebrations now respect `enableCompletionCelebrations` setting in `TaskNotificationService.showImmediateNotification()`
+  - Settings work independently - users can enable task reminders but disable celebrations, or vice versa
+  - Updated all notification call sites in `TaskProvider` (4 locations) and `CompletionUiSequence` to pass settings
+  - Added debug logging when notifications are skipped due to user preferences
+
+### Added — Tests
+- **📋 Notification Gating Smoke Test**: Added `task_notification_service_test.dart` to verify settings integration
+  - Tests that notification preferences can be independently controlled
+  - Verifies notification gating integration points exist and function correctly
+  - Ensures backward compatibility for existing notification calls
+
+### Technical
+- Enhanced `TaskNotificationService` methods to accept `SettingsProvider` parameters with proper gating logic
+- Maintained backward compatibility by making settings parameter optional in `showImmediateNotification()`
+
+
+## [0.7.1] - 2025-08-28
+
+### Changed — Consolidation & Effects
+- Providers: canonicalized `UserProvider` (refactored) via `providers/user_provider.dart` re‑export; updated provider wiring in `main.dart` to inject `TalentPerkController` (ProxyProvider3).
+- Pipeline: removed legacy feature-layer pipeline and introduced `presentation/flows/completion_ui_sequence.dart` as a UI‑only sequence orchestrated by `AnimationOrchestrator`.
+- Effects: migrated `EnhancedXPCalculationService` to compute perk/talent bonuses via `PureEffectEngine` as single source of truth; resolved class name collisions with import aliases.
+
+### Added — Tests
+- Unit tests for `PureEffectEngine` and `EnhancedXPCalculationService`.
+- Smoke tests for provider alias export and UI sequence symbol presence.
+
+### Fixed
+- Build issues from stale imports and provider constructor changes after refactor.
+
+### Docs
+- Roadmap updated with consolidation plan under “Now”.
+
+
+## [0.7.0] - 2025-08-28
+
+### Added
+- ADR index (`docs/adr/0000-index.md`) and initial ADR stubs (0001–0004).
+- Roadmap consolidation with top-level Now/Next/Later priorities.
+
+### Fixed
+- Talent selection dialog reliably triggers at levels 5/10/15/20/25.
+
+### Security & Docs
+- Hardened docs around secrets handling and CI security checks; clarified versioning note about earlier internal 1.x milestones.
+
+---
+
+## [1.x Internal Milestones] (pre-public)
 
 ## [1.5.0] - 2025-08-21
 
@@ -88,10 +139,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Epic completion now uses an orchestrated dialog (placeholder overlay) instead of only a snackbar
 
 ### Known Issues (to be addressed)
-- Notifications currently ignore user preference toggles in `SettingsProvider`
-- Talent dialog and selection flow not triggering as expected after level-up
-- Perk "Smart Suggestions"/"Bound suggestions" must be removed entirely from perks
-- Epic completion celebration is a basic snackbar; needs orchestrated overlay
+- Perk "Smart Suggestions"/"Bound suggestions" must be removed entirely from perks.
+- Epic completion celebration is a basic snackbar; needs orchestrated overlay.
 
 ## [1.4.0] - 2025-08-20
 

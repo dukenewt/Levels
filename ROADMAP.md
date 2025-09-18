@@ -2,6 +2,39 @@
 
 This document outlines the strategic development priorities for TaskBound, focusing on building upon the completed Epic Project Management system and enhancing the RPG experience.
 
+## Now / Next / Later
+- Now:
+  - Animations & Accessibility: implement Reduced Motion in `ring_unraveling_celebration.dart` and `xp_orb_overlay.dart`; centralize timings in `AppDesignTokens`; sequence via `AnimationOrchestrator`.
+  - Effects cleanup: remove `PerkEffectEngine`; migrate `PerkEffectResult` shape to a neutral model or normalized structure; sweep imports.
+  - Persistence safety: use Firestore transactions for XP/level-up and talent choice persistence to avoid races.
+  - Tests: add unit tests for `CompletionPipeline` outputs (deterministic `StateDelta`/`UiEvent`), stacking/overrides for `PureEffectEngine`.
+  - CI/Quality gates: require "Build & Tests" and "Security Check" on `develop`; keep `main` protected for release-only merges.
+  - Branching: use `develop` as the staging branch; open feature PRs into `develop`. When release-ready, merge `develop` → `main` and tag 1.0.0.
+- Next:
+  - Replace snackbar with orchestrated celebration overlay (Reduced Motion aware).
+  - Remove "Smart/Bound Suggestions" remnants from code and UI.
+  - Epic performance polish; large-list rendering keys/tuning.
+  - Material 3 cleanups across core screens (dashboard, creation flows, profile).
+- Later:
+  - Achievements foundation and analytics.
+  - Epic templates and collaboration exploration (behind flags).
+  - Advanced intelligence (personalized talent recommendations).
+
+## Consolidation Plan (Now)
+- Providers: unify on `user_provider_refactored.dart` and remove duplication.
+- Pipeline: expose a single `CompletionPipeline` that sequences analyze → compute → persist → emit; keep the feature-layer helper only as a UI façade if needed.
+- Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.
+- Animations: centralize durations/curves in `AppDesignTokens`; ensure Reduced Motion across major celebratory widgets.
+
+## Recently Completed (v0.7.2)
+- Notifications: implemented user preference gating for task reminders and completion celebrations via `SettingsProvider` in `TaskNotificationService`; added smoke test for notification gating functionality.
+
+## Recently Completed (v0.7.1)
+- Providers: canonicalized `UserProvider` and updated DI (ProxyProvider3) to include `TalentPerkController`.
+- Pipeline UI: replaced legacy feature-layer pipeline with `presentation/flows/completion_ui_sequence.dart`; removed old file and fixed imports.
+- Effects: migrated `EnhancedXPCalculationService` to use `PureEffectEngine` for compute; eliminated duplicate compute path; added import aliases to avoid collisions.
+- Tests: added unit tests for PureEffectEngine and EnhancedXPCalculationService; smoke tests for provider alias and UI sequence.
+
 ## **📋 REFINED DEVELOPMENT PRIORITY LIST**
 *Updated based on recent Epic Project Management implementation and existing roadmap analysis*
 
@@ -37,7 +70,7 @@ This document outlines the strategic development priorities for TaskBound, focus
  - App Check: enable, monitor, then enforce for Firestore/Storage
  - Branch protection: require Security Check CI to pass on `main`
 
-### Integration Track
+### Integration Track --DONE
 - Merge plan for architecture refactor:
   - Create `integrate/arch-refactor` from refactor branch
   - Merge rewritten `main` with `--allow-unrelated-histories`, keep security scaffolding
@@ -199,9 +232,9 @@ This document outlines the strategic development priorities for TaskBound, focus
 <!--
 ## ARCHIVED: Previous Roadmap (Commented Out for Reference)
 
-# DailyXP Development Roadmap
+# TaskBound Development Roadmap
 
-This document outlines the strategic development priorities for DailyXP, focusing on perfecting the single-player RPG experience first.
+This document outlines the strategic development priorities for TaskBound, focusing on perfecting the single-player RPG experience first.
 
 ## Tier 1: The Unbreakable Core Loop
 *Focus: Make the app fundamentally useful and ensure the basic "game" is in place.*
