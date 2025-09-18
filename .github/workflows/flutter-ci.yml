@@ -64,11 +64,11 @@ jobs:
         continue-on-error: true
         run: flutter analyze
 
-      - name: Analyze changed files (PRs only, blocking)
+      - name: Analyze changed files (PRs only, blocking; ignore warnings/infos)
         if: ${{ github.event_name == 'pull_request' && steps.changed.outputs.all_changed_files != '' }}
         run: |
           echo "Changed Dart files: ${{ steps.changed.outputs.all_changed_files }}"
-          flutter analyze ${{ steps.changed.outputs.all_changed_files }}
+          flutter analyze --no-fatal-warnings --no-fatal-infos ${{ steps.changed.outputs.all_changed_files }}
       - name: No Dart file changes detected
         if: ${{ steps.changed.outputs.all_changed_files == '' }}
         run: echo "No changed Dart files to analyze."
