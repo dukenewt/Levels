@@ -11,7 +11,8 @@ import '../features/character_progression/domain/completion_context.dart';
 import '../services/pure_effect_engine.dart';
 import '../providers/user_provider_refactored.dart';
 import '../controllers/talent_perk_controller.dart';
-import '../features/character_progression/application/intelligent_xp_engine.dart' as xp;
+import '../features/character_progression/application/intelligent_xp_engine.dart'
+    as xp;
 
 /// Result of the completion pipeline execution
 class PipelineExecutionResult {
