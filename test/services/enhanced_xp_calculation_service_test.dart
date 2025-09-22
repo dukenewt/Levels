@@ -52,16 +52,17 @@ void main() {
       double globalBonusFraction = 0.0;
       for (final e in effects.appliedEffects) {
         if (e.targetProperty == 'xp' && e.scope == EffectScope.category) {
-          final matchesCategory =
-              e.conditions.any((c) => c.type == 'category' && c.value == task.category);
+          final matchesCategory = e.conditions
+              .any((c) => c.type == 'category' && c.value == task.category);
           if (matchesCategory) categoryBonusFraction += e.value;
         } else if (e.targetProperty == 'xp' && e.scope == EffectScope.global) {
           globalBonusFraction += e.value;
         }
       }
       final expectedPerkBonus =
-          (result.originalBreakdown.finalBaseXP * categoryBonusFraction).round() +
-          (result.originalBreakdown.totalXP * globalBonusFraction).round();
+          (result.originalBreakdown.finalBaseXP * categoryBonusFraction)
+                  .round() +
+              (result.originalBreakdown.totalXP * globalBonusFraction).round();
       expect(result.perkBonusXP, expectedPerkBonus);
 
       // final total = original total + perk bonus

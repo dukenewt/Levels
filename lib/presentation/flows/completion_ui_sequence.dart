@@ -87,7 +87,8 @@ class CompletionUiSequence {
         if (!context.mounted) return;
         bool allowCelebrations = false;
         try {
-          final settings = Provider.of<SettingsProvider>(context, listen: false);
+          final settings =
+              Provider.of<SettingsProvider>(context, listen: false);
           allowCelebrations = settings.enableCompletionCelebrations;
         } catch (_) {}
 

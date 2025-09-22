@@ -27,7 +27,8 @@ void main() {
         'completion_time': DateTime.now().toIso8601String(),
       };
 
-      final effects = PureEffectEngine.evaluateEffects(user: user, context: context);
+      final effects =
+          PureEffectEngine.evaluateEffects(user: user, context: context);
 
       // Compute expected XP multiplier from applied effects to avoid drift
       double expectedXpMultiplier = 1.0;
