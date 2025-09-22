@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed — Effects Architecture Cleanup
+- **Effects consolidation**: Removed legacy `PerkEffectEngine` and migrated all effect evaluation to `PureEffectEngine` with normalized `EffectEvaluationResult`.
+- **Service modernization**: Updated `EnhancedXPCalculationService` to use `EffectEvaluationResult` instead of deprecated `PerkEffectResult`.
+- **Import cleanup**: Removed all references to deprecated perk effect engine across UI components.
+
 ### Planning
 - Roadmap consolidated with a Now/Next/Later section; `TODO.md` reduced to a pointer.
 

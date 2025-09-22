@@ -5,12 +5,11 @@ import '../features/character_progression/application/intelligent_xp_engine.dart
 import '../features/character_progression/domain/completion_context.dart';
 import 'pure_effect_engine.dart' as pe;
 import '../models/effect.dart';
-import 'perk_effect_engine.dart' show PerkEffectResult;
 
 /// Enhanced XP calculation breakdown that includes perk effects
 class EnhancedXPCalculationBreakdown {
   final xp.XPCalculationBreakdown originalBreakdown;
-  final PerkEffectResult perkEffects;
+  final pe.EffectEvaluationResult effectResults;
   final int perkBonusXP;
   final int finalTotalXP;
   final List<String> activePerkNames;
@@ -18,7 +17,7 @@ class EnhancedXPCalculationBreakdown {
 
   EnhancedXPCalculationBreakdown({
     required this.originalBreakdown,
-    required this.perkEffects,
+    required this.effectResults,
     required this.perkBonusXP,
     required this.finalTotalXP,
     required this.activePerkNames,
@@ -153,16 +152,7 @@ class EnhancedXPCalculationService {
 
     return EnhancedXPCalculationBreakdown(
       originalBreakdown: originalBreakdown,
-      perkEffects: PerkEffectResult(
-        categoryBonusMultiplier: categoryBonusFraction,
-        xpBonusMultiplier: globalXpBonusFraction,
-        lootBoxChanceBonus: effects.getMultiplier('loot_box_chance') - 1.0,
-        hasStreakFreeze:
-            (effects.getConditionalValue<double>('streak_freeze') ?? 0) > 0,
-        appliedPerkNames:
-            effects.appliedEffects.map((e) => e.name).toSet().toList(),
-        effectDescriptions: effects.effectDescriptions,
-      ),
+      effectResults: effects,
       perkBonusXP: perkBonusXP,
       finalTotalXP: finalTotalXP,
       activePerkNames:

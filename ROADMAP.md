@@ -6,7 +6,7 @@ This document outlines the strategic development priorities for TaskBound, focus
 - Now:
   - Notifications: gate schedule/cancel/overdue/re‑engagement via `SettingsProvider` in `TaskNotificationService`; add a smoke test.
   - Animations & Accessibility: implement Reduced Motion in `ring_unraveling_celebration.dart` and `xp_orb_overlay.dart`; centralize timings in `AppDesignTokens`; sequence via `AnimationOrchestrator`.
-  - Effects cleanup: remove `PerkEffectEngine`; migrate `PerkEffectResult` shape to a neutral model or normalized structure; sweep imports.
+  - ✅ Effects cleanup: ~~remove `PerkEffectEngine`; migrate `PerkEffectResult` shape to a neutral model or normalized structure; sweep imports.~~ **COMPLETED** - All effect evaluation now consolidated through `PureEffectEngine`.
   - Persistence safety: use Firestore transactions for XP/level-up and talent choice persistence to avoid races.
   - Tests: add unit tests for `CompletionPipeline` outputs (deterministic `StateDelta`/`UiEvent`), stacking/overrides for `PureEffectEngine`, and a basic notification-gating test.
   - CI/Quality gates: require “Build & Tests” and “Security Check” on `develop`; keep `main` protected for release-only merges.
