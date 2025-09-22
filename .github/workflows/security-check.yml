@@ -83,12 +83,12 @@ jobs:
 
       - name: Gitleaks Scan
         uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --no-git -v
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: TruffleHog Scan (container)
+      - name: TruffleHog Scan (Docker)
         run: |
           docker run --rm \
-          -v "$PWD":/repo \
-          trufflesecurity/trufflehog:3.76.3 \
-          filesystem --only-verified --fail /repo
+            -v "$PWD":/repo \
+            trufflesecurity/trufflehog:3.76.3 \
+            filesystem --only-verified --fail --exclude-paths /repo/.trufflehogignore /repo

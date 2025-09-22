@@ -185,91 +185,94 @@ class EnhancedXPCalculationService {
 
     int perkBonusXP = 0;
     if (categoryBonusFraction > 0) {
-    if (categoryBonusFraction > 0) {
-      perkBonusXP +=
-          (originalBreakdown.finalBaseXP * categoryBonusFraction).round();
-          (originalBreakdown.finalBaseXP * categoryBonusFraction).round();
-    }
-    if (globalXpBonusFraction > 0) {
-    if (globalXpBonusFraction > 0) {
-      perkBonusXP +=
+      if (categoryBonusFraction > 0) {
+        perkBonusXP +=
+            (originalBreakdown.finalBaseXP * categoryBonusFraction).round();
+        (originalBreakdown.finalBaseXP * categoryBonusFraction).round();
+      }
+      if (globalXpBonusFraction > 0) {
+        if (globalXpBonusFraction > 0) {
+          perkBonusXP +=
+              (originalBreakdown.totalXP * globalXpBonusFraction).round();
           (originalBreakdown.totalXP * globalXpBonusFraction).round();
-          (originalBreakdown.totalXP * globalXpBonusFraction).round();
+        }
+
+        final finalTotalXP = originalBreakdown.totalXP + perkBonusXP;
+
+        return EnhancedXPCalculationBreakdown(
+          originalBreakdown: originalBreakdown,
+          effectResults: effects,
+          perkBonusXP: perkBonusXP,
+          finalTotalXP: finalTotalXP,
+          activePerkNames:
+              effects.appliedEffects.map((e) => e.name).toSet().toList(),
+          perkDescriptions: effects.effectDescriptions,
+          activePerkNames:
+              effects.appliedEffects.map((e) => e.name).toSet().toList(),
+          perkDescriptions: effects.effectDescriptions,
+        );
+      }
     }
 
-    final finalTotalXP = originalBreakdown.totalXP + perkBonusXP;
+    /// Get preview of XP calculation for task creation UI
+    Map<String, dynamic> getXPPreview(
+      User user,
+      Task task,
+    ) {
+      final context = CompletionContext.defaultContext();
+      final enhancedBreakdown = calculateEnhancedXP(user, task, context);
 
-    return EnhancedXPCalculationBreakdown(
-      originalBreakdown: originalBreakdown,
-      effectResults: effects,
-      perkBonusXP: perkBonusXP,
-      finalTotalXP: finalTotalXP,
-      activePerkNames:
-          effects.appliedEffects.map((e) => e.name).toSet().toList(),
-      perkDescriptions: effects.effectDescriptions,
-      activePerkNames:
-          effects.appliedEffects.map((e) => e.name).toSet().toList(),
-      perkDescriptions: effects.effectDescriptions,
-    );
-  }
-
-  /// Get preview of XP calculation for task creation UI
-  Map<String, dynamic> getXPPreview(
-    User user,
-    Task task,
-  ) {
-    final context = CompletionContext.defaultContext();
-    final enhancedBreakdown = calculateEnhancedXP(user, task, context);
-
-    return {
-      'baseXP': enhancedBreakdown.originalBreakdown.finalBaseXP,
-      'totalXP': enhancedBreakdown.finalTotalXP,
-      'perkBonus': enhancedBreakdown.perkBonusXP,
-      'activePerks': enhancedBreakdown.activePerkNames,
-      'hasPerks': enhancedBreakdown.perkBonusXP > 0,
-      'breakdown': enhancedBreakdown.getBreakdownForUI(),
-    };
-  }
-
-  /// Check if user can create Epic difficulty tasks (requires Project Management talent)
-  bool canCreateEpicTasks(User user) {
-    return user.hasProjectManagementTalent();
-  }
-
-  /// Get available difficulties for user based on talents
-  List<TaskDifficulty> getAvailableDifficulties(User user) {
-    final difficulties = [
-      TaskDifficulty.easy,
-      TaskDifficulty.medium,
-      TaskDifficulty.hard,
-    ];
-
-    // Add Epic if user has Project Management talent
-    if (canCreateEpicTasks(user)) {
-      difficulties.add(TaskDifficulty.epic);
+      return {
+        'baseXP': enhancedBreakdown.originalBreakdown.finalBaseXP,
+        'totalXP': enhancedBreakdown.finalTotalXP,
+        'perkBonus': enhancedBreakdown.perkBonusXP,
+        'activePerks': enhancedBreakdown.activePerkNames,
+        'hasPerks': enhancedBreakdown.perkBonusXP > 0,
+        'breakdown': enhancedBreakdown.getBreakdownForUI(),
+      };
     }
 
-    return difficulties;
-  }
+    /// Check if user can create Epic difficulty tasks (requires Project Management talent)
+    bool canCreateEpicTasks(User user) {
+      return user.hasProjectManagementTalent();
+    }
 
-  /// Apply streak freeze if user has the perk and task is overdue
-  bool tryApplyStreakFreeze(User user, Task overdueTask) {
-    return pe.PureEffectEngine.hasStreakProtection(
-      user: user,
-      overdueTask: overdueTask,
-    );
-    return pe.PureEffectEngine.hasStreakProtection(
-      user: user,
-      overdueTask: overdueTask,
-    );
-  }
+    /// Get available difficulties for user based on talents
+    List<TaskDifficulty> getAvailableDifficulties(User user) {
+      final difficulties = [
+        TaskDifficulty.easy,
+        TaskDifficulty.medium,
+        TaskDifficulty.hard,
+      ];
 
-  /// Get effects that will be applied to a task based on category
-  List<String> getPerkEffectsForCategory(User user, String category) {
-    return pe.PureEffectEngine.getEffectPreview(user: user, category: category);
-    return pe.PureEffectEngine.getEffectPreview(user: user, category: category);
-  }
+      // Add Epic if user has Project Management talent
+      if (canCreateEpicTasks(user)) {
+        difficulties.add(TaskDifficulty.epic);
+      }
 
-  // Note: Loot box logic is handled by IntelligentXPEngine within the
-  // original breakdown to avoid drift and duplication.
+      return difficulties;
+    }
+
+    /// Apply streak freeze if user has the perk and task is overdue
+    bool tryApplyStreakFreeze(User user, Task overdueTask) {
+      return pe.PureEffectEngine.hasStreakProtection(
+        user: user,
+        overdueTask: overdueTask,
+      );
+      return pe.PureEffectEngine.hasStreakProtection(
+        user: user,
+        overdueTask: overdueTask,
+      );
+    }
+
+    /// Get effects that will be applied to a task based on category
+    List<String> getPerkEffectsForCategory(User user, String category) {
+      return pe.PureEffectEngine.getEffectPreview(
+          user: user, category: category);
+      return pe.PureEffectEngine.getEffectPreview(
+          user: user, category: category);
+    }
+
+    // Note: Loot box logic is handled by IntelligentXPEngine within the
+  } // original breakdown to avoid drift and duplication.
 }
