@@ -86,8 +86,9 @@ jobs:
         with:
           args: detect --no-git -v
 
-      - name: TruffleHog Scan
-        uses: trufflesecurity/trufflehog-actions-scan@v0.17.6
-        with:
-          path: .
-          extra_args: "--only-verified"
+      - name: TruffleHog Scan (container)
+        run: |
+          docker run --rm \
+          -v "$PWD":/repo \
+          trufflesecurity/trufflehog:3.76.3 \
+          filesystem --only-verified --fail /repo
