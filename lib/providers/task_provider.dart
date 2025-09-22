@@ -223,8 +223,10 @@ class TaskProvider with ChangeNotifier {
         debugPrint('✅ TaskProvider: Task created successfully');
         _lastError = null;
         for (final newTask in tasksToAdd) {
+          final settings =
+              Provider.of<SettingsProvider>(context, listen: false);
           TaskNotificationService.instance
-              .scheduleTaskReminder(context, newTask);
+              .scheduleTaskReminder(context, newTask, settings);
         }
         return Result.success(tasksToAdd.first);
       } else {
@@ -283,8 +285,9 @@ class TaskProvider with ChangeNotifier {
         _lastError = null;
         await TaskNotificationService.instance
             .cancelTaskNotification(updatedTask.id);
+        final settings = Provider.of<SettingsProvider>(context, listen: false);
         await TaskNotificationService.instance
-            .scheduleTaskReminder(context, updatedTask);
+            .scheduleTaskReminder(context, updatedTask, settings);
         return Result.success(null);
       } else {
         debugPrint('❌ TaskProvider: Failed to save updated task, reverting');
@@ -380,8 +383,9 @@ class TaskProvider with ChangeNotifier {
       // Update notifications
       await TaskNotificationService.instance
           .cancelTaskNotification(modifiedTask.id);
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
       await TaskNotificationService.instance
-          .scheduleTaskReminder(context, modifiedTask);
+          .scheduleTaskReminder(context, modifiedTask, settings);
     }
   }
 
@@ -426,8 +430,9 @@ class TaskProvider with ChangeNotifier {
         // Update notifications
         await TaskNotificationService.instance
             .cancelTaskNotification(modifiedTask.id);
+        final settings = Provider.of<SettingsProvider>(context, listen: false);
         await TaskNotificationService.instance
-            .scheduleTaskReminder(context, modifiedTask);
+            .scheduleTaskReminder(context, modifiedTask, settings);
       }
     }
   }

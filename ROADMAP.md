@@ -70,6 +70,7 @@ This document outlines the strategic development priorities for TaskBound, focus
  - Branch protection: require Security Check CI to pass on `main`
 
 ### Integration Track --DONE
+### Integration Track --DONE
 - Merge plan for architecture refactor:
   - Create `integrate/arch-refactor` from refactor branch
   - Merge rewritten `main` with `--allow-unrelated-histories`, keep security scaffolding
@@ -232,7 +233,9 @@ This document outlines the strategic development priorities for TaskBound, focus
 ## ARCHIVED: Previous Roadmap (Commented Out for Reference)
 
 # TaskBound Development Roadmap
+# TaskBound Development Roadmap
 
+This document outlines the strategic development priorities for TaskBound, focusing on perfecting the single-player RPG experience first.
 This document outlines the strategic development priorities for TaskBound, focusing on perfecting the single-player RPG experience first.
 
 ## Tier 1: The Unbreakable Core Loop

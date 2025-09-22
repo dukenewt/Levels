@@ -54,6 +54,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [1.x Internal Milestones] (pre-public)
+### Docs
+- Roadmap updated with consolidation plan under “Now”.
+
+
+## [0.7.0] - 2025-08-28
+
+### Added
+- ADR index (`docs/adr/0000-index.md`) and initial ADR stubs (0001–0004).
+- Roadmap consolidation with top-level Now/Next/Later priorities.
+
+### Fixed
+- Talent selection dialog reliably triggers at levels 5/10/15/20/25.
+
+### Security & Docs
+- Hardened docs around secrets handling and CI security checks; clarified versioning note about earlier internal 1.x milestones.
+
+---
+
+## [1.x Internal Milestones] (pre-public)
 
 ## [1.5.0] - 2025-08-21
 
