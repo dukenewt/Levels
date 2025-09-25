@@ -5,14 +5,12 @@ This document outlines the strategic development priorities for TaskBound, focus
 ## Now / Next / Later
 - Now:
   - Animations & Accessibility: implement Reduced Motion in `ring_unraveling_celebration.dart` and `xp_orb_overlay.dart`; centralize timings in `AppDesignTokens`; sequence via `AnimationOrchestrator`.
-  - Effects cleanup: remove `PerkEffectEngine`; migrate `PerkEffectResult` shape to a neutral model or normalized structure; sweep imports.
   - Persistence safety: use Firestore transactions for XP/level-up and talent choice persistence to avoid races.
   - Tests: add unit tests for `CompletionPipeline` outputs (deterministic `StateDelta`/`UiEvent`), stacking/overrides for `PureEffectEngine`.
   - CI/Quality gates: require "Build & Tests" and "Security Check" on `develop`; keep `main` protected for release-only merges.
   - Branching: use `develop` as the staging branch; open feature PRs into `develop`. When release-ready, merge `develop` → `main` and tag 1.0.0.
 - Next:
   - Replace snackbar with orchestrated celebration overlay (Reduced Motion aware).
-  - Remove "Smart/Bound Suggestions" remnants from code and UI.
   - Epic performance polish; large-list rendering keys/tuning.
   - Material 3 cleanups across core screens (dashboard, creation flows, profile).
 - Later:
@@ -23,8 +21,15 @@ This document outlines the strategic development priorities for TaskBound, focus
 ## Consolidation Plan (Now)
 - Providers: unify on `user_provider_refactored.dart` and remove duplication.
 - Pipeline: expose a single `CompletionPipeline` that sequences analyze → compute → persist → emit; keep the feature-layer helper only as a UI façade if needed.
-- Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.
+- ✅ **Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.** (COMPLETED)
 - Animations: centralize durations/curves in `AppDesignTokens`; ensure Reduced Motion across major celebratory widgets.
+
+## Recently Completed (v0.7.3)
+- **Architecture Cleanup & Consolidation**: completed major codebase cleanup to eliminate bloat and architectural duplication
+  - **PerkEffect → PureEffect Migration**: fully removed legacy `PerkEffectEngine` system; migrated `PerkEffectResult` to simplified `PerkEffectSummary` model; all effect computation now uses `PureEffectEngine` as single source of truth
+  - **Smart/Bound Suggestions Removal**: completely eliminated deprecated Smart Suggestions feature (services, widgets, UI, perks) per roadmap; removed misleading AI-like capabilities that weren't actually implemented
+  - **Import Cleanup**: swept and cleaned all imports related to removed systems; updated `task_creation_dialog.dart` to use `PureEffectEngine.getEffectPreview()`
+  - **Tests**: all existing functionality preserved; 9/9 tests passing after cleanup
 
 ## Recently Completed (v0.7.2)
 - Notifications: implemented user preference gating for task reminders and completion celebrations via `SettingsProvider` in `TaskNotificationService`; added smoke test for notification gating functionality.

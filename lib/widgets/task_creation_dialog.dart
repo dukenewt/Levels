@@ -6,7 +6,7 @@ import '../providers/task_provider.dart';
 import '../providers/user_provider.dart';
 import '../services/enhanced_xp_calculation_service.dart';
 import '../services/task_analyzer_service.dart';
-import '../services/perk_effect_engine.dart';
+import '../services/pure_effect_engine.dart' as pe;
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
 import 'recurrence_pattern_dialog.dart';
@@ -216,8 +216,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       setState(() {
         _estimatedXp = newXp;
         _perkBonusXp = perkBonus;
-        _activePerkEffects =
-            PerkEffectEngine.getPerkEffectPreview(user, _category);
+        _activePerkEffects = pe.PureEffectEngine.getEffectPreview(
+            user: user, category: _category);
         _showPerkEffects = _activePerkEffects.isNotEmpty;
       });
       if (mounted) {

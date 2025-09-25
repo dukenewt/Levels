@@ -35,12 +35,7 @@ class UserPerk {
 }
 
 class UserPerks {
-  static const smartSuggestions = UserPerk(
-    id: 'smart_suggestions',
-    name: 'Smart Task Suggestions',
-    description: 'Get AI-powered task recommendations based on your patterns',
-    requiredLevel: 3,
-  );
+  // Smart Suggestions perk removed - no longer supported
 
-  static List<UserPerk> get allPerks => [smartSuggestions];
+  static List<UserPerk> get allPerks => [];
 }

@@ -238,7 +238,6 @@ class TalentManagementService {
         'features': nlpTalents > 0
             ? [
                 'Auto Task Categorization',
-                'Smart Difficulty Suggestions',
                 'Keyword Analysis',
               ]
             : [],
