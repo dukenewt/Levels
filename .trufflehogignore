@@ -1,0 +1,6 @@
+# Paths to exclude from TruffleHog scans
+# Keep this list minimal to avoid masking real issues.
+
+# User-provided/media assets
+private_media/
+

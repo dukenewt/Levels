@@ -7,7 +7,6 @@ import 'settings_screen.dart';
 import '../widgets/task_creation_dialog.dart';
 import '../widgets/task_tile.dart';
 // import '../widgets/professional_progress_card.dart';
-import '../widgets/smart_suggestions_widget.dart';
 import '../widgets/task_editing_dialog.dart';
 import '../widgets/unified_progress_bar.dart';
 import '../widgets/wheel_of_time_progress.dart';
@@ -206,13 +205,6 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen>
           // Completed tasks section
           _buildCompletedTasksSection(taskProvider.completedTasks),
 
-          // Smart suggestions at the bottom so they don't block task view
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SmartSuggestionsWidget(),
-            ),
-          ),
         ],
       ),
       floatingActionButton: Column(

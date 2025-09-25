@@ -5,12 +5,36 @@ import '../features/character_progression/application/intelligent_xp_engine.dart
 import '../features/character_progression/domain/completion_context.dart';
 import 'pure_effect_engine.dart' as pe;
 import '../models/effect.dart';
-import 'perk_effect_engine.dart' show PerkEffectResult;
+
+/// Result of applying perk effects to XP calculation (simplified)
+class PerkEffectSummary {
+  final double categoryBonusMultiplier;
+  final double xpBonusMultiplier;
+  final double lootBoxChanceBonus;
+  final bool hasStreakFreeze;
+  final List<String> appliedPerkNames;
+  final Map<String, String> effectDescriptions;
+
+  const PerkEffectSummary({
+    this.categoryBonusMultiplier = 0.0,
+    this.xpBonusMultiplier = 0.0,
+    this.lootBoxChanceBonus = 0.0,
+    this.hasStreakFreeze = false,
+    this.appliedPerkNames = const [],
+    this.effectDescriptions = const {},
+  });
+
+  bool get hasAnyEffects =>
+      categoryBonusMultiplier > 0 ||
+      xpBonusMultiplier > 0 ||
+      lootBoxChanceBonus > 0 ||
+      hasStreakFreeze;
+}
 
 /// Enhanced XP calculation breakdown that includes perk effects
 class EnhancedXPCalculationBreakdown {
   final xp.XPCalculationBreakdown originalBreakdown;
-  final PerkEffectResult perkEffects;
+  final PerkEffectSummary perkEffects;
   final int perkBonusXP;
   final int finalTotalXP;
   final List<String> activePerkNames;
@@ -153,7 +177,7 @@ class EnhancedXPCalculationService {
 
     return EnhancedXPCalculationBreakdown(
       originalBreakdown: originalBreakdown,
-      perkEffects: PerkEffectResult(
+      perkEffects: PerkEffectSummary(
         categoryBonusMultiplier: categoryBonusFraction,
         xpBonusMultiplier: globalXpBonusFraction,
         lootBoxChanceBonus: effects.getMultiplier('loot_box_chance') - 1.0,

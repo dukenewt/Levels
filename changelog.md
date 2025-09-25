@@ -16,6 +16,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - App Check: enable → monitor → enforce for Firestore/Storage (pending enforcement step).
 
 
+## [0.7.3] - 2025-09-25
+
+### Removed — Architecture Cleanup & Consolidation
+- **🧹 Completed major codebase cleanup to eliminate bloat and architectural duplication**
+  - **PerkEffect System Removal**: Fully removed legacy `PerkEffectEngine` system and related files
+    - Deleted `lib/services/perk_effect_engine.dart` completely
+    - Migrated `PerkEffectResult` usage to simplified `PerkEffectSummary` model in `enhanced_xp_calculation_service.dart`
+    - Updated `task_creation_dialog.dart` to use `PureEffectEngine.getEffectPreview()` instead of old engine
+    - All effect computation now uses `PureEffectEngine` as single source of truth
+  - **Smart/Bound Suggestions Feature Removal**: Completely eliminated deprecated AI-like feature per roadmap
+    - Deleted `lib/services/smart_suggestions_service.dart` and `lib/widgets/smart_suggestions_widget.dart`
+    - Removed Smart Suggestions perk definition from `user_perk.dart` (level 3 perk)
+    - Disabled Smart Suggestions in `enhanced_game_experience_manager.dart` level progression
+    - Removed "Smart Difficulty Suggestions" from talent management features list
+    - Removed Smart Suggestions widget usage from task dashboard screen
+    - Cleaned up all imports and references throughout codebase
+
+### Technical
+- **Import Cleanup**: Swept and cleaned all imports related to removed systems
+- **Tests**: All existing functionality preserved; 9/9 tests passing after cleanup
+- **Static Analysis**: No compilation errors or functional regressions introduced
+
+### Impact
+- **Reduced Codebase Bloat**: Eliminated unused and misleading features that weren't providing real value
+- **Cleaner Architecture**: Single source of truth for effect computation via `PureEffectEngine`
+- **Honest UX**: Removed UI elements that promised AI capabilities that weren't actually implemented
+- **Maintenance**: Easier to maintain with fewer duplicated systems and cleaner dependencies
+
+
 ## [0.7.2] - 2025-08-28
 
 ### Fixed — Notification Gating

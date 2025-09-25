@@ -139,7 +139,7 @@ class EnhancedGameExperienceManager {
     for (int level = oldLevel + 1; level <= newLevel; level++) {
       switch (level) {
         case 5:
-          perks.add('Smart Suggestions');
+          // Smart Suggestions perk removed - no longer supported
           break;
         case 10:
           perks.add('Custom Categories');
