@@ -2,6 +2,38 @@
 
 This document outlines the strategic development priorities for TaskBound, focusing on building upon the completed Epic Project Management system and enhancing the RPG experience.
 
+## Fun‑First MVP (Pre‑Beta)
+Goal: prove the core loop is fun and understandable for new users before broader beta. Focus on “complete task → get XP → level → choose talent → feel a power‑up” with minimal, polished UI.
+
+- Objectives
+  - Make early levels fast and rewarding (reach L5 in ~2–3 sessions).
+  - Talent choices are few, clear, and measurably impactful.
+  - Reduced Motion respected across celebrations and key flows.
+
+- Scope (4‑Week Track)
+  1. Celebration overlay v1 (Reduced Motion variant) with XP breakdown and “next level” clarity.
+  2. Talent choice overhaul: impact preview (before/after XP), simplified options per gate.
+  3. Material 3 pass on dashboard + task creation; real‑time XP preview during creation.
+  4. Tuning/playtests: add debug panel for balance; iterate on XP curve and perks.
+
+- Deliverables
+  - `AnimationOrchestrator`-driven celebration overlay with tokenized motion; low‑motion path.
+  - Talent dialog (full‑screen) with numeric effect + preview; non‑dismissable until choice.
+  - Gameplay tunables centralized (e.g., `lib/gameplay/game_balance.dart`) + dev‑only debug panel.
+  - Deterministic tests for `CompletionPipeline` outputs; stacking/override matrices for `PureEffectEngine`.
+  - Firestore transactions for XP/level‑up and talent choice persistence.
+
+- Acceptance Criteria
+  - 80% of playtesters reach level 3 in a first 30–45 min session.
+  - >60% can describe their last talent’s effect unaided.
+  - Celebration overlay passes Reduced Motion audit; durations/curves pulled from `AppDesignTokens`.
+  - Pipeline and effect tests green and deterministic.
+  - No duplicate level‑ups or lost talent choices in offline/retry scenarios (transactional).
+
+- References
+  - ADRs: Effect Model (0001), CompletionPipeline (0002), AnimationOrchestrator (0003), Provider Boundaries (0004).
+  - UX: follow Material 3/HIG, Reduced Motion, dynamic text, and contrast guidance in agents.md.
+
 ## Now / Next / Later
 - Now:
   - Animations & Accessibility: implement Reduced Motion in `ring_unraveling_celebration.dart` and `xp_orb_overlay.dart`; centralize timings in `AppDesignTokens`; sequence via `AnimationOrchestrator`.
