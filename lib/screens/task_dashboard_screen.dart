@@ -204,7 +204,6 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen>
 
           // Completed tasks section
           _buildCompletedTasksSection(taskProvider.completedTasks),
-
         ],
       ),
       floatingActionButton: Column(

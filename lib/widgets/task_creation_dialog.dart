@@ -216,8 +216,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       setState(() {
         _estimatedXp = newXp;
         _perkBonusXp = perkBonus;
-        _activePerkEffects =
-            pe.PureEffectEngine.getEffectPreview(user: user, category: _category);
+        _activePerkEffects = pe.PureEffectEngine.getEffectPreview(
+            user: user, category: _category);
         _showPerkEffects = _activePerkEffects.isNotEmpty;
       });
       if (mounted) {
