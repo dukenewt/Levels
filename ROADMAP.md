@@ -36,25 +36,34 @@ Goal: prove the core loop is fun and understandable for new users before broader
 
 ## Now / Next / Later
 - Now:
-  - Animations & Accessibility: implement Reduced Motion in `ring_unraveling_celebration.dart` and `xp_orb_overlay.dart`; centralize timings in `AppDesignTokens`; sequence via `AnimationOrchestrator`.
-  - Persistence safety: use Firestore transactions for XP/level-up and talent choice persistence to avoid races.
-  - Tests: add unit tests for `CompletionPipeline` outputs (deterministic `StateDelta`/`UiEvent`), stacking/overrides for `PureEffectEngine`.
-  - CI/Quality gates: require "Build & Tests" and "Security Check" on `develop`; keep `main` protected for release-only merges.
-  - Branching: use `develop` as the staging branch; open feature PRs into `develop`. When release-ready, merge `develop` → `main` and tag 1.0.0.
+  - **Progression UI Polish**: Add celebration dialogs for perk unlocks and theme unlocks to match talent choice experience
+  - **Enhanced Celebrations**: Replace snackbar with orchestrated celebration overlay (Reduced Motion aware) for perk/theme unlocks
+  - **Progression Testing**: Add unit tests for conditional bonus evaluation, theme unlocking, and new perk effects
+  - **Balance Tuning**: Gather gameplay data to tune XP bonus percentages and conditional thresholds for optimal fun
 - Next:
-  - Replace snackbar with orchestrated celebration overlay (Reduced Motion aware).
-  - Epic performance polish; large-list rendering keys/tuning.
-  - Material 3 cleanups across core screens (dashboard, creation flows, profile).
+  - **Animation Polish**: Implement Reduced Motion in progression celebrations; centralize timings in `AppDesignTokens`
+  - **Persistence Safety**: Use Firestore transactions for XP/level-up, perk unlocks, and theme unlocks to avoid races
+  - **Material 3 Polish**: Update progression screens (perk display, theme selection) with Material 3 components
+  - **Analytics Foundation**: Track progression metrics (time to first perk, theme unlock engagement, etc.)
 - Later:
-  - Achievements foundation and analytics.
-  - Epic templates and collaboration exploration (behind flags).
-  - Advanced intelligence (personalized talent recommendations).
+  - **Achievement System**: Build on the conditional bonus system for complex achievements
+  - **Intelligent Progression**: Personalized perk recommendations based on user task patterns
+  - **Advanced Mechanics**: Seasonal themes, limited-time perks, progression challenges
 
 ## Consolidation Plan (Now)
 - Providers: unify on `user_provider_refactored.dart` and remove duplication.
 - Pipeline: expose a single `CompletionPipeline` that sequences analyze → compute → persist → emit; keep the feature-layer helper only as a UI façade if needed.
 - ✅ **Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.** (COMPLETED)
 - Animations: centralize durations/curves in `AppDesignTokens`; ensure Reduced Motion across major celebratory widgets.
+
+## Recently Completed (v0.8.0)
+- **Enhanced Progression System**: Complete redesign of level progression with alternating perk/theme rewards
+  - **Conditional Bonus System**: Added `conditionalBonus` perk effect type with advanced condition parsing (`>=`, `<=`, time-based, recurring tasks)
+  - **7 New Gameplay Perks**: Level 1, 3, 7, 9, 11, 13 now unlock meaningful XP bonuses (Routine Master, Morning Motivation, Difficulty Dabbler, Category Explorer, etc.)
+  - **4 Cosmetic Theme Unlocks**: Level 2, 4, 6, 8 unlock colorway themes (Crimson Wave, Amber Blaze, Emerald Mist, Violet Storm)
+  - **Smart Context Building**: XP calculations include task recurrence, time of day, difficulty matching, category diversity
+  - **Theme Integration**: Automatic theme unlocking via callback system; premium theme gating for progression rewards
+  - **UI Compatibility**: Enhanced `PerkSummaryCard` with user-friendly conditional bonus descriptions
 
 ## Recently Completed (v0.7.3)
 - **Architecture Cleanup & Consolidation**: completed major codebase cleanup to eliminate bloat and architectural duplication

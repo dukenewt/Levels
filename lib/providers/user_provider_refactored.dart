@@ -7,6 +7,7 @@ import '../models/user.dart' as app_user;
 import '../models/user_talent.dart';
 import '../models/enhanced_user_perk.dart';
 import '../models/state_delta.dart';
+import '../models/theme_model.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/talent_management_service.dart';
@@ -27,6 +28,7 @@ class UserProvider with ChangeNotifier {
   Function(int oldLevel, int newLevel)? onLevelUp;
   Function(TalentChoice talentChoice)? onTalentChoice;
   Function(EnhancedUserPerk perk)? onPerkUnlock;
+  Function(ThemeType theme)? onThemeUnlock;
 
   // Getters
   app_user.User? get user => _user;
@@ -45,7 +47,8 @@ class UserProvider with ChangeNotifier {
   // Basic user data getters (not effect-related)
   int get nextLevelXp {
     if (_user == null) return 100;
-    return _user!.level * 100;
+    return (_user!.level + 1) *
+        100; // XP needed for NEXT level, not current level
   }
 
   TalentChoice? getAvailableTalentChoice() => _user?.getAvailableTalentChoice();
@@ -136,6 +139,13 @@ class UserProvider with ChangeNotifier {
               // Note: User model doesn't have currentStreak property
               // This would be handled by a separate streak tracking system
               break;
+            case 'currentXp':
+              // Override current XP (used for level overflow adjustments)
+              final newCurrentXp = entry.value;
+              if (newCurrentXp is int) {
+                updatedUser = updatedUser.copyWith(currentXp: newCurrentXp);
+              }
+              break;
             case 'talentChoices':
               // Merge incoming map into the strongly-typed Map<int, String>
               final incoming = entry.value;
@@ -189,6 +199,14 @@ class UserProvider with ChangeNotifier {
         }
       }
 
+      // Trigger theme unlock for even levels
+      if (userDelta.levelChange != null && userDelta.levelChange! > 0) {
+        final newTheme = _getThemeUnlockedAtLevel(updatedUser.level);
+        if (newTheme != null) {
+          onThemeUnlock?.call(newTheme);
+        }
+      }
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -210,11 +228,11 @@ class UserProvider with ChangeNotifier {
     int newXp = oldXp + amount;
     int newLevel = oldLevel;
 
-    int requiredXp = _xpForLevel(newLevel);
+    int requiredXp = _xpForLevel(newLevel + 1); // XP required for NEXT level
     while (newXp >= requiredXp) {
       newXp -= requiredXp;
       newLevel++;
-      requiredXp = _xpForLevel(newLevel);
+      requiredXp = _xpForLevel(newLevel + 1); // XP required for NEXT level
     }
 
     final leveledUp = newLevel > oldLevel;
@@ -229,7 +247,7 @@ class UserProvider with ChangeNotifier {
         levelChange: leveledUp ? (newLevel - oldLevel) : null,
         newPerks: newPerks.isNotEmpty ? newPerks : null,
         additionalChanges: {
-          'adjusted_xp': newXp, // XP after level overflow
+          'currentXp': newXp, // Set the correct XP after level overflow
         },
       ),
       timestamp: DateTime.now(),
@@ -283,21 +301,22 @@ class UserProvider with ChangeNotifier {
   Future<void> resetToLevelOne() async {
     if (_user == null) return;
 
-    final delta = StateDelta(
-      user: UserStateDelta(
-        additionalChanges: {
-          'level': 1,
-          'currentXp': 0,
-          'perks': <String>[],
-          'talents': <String>[],
-          'talentChoices': <String, dynamic>{},
-        },
-      ),
-      timestamp: DateTime.now(),
-      operation: 'reset_level',
+    final resetUser = _user!.copyWith(
+      level: 1,
+      currentXp: 0,
+      perks: [],
+      talents: [],
+      talentChoices: {},
     );
 
-    await applyStateDelta(delta);
+    // Direct Firestore update for reset
+    await _firestoreService.setUser(resetUser);
+    _user = resetUser;
+
+    // Update controller
+    await _talentPerkController.updateUser(resetUser);
+
+    notifyListeners();
   }
 
   /// Update profile picture - pure persistence
@@ -368,14 +387,32 @@ class UserProvider with ChangeNotifier {
 
     for (int level = oldLevel + 1; level <= newLevel; level++) {
       switch (level) {
+        case 1:
+          perks.add('routine_master');
+          break;
+        case 3:
+          perks.add('task_starter');
+          break;
         case 5:
           perks.add('health_expert');
+          break;
+        case 7:
+          perks.add('morning_motivation');
           break;
         case 8:
           perks.add('lucky_charm');
           break;
+        case 9:
+          perks.add('difficulty_dabbler');
+          break;
+        case 11:
+          perks.add('category_explorer');
+          break;
         case 12:
           perks.add('streak_guardian');
+          break;
+        case 13:
+          perks.add('consistency_champion');
           break;
         case 15:
           perks.add('learning_master');
@@ -396,6 +433,22 @@ class UserProvider with ChangeNotifier {
     }
 
     return perks;
+  }
+
+  // Theme unlock helper for even levels
+  ThemeType? _getThemeUnlockedAtLevel(int level) {
+    switch (level) {
+      case 2:
+        return ThemeType.crimsonWave;
+      case 4:
+        return ThemeType.amberBlaze;
+      case 6:
+        return ThemeType.emeraldMist;
+      case 8:
+        return ThemeType.violetStorm;
+      default:
+        return null;
+    }
   }
 
   @override

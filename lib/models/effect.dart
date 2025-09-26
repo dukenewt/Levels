@@ -99,9 +99,19 @@ class EffectCondition {
         result = (contextValue as num?) != null &&
             (contextValue as num) > (value as num);
         break;
+      case 'greater_than_or_equal':
+      case '>=':
+        result = (contextValue as num?) != null &&
+            (contextValue as num) >= (value as num);
+        break;
       case 'less_than':
         result = (contextValue as num?) != null &&
             (contextValue as num) < (value as num);
+        break;
+      case 'less_than_or_equal':
+      case '<=':
+        result = (contextValue as num?) != null &&
+            (contextValue as num) <= (value as num);
         break;
       case 'contains':
         result = contextValue
@@ -233,6 +243,96 @@ class Effect {
       conditions: conditions,
       metadata: {'uses': uses, 'remaining_uses': uses},
     );
+  }
+
+  /// Create a conditional XP bonus effect
+  factory Effect.conditionalXpBonus({
+    required String id,
+    required String name,
+    required double bonusPercentage,
+    required List<String> conditions,
+  }) {
+    final effectConditions = <EffectCondition>[];
+
+    // Parse condition strings like "difficulty:easy", "recurring:true", "daily_categories_count:>=3"
+    for (final conditionStr in conditions) {
+      final parts = conditionStr.split(':');
+      if (parts.length == 2) {
+        final type = parts[0];
+        var value = parts[1];
+        String operator = 'equals';
+
+        // Check for operators in the value part
+        if (value.startsWith('>=')) {
+          operator = '>=';
+          value = value.substring(2);
+        } else if (value.startsWith('<=')) {
+          operator = '<=';
+          value = value.substring(2);
+        } else if (value.startsWith('>')) {
+          operator = 'greater_than';
+          value = value.substring(1);
+        } else if (value.startsWith('<')) {
+          operator = 'less_than';
+          value = value.substring(1);
+        }
+
+        // Convert string values to appropriate types
+        dynamic conditionValue = value;
+        if (value == 'true')
+          conditionValue = true;
+        else if (value == 'false')
+          conditionValue = false;
+        else if (int.tryParse(value) != null)
+          conditionValue = int.parse(value);
+        else if (double.tryParse(value) != null)
+          conditionValue = double.parse(value);
+
+        effectConditions.add(EffectCondition(
+          type: type,
+          operator: operator,
+          value: conditionValue,
+        ));
+      }
+    }
+
+    return Effect(
+      id: id,
+      name: name,
+      description:
+          '+${(bonusPercentage * 100).toInt()}% XP for ${_formatConditions(conditions)}',
+      scope: EffectScope.context,
+      modifier: EffectModifier.multiplicative,
+      stacking: EffectStacking.additive,
+      duration: EffectDuration.permanent,
+      value: bonusPercentage,
+      targetProperty: 'xp',
+      conditions: effectConditions,
+      metadata: {'conditionStrings': conditions},
+    );
+  }
+
+  /// Helper to format condition strings for description
+  static String _formatConditions(List<String> conditions) {
+    return conditions.map((c) {
+      final parts = c.split(':');
+      if (parts.length == 2) {
+        final type = parts[0];
+        final value = parts[1];
+
+        switch (type) {
+          case 'difficulty':
+            return '$value difficulty';
+          case 'recurring':
+            return value == 'true' ? 'recurring' : 'non-recurring';
+          case 'category':
+            return '$value category';
+          default:
+            return '$type:$value';
+        }
+      }
+      return c;
+    }).join(' ');
   }
 
   /// Check if this effect applies to the given context

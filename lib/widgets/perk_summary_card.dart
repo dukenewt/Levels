@@ -190,6 +190,44 @@ class PerkSummaryCard extends StatelessWidget {
       case PerkEffect.categoryBonus:
         final category = effect.category ?? 'All';
         return '+${(effect.value * 100).toInt()}% $category XP';
+      case PerkEffect.conditionalBonus:
+        // Parse the conditions for a user-friendly description
+        final conditions = effect.metadata?['conditions'] as List<String>?;
+        if (conditions != null && conditions.isNotEmpty) {
+          final conditionText = _formatConditionsForUI(conditions);
+          return '+${(effect.value * 100).toInt()}% XP for $conditionText';
+        }
+        return '+${(effect.value * 100).toInt()}% Conditional XP';
     }
+  }
+
+  String _formatConditionsForUI(List<String> conditions) {
+    return conditions.map((c) {
+      final parts = c.split(':');
+      if (parts.length == 2) {
+        final type = parts[0];
+        final value = parts[1];
+
+        switch (type) {
+          case 'difficulty':
+            return '$value difficulty';
+          case 'recurring':
+            return value == 'true' ? 'recurring tasks' : 'non-recurring tasks';
+          case 'is_morning':
+            return value == 'true' ? 'morning tasks' : 'evening tasks';
+          case 'category':
+            return '$value category';
+          case 'daily_categories_count':
+            if (value.startsWith('>=')) {
+              final count = value.substring(2);
+              return '$count+ categories per day';
+            }
+            return '$value categories';
+          default:
+            return '$type:$value';
+        }
+      }
+      return c;
+    }).join(' ');
   }
 }

@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added — Enhanced Progression System
+- **Alternating Perk/Theme Unlock System**: Complete redesign of level progression with meaningful rewards at every level
+  - **Odd Levels (1,3,5,7,9,11,13...)**: Unlock gameplay perks with real XP bonuses and conditional effects
+  - **Even Levels (2,4,6,8...)**: Unlock cosmetic theme colorways for visual customization
+  - **Level 1**: Routine Master (+20% XP for easy recurring tasks)
+  - **Level 3**: Task Starter (+10% XP for all tasks)
+  - **Level 7**: Morning Motivation (+15% XP for tasks completed before noon)
+  - **Level 9**: Difficulty Dabbler (+15% XP for medium difficulty tasks)
+  - **Level 11**: Category Explorer (+10% XP when completing 3+ categories per day)
+  - **Level 13**: Consistency Champion (+10% XP for all tasks)
+
+- **Cosmetic Theme Unlock System**: Four new colorway themes unlocked through level progression
+  - **Level 2**: Crimson Wave (bold red colorway)
+  - **Level 4**: Amber Blaze (warm amber/gold colorway)
+  - **Level 6**: Emerald Mist (fresh emerald/jade colorway)
+  - **Level 8**: Violet Storm (deep violet/purple colorway)
+
+### Enhanced — Conditional Effect Engine
+- **Advanced Conditional Bonuses**: New `conditionalBonus` perk effect type with sophisticated condition parsing
+  - Supports operators: `>=`, `<=`, `>`, `<`, `equals` for numeric and boolean conditions
+  - Smart condition parsing for difficulty, recurring status, time of day, category counts
+  - Context-aware XP calculation including task recurrence, morning completion, difficulty matching
+  - Enhanced Effect model with comprehensive condition evaluation system
+
+- **Smart Context Building**: XP calculations now include rich contextual data
+  - Task recurrence status (`recurring: task.recurrencePattern != null`)
+  - Time-based conditions (`is_morning: completionTime.hour < 12`)
+  - Difficulty matching for targeted bonuses
+  - Daily category diversity tracking for exploration bonuses
+
+### Technical Implementation
+- **Enhanced PureEffectEngine**: Full support for conditional bonus evaluation with complex condition matching
+- **Theme Provider Integration**: Automatic theme unlocking via `onThemeUnlock` callback system
+- **UI Compatibility**: Updated `PerkSummaryCard` with user-friendly conditional bonus descriptions
+- **Backwards Compatibility**: All existing perks and functionality preserved
+
 ### Planning
 - Roadmap consolidated with a Now/Next/Later section; `TODO.md` reduced to a pointer.
 

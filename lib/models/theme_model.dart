@@ -20,6 +20,11 @@ enum ThemeType {
   oceanDepths,
   forestCanopy,
   sunsetGlow,
+  // Level unlock themes (cosmetic colorways)
+  crimsonWave,
+  amberBlaze,
+  emeraldMist,
+  violetStorm,
 }
 
 class AppTheme {
@@ -289,6 +294,111 @@ class AppTheme {
     },
   );
 
+  // Level unlock themes (cosmetic colorways)
+  // Level 2: Crimson Wave
+  static const AppTheme crimsonWave = AppTheme(
+    type: ThemeType.crimsonWave,
+    name: 'Crimson Wave',
+    description: 'Bold crimson and rose colorway',
+    isPremium: true,
+    primaryColor: Color(0xFFDC2626), // Red
+    secondaryColor: Color(0xFFF87171), // Light red
+    backgroundColor: Color(0xFFFEF2F2), // Very light red
+    surfaceColor: Color(0xFFFFFFFF),
+    textColor: Color(0xFF7F1D1D), // Dark red
+    accentColor: Color(0xFFF59E0B), // Amber accent
+    gradientColors: [
+      Color(0xFFDC2626), // Red
+      Color(0xFFEF4444), // Bright red
+      Color(0xFFF87171), // Light red
+    ],
+    blurRadius: 0,
+    glassOpacity: 0,
+    priorityColors: {
+      Priority.low: Color(0xFF10B981), // Emerald
+      Priority.medium: Color(0xFFF59E0B), // Amber
+      Priority.high: Color(0xFFDC2626), // Red
+    },
+  );
+
+  // Level 4: Amber Blaze
+  static const AppTheme amberBlaze = AppTheme(
+    type: ThemeType.amberBlaze,
+    name: 'Amber Blaze',
+    description: 'Warm amber and gold colorway',
+    isPremium: true,
+    primaryColor: Color(0xFFD97706), // Orange
+    secondaryColor: Color(0xFFFBBF24), // Yellow
+    backgroundColor: Color(0xFFFFFBEB), // Very light yellow
+    surfaceColor: Color(0xFFFFFFFF),
+    textColor: Color(0xFF92400E), // Dark orange
+    accentColor: Color(0xFFEF4444), // Red accent
+    gradientColors: [
+      Color(0xFFD97706), // Orange
+      Color(0xFFF59E0B), // Amber
+      Color(0xFFFBBF24), // Yellow
+    ],
+    blurRadius: 0,
+    glassOpacity: 0,
+    priorityColors: {
+      Priority.low: Color(0xFF10B981), // Emerald
+      Priority.medium: Color(0xFFF59E0B), // Amber
+      Priority.high: Color(0xFFEF4444), // Red
+    },
+  );
+
+  // Level 6: Emerald Mist
+  static const AppTheme emeraldMist = AppTheme(
+    type: ThemeType.emeraldMist,
+    name: 'Emerald Mist',
+    description: 'Fresh emerald and jade colorway',
+    isPremium: true,
+    primaryColor: Color(0xFF059669), // Emerald
+    secondaryColor: Color(0xFF34D399), // Light emerald
+    backgroundColor: Color(0xFFECFDF5), // Very light green
+    surfaceColor: Color(0xFFFFFFFF),
+    textColor: Color(0xFF064E3B), // Dark green
+    accentColor: Color(0xFFF59E0B), // Amber accent
+    gradientColors: [
+      Color(0xFF059669), // Emerald
+      Color(0xFF10B981), // Green
+      Color(0xFF34D399), // Light emerald
+    ],
+    blurRadius: 0,
+    glassOpacity: 0,
+    priorityColors: {
+      Priority.low: Color(0xFF10B981), // Emerald
+      Priority.medium: Color(0xFFF59E0B), // Amber
+      Priority.high: Color(0xFFEF4444), // Red
+    },
+  );
+
+  // Level 8: Violet Storm
+  static const AppTheme violetStorm = AppTheme(
+    type: ThemeType.violetStorm,
+    name: 'Violet Storm',
+    description: 'Deep violet and purple colorway',
+    isPremium: true,
+    primaryColor: Color(0xFF7C3AED), // Purple
+    secondaryColor: Color(0xFFA855F7), // Light purple
+    backgroundColor: Color(0xFFFAF5FF), // Very light purple
+    surfaceColor: Color(0xFFFFFFFF),
+    textColor: Color(0xFF581C87), // Dark purple
+    accentColor: Color(0xFFF59E0B), // Amber accent
+    gradientColors: [
+      Color(0xFF7C3AED), // Purple
+      Color(0xFF8B5CF6), // Violet
+      Color(0xFFA855F7), // Light purple
+    ],
+    blurRadius: 0,
+    glassOpacity: 0,
+    priorityColors: {
+      Priority.low: Color(0xFF10B981), // Emerald
+      Priority.medium: Color(0xFFF59E0B), // Amber
+      Priority.high: Color(0xFFEF4444), // Red
+    },
+  );
+
   // Epic reward themes
   static const AppTheme oceanDepths = AppTheme(
     type: ThemeType.oceanDepths,
@@ -376,6 +486,10 @@ class AppTheme {
         professional,
         natural,
         cyanPinkTeal,
+        crimsonWave,
+        amberBlaze,
+        emeraldMist,
+        violetStorm,
         oceanDepths,
         forestCanopy,
         sunsetGlow,
@@ -410,7 +524,7 @@ class AppTheme {
       ),
 
       // Enhanced card theme with subtle gradients
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shadowColor: primaryColor.withOpacity(0.1),
         shape: RoundedRectangleBorder(
