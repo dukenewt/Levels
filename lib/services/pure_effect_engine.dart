@@ -201,6 +201,19 @@ class PureEffectEngine {
           name: perk.name,
           uses: effectData.value.round(),
         );
+
+      case PerkEffect.conditionalBonus:
+        // Handle conditional bonuses (like easy recurring tasks)
+        final conditions = effectData.metadata?['conditions'] as List<String>?;
+        if (conditions != null) {
+          return Effect.conditionalXpBonus(
+            id: '${perk.id}_conditional_bonus',
+            name: perk.name,
+            bonusPercentage: effectData.value,
+            conditions: conditions,
+          );
+        }
+        break;
     }
 
     return null;
@@ -294,6 +307,7 @@ class PureEffectEngine {
         'user_level': user.level,
         'perfect_weeks': context.perfectWeeksThisMonth,
         'is_challenge': context.isPartOfChallenge,
+        'recurring': task.recurrencePattern != null,
       },
     );
 

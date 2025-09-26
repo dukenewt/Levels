@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 import 'core/app_logger.dart';
 import 'core/global_error_handler.dart';
 import 'core/offline_manager.dart';
@@ -24,6 +25,7 @@ import 'services/app_talent_manager.dart';
 import 'controllers/talent_perk_controller.dart';
 import 'services/talent_trigger_service.dart';
 import 'config/feature_flags.dart';
+import 'debug/gameplay_debug_panel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -310,6 +312,15 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
             type: BottomNavigationBarType.fixed,
             items: navItems,
           ),
+          floatingActionButton: kDebugMode
+              ? FloatingActionButton.small(
+                  onPressed: () => showGameplayDebugPanel(context),
+                  child: const Icon(Icons.tune),
+                  tooltip: 'Gameplay Debug',
+                )
+              : null,
+          floatingActionButtonLocation:
+              kDebugMode ? FloatingActionButtonLocation.startFloat : null,
         );
       },
     );

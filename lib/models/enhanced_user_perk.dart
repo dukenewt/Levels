@@ -2,7 +2,8 @@ enum PerkEffect {
   xpBonus,
   lootBoxBonus,
   streakFreeze,
-  categoryBonus;
+  categoryBonus,
+  conditionalBonus;
 
   String get id {
     switch (this) {
@@ -14,6 +15,8 @@ enum PerkEffect {
         return 'streak_freeze';
       case PerkEffect.categoryBonus:
         return 'category_bonus';
+      case PerkEffect.conditionalBonus:
+        return 'conditional_bonus';
     }
   }
 
@@ -27,6 +30,8 @@ enum PerkEffect {
         return 'Streak Shield';
       case PerkEffect.categoryBonus:
         return 'Category Expert';
+      case PerkEffect.conditionalBonus:
+        return 'Conditional Boost';
     }
   }
 }
@@ -142,7 +147,36 @@ class EnhancedUserPerk {
 }
 
 class EnhancedUserPerks {
-  // Removed: Smart/Bound Suggestions perk (no longer supported)
+  // Level 1: First perk - recurring task motivation
+  static const routineMaster = EnhancedUserPerk(
+    id: 'routine_master',
+    name: 'Routine Master',
+    description: '+20% XP for easy recurring tasks',
+    requiredLevel: 1,
+    effects: [
+      PerkEffectData(
+        effect: PerkEffect.conditionalBonus,
+        value: 0.20,
+        metadata: {
+          'conditions': ['difficulty:easy', 'recurring:true']
+        },
+      ),
+    ],
+  );
+
+  // Level 3: Early game momentum perk
+  static const taskStarter = EnhancedUserPerk(
+    id: 'task_starter',
+    name: 'Task Starter',
+    description: '+10% XP for all tasks (early game boost)',
+    requiredLevel: 3,
+    effects: [
+      PerkEffectData(
+        effect: PerkEffect.xpBonus,
+        value: 0.10,
+      ),
+    ],
+  );
 
   // Level 5: First major perk choice
   static const healthExpert = EnhancedUserPerk(
@@ -155,6 +189,23 @@ class EnhancedUserPerks {
         effect: PerkEffect.categoryBonus,
         value: 0.15,
         category: 'Health',
+      ),
+    ],
+  );
+
+  // Level 7: Morning motivation
+  static const morningMotivation = EnhancedUserPerk(
+    id: 'morning_motivation',
+    name: 'Morning Motivation',
+    description: '+15% XP for tasks completed before noon',
+    requiredLevel: 7,
+    effects: [
+      PerkEffectData(
+        effect: PerkEffect.conditionalBonus,
+        value: 0.15,
+        metadata: {
+          'conditions': ['is_morning:true']
+        },
       ),
     ],
   );
@@ -173,6 +224,41 @@ class EnhancedUserPerks {
     ],
   );
 
+  // Level 9: Difficulty dabbler
+  static const difficultyDabbler = EnhancedUserPerk(
+    id: 'difficulty_dabbler',
+    name: 'Difficulty Dabbler',
+    description: '+15% XP for medium difficulty tasks',
+    requiredLevel: 9,
+    effects: [
+      PerkEffectData(
+        effect: PerkEffect.conditionalBonus,
+        value: 0.15,
+        metadata: {
+          'conditions': ['difficulty:medium']
+        },
+      ),
+    ],
+  );
+
+  // Level 11: Category explorer
+  static const categoryExplorer = EnhancedUserPerk(
+    id: 'category_explorer',
+    name: 'Category Explorer',
+    description:
+        '+10% XP when completing tasks from 3+ different categories in a day',
+    requiredLevel: 11,
+    effects: [
+      PerkEffectData(
+        effect: PerkEffect.conditionalBonus,
+        value: 0.10,
+        metadata: {
+          'conditions': ['daily_categories_count:>=3']
+        },
+      ),
+    ],
+  );
+
   // Level 12: Streak protection
   static const streakGuardian = EnhancedUserPerk(
     id: 'streak_guardian',
@@ -183,6 +269,20 @@ class EnhancedUserPerks {
       PerkEffectData(
         effect: PerkEffect.streakFreeze,
         value: 1.0, // One use
+      ),
+    ],
+  );
+
+  // Level 13: Consistency champion (replacing old Task Starter)
+  static const consistencyChampion = EnhancedUserPerk(
+    id: 'consistency_champion',
+    name: 'Consistency Champion',
+    description: '+10% XP for all tasks (building momentum)',
+    requiredLevel: 13,
+    effects: [
+      PerkEffectData(
+        effect: PerkEffect.xpBonus,
+        value: 0.10,
       ),
     ],
   );
@@ -250,9 +350,15 @@ class EnhancedUserPerks {
   );
 
   static List<EnhancedUserPerk> get allPerks => [
+        routineMaster,
+        taskStarter,
         healthExpert,
+        morningMotivation,
         luckyCharm,
+        difficultyDabbler,
+        categoryExplorer,
         streakGuardian,
+        consistencyChampion,
         learningMaster,
         xpVeteran,
         workEfficiency,
