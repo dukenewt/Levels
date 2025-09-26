@@ -6,6 +6,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.8.1] - 2025-09-26
+
+### Changed — Animation Architecture Overhaul
+- **Enhanced AnimationOrchestrator**: Major refactor for centralized animation management and gaming-level polish
+  - Added controller lifecycle management with automatic disposal
+  - Implemented choreographed animation sequences with built-in timing control
+  - Enhanced with controller pooling and named grouping for efficient resource management
+  - Added preset animation sequences for common UI patterns (celebration, task completion, etc.)
+
+- **Streamlined Animation Controllers**: Significant reduction in animation complexity across widgets
+  - **Wheel of Time Progress Widget**: Reduced from 7 animation controllers to 2 controllers
+  - Consolidated rotation, pulse, and progress animations under unified orchestration
+  - Maintained all visual effects while dramatically simplifying code structure
+
+- **OrchestrationMixin**: New widget integration pattern for clean animation management
+  - Automatic controller creation and disposal through mixin lifecycle
+  - Simplified API for creating animations with consistent curves and timing
+  - Built-in support for choreographed animation sequences
+
+### Added — Animation Foundation
+- **Centralized Reduced Motion Support**: Consistent accessibility implementation across all animations
+  - Automatic duration adjustment (70% reduction) when reduced motion is enabled
+  - Built-in curve simplification for accessibility compliance
+  - Global reduced motion state management through AnimationOrchestrator
+
+- **Animation Specification System**: Standardized animation definitions for consistency
+  - Predefined animation specs for common durations and curves (quick, medium, slow, bounce, celebration)
+  - Type-safe animation step definitions for complex sequences
+  - Enhanced debugging and maintainability through structured animation definitions
+
+### Fixed — Build and Stability
+- **iOS Build Compatibility**: Resolved naming conflicts in AnimationOrchestrator
+  - Fixed duplicate 'delay' declaration that prevented iOS compilation
+  - Cleaned up import dependencies and unused code references
+  - Improved type safety and eliminated shadowing warnings
+
+### Technical — Architecture Improvements
+- **Animation Code Reduction**: Significant codebase cleanup and consolidation
+  - Eliminated duplicate animation logic across multiple widgets
+  - Centralized animation timing and curve definitions
+  - Improved maintainability through consistent patterns and shared infrastructure
+
+## [0.8.0] - 2025-09-25
+
 ### Added — Enhanced Progression System
 - **Alternating Perk/Theme Unlock System**: Complete redesign of level progression with meaningful rewards at every level
   - **Odd Levels (1,3,5,7,9,11,13...)**: Unlock gameplay perks with real XP bonuses and conditional effects

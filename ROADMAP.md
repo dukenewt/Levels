@@ -54,7 +54,15 @@ Goal: prove the core loop is fun and understandable for new users before broader
 - Providers: unify on `user_provider_refactored.dart` and remove duplication.
 - Pipeline: expose a single `CompletionPipeline` that sequences analyze → compute → persist → emit; keep the feature-layer helper only as a UI façade if needed.
 - ✅ **Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.** (COMPLETED)
-- Animations: centralize durations/curves in `AppDesignTokens`; ensure Reduced Motion across major celebratory widgets.
+- ✅ **Animations: centralized animation system with enhanced `AnimationOrchestrator`, controller lifecycle management, and built-in Reduced Motion support.** (COMPLETED)
+
+## Recently Completed (v0.8.1)
+- **Animation Architecture Overhaul**: Major refactor of animation system for gaming-level polish and maintainability
+  - **Enhanced AnimationOrchestrator**: Added controller lifecycle management, choreographed sequences, and automatic disposal
+  - **Streamlined Wheel of Time Widget**: Reduced from 7 animation controllers to 2, significantly cleaner codebase
+  - **Centralized Animation Management**: All animations now use orchestrator with consistent timing and Reduced Motion support
+  - **OrchestrationMixin**: Provided clean widget integration pattern for managed animations
+  - **Gaming-Level Polish**: Foundation ready for sophisticated celebration sequences and visual feedback
 
 ## Recently Completed (v0.8.0)
 - **Enhanced Progression System**: Complete redesign of level progression with alternating perk/theme rewards
