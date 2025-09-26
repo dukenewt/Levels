@@ -7,8 +7,7 @@ import '../providers/task_provider.dart';
 import '../models/user_rank.dart';
 import '../models/user.dart' as app;
 import '../services/smooth_xp_animation_service.dart';
-import '../providers/settings_provider.dart';
-import '../core/theme/app_design_tokens.dart';
+import '../core/animation/animation_orchestrator.dart';
 import '../screens/stats_screen.dart';
 
 class WheelOfTimeProgress extends StatefulWidget {
@@ -19,29 +18,15 @@ class WheelOfTimeProgress extends StatefulWidget {
 }
 
 class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
-    with TickerProviderStateMixin {
-  late AnimationController _rotationController;
-  late AnimationController _pulseController;
-  late AnimationController _xpRingController;
-  late AnimationController _rankRingController;
-  late AnimationController _taskRingController;
+    with TickerProviderStateMixin, OrchestrationMixin {
+  // Streamlined controllers using the new architecture
+  late AnimationController _ambientController;
+  late AnimationController _progressController;
 
-  // Smooth XP animation controller
-  late AnimationController _xpProgressController;
-  late AnimationController _celebrationController;
-
+  // Consolidated animations
   late Animation<double> _rotationAnimation;
   late Animation<double> _pulseAnimation;
-  late Animation<double> _xpRingAnimation;
-  late Animation<double> _rankRingAnimation;
-  late Animation<double> _taskRingAnimation;
-
-  // Smooth XP progress animation
   late Animation<double> _xpProgressAnimation;
-
-  // Celebration animations for task completion
-  late Animation<double> _celebrationScaleAnimation;
-  late Animation<double> _celebrationGlowAnimation;
 
   // Track previous XP values for smooth animation
   double _previousXPProgress = 0.0;
@@ -49,8 +34,6 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
   int _previousXP = 0;
   int _previousNextLevelXP = 1;
   bool _isInitialized = false;
-
-  bool _reducedMotion = false;
 
   @override
   void initState() {
@@ -71,195 +54,92 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
       }
     });
 
-    // Accessibility: read reduced-motion preference
-    try {
-      final settings = Provider.of<SettingsProvider>(context, listen: false);
-      _reducedMotion = settings.reducedMotion;
-    } catch (_) {
-      _reducedMotion = false;
-    }
-
-    // Slow rotation for the mystical effect (skip if reduced motion)
-    _rotationController = AnimationController(
-      duration: const Duration(seconds: 60),
-      vsync: this,
-    );
-    if (!_reducedMotion) {
-      _rotationController.safeRepeat();
-    }
-
-    // Gentle pulse animation
-    _pulseController = AnimationController(
-      duration: AppDesignTokens.slow,
-      vsync: this,
-    );
-    if (!_reducedMotion) {
-      _pulseController.safeRepeat(reverse: true);
-    }
-
-    // Ring animations for progress changes
-    _xpRingController = AnimationController(
-      duration: _reducedMotion
-          ? AppDesignTokens.microFast
-          : const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    _rankRingController = AnimationController(
-      duration: _reducedMotion
-          ? AppDesignTokens.microFast
-          : const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    _taskRingController = AnimationController(
-      duration: _reducedMotion
-          ? AppDesignTokens.microFast
-          : const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    // Smooth XP progress animation controller
-    _xpProgressController = AnimationController(
-      duration: _reducedMotion
-          ? AppDesignTokens.microFast
-          : const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    // Celebration animation controller for task completions
-    _celebrationController = AnimationController(
-      duration: _reducedMotion
-          ? AppDesignTokens.microFast
-          : const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _rotationAnimation = Tween<double>(
-      begin: 0,
-      end: 2 * math.pi,
-    ).animate(CurvedAnimation(
-      parent: _rotationController,
-      curve: Curves.linear,
-    ));
-
-    _pulseAnimation = Tween<double>(
-      begin: 0.98,
-      end: 1.02,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
-
-    _xpRingAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(
-      parent: _xpRingController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _rankRingAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(
-      parent: _rankRingController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _taskRingAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(
-      parent: _taskRingController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    // Initialize XP progress animation
-    _xpProgressAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _xpProgressController,
-      curve: Curves.easeOutCubic, // Smooth easing for XP gains
-    ));
-
-    // Initialize celebration animations
-    _celebrationScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
-    ).animate(CurvedAnimation(
-      parent: _celebrationController,
-      curve: Curves.elasticOut,
-    ));
-
-    _celebrationGlowAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _celebrationController,
-      curve: Curves.easeOutCirc,
-    ));
-
-    // Start the ring animations with staggered delays (or snap complete if reduced motion)
-    if (_reducedMotion) {
-      _xpRingController.value = 1.0;
-      _taskRingController.value = 1.0;
-      _rankRingController.value = 1.0;
-    } else {
-      Future.delayed(AppDesignTokens.microMedium, () {
-        if (mounted) _xpRingController.safeForward();
-      });
-      Future.delayed(
-          AppDesignTokens.microSlow + const Duration(milliseconds: 300), () {
-        if (mounted) _taskRingController.safeForward();
-      });
-      Future.delayed(AppDesignTokens.slow, () {
-        if (mounted) _rankRingController.safeForward();
-      });
-    }
+    // Initialize orchestrated animations - MUCH CLEANER!
+    _setupAnimations();
+    _startAmbientAnimations();
 
     // Mark as initialized
     _isInitialized = true;
+  }
+
+  void _setupAnimations() {
+    // Get controllers from the orchestrator
+    _ambientController = getAnimationController(
+      'ambient',
+      duration: const Duration(seconds: 60),
+    );
+
+    _progressController = getAnimationController(
+      'progress',
+      duration: const Duration(milliseconds: 800),
+    );
+
+    // Create animations using the orchestrator
+    _rotationAnimation = createAnimation(
+      _ambientController,
+      Tween<double>(begin: 0, end: 2 * math.pi),
+      curve: Curves.linear,
+    );
+
+    _pulseAnimation = createAnimation(
+      _ambientController,
+      Tween<double>(begin: 0.98, end: 1.02),
+      curve: Curves.easeInOut,
+    );
+
+    _xpProgressAnimation = createAnimation(
+      _progressController,
+      Tween<double>(begin: 0.0, end: 0.0),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _startAmbientAnimations() {
+    // Start ambient animations unless reduced motion is enabled
+    if (!AnimationOrchestrator.instance.reducedMotion) {
+      _ambientController.repeat();
+    }
   }
 
   void _animateXPProgress(double newProgress,
       {bool triggerCelebration = false}) {
     if (!mounted || !_isInitialized) return;
 
-    // Update the tween to animate from current displayed progress to new progress
-    _xpProgressAnimation = Tween<double>(
+    // Use orchestrator to animate XP progress smoothly
+    final progressTween = Tween<double>(
       begin: _currentDisplayedXPProgress,
       end: newProgress,
-    ).animate(CurvedAnimation(
-      parent: _xpProgressController,
-      curve: Curves.easeOutCubic,
-    ));
+    );
 
-    // Reset and start the animation
-    _xpProgressController.safeReset();
-    _xpProgressController.safeForward()?.then((_) {
+    _xpProgressAnimation = createAnimation(
+      _progressController,
+      progressTween,
+      curve: Curves.easeOutCubic,
+    );
+
+    _progressController.reset();
+    _progressController.forward().then((_) {
       if (mounted) {
         _currentDisplayedXPProgress = newProgress;
       }
     });
 
-    // Trigger celebration animation for XP gains
-    if (!_reducedMotion &&
-        triggerCelebration &&
-        newProgress > _currentDisplayedXPProgress) {
-      _celebrationController.safeReset();
-      _celebrationController.safeForward()?.then((_) {
-        if (mounted) {
-          // Pulse briefly to show completion satisfaction
-          _pulseController.safeReset();
-          _pulseController.safeForward()?.then((_) {
-            if (mounted) {
-              _pulseController.safeReverse();
-            }
-          });
-        }
-      });
+    // Trigger celebration using orchestrated sequence
+    if (triggerCelebration && newProgress > _currentDisplayedXPProgress) {
+      runAnimationSequence(
+        'xpCelebration',
+        [
+          AnimationStep(
+            type: AnimationStepType.delay,
+            duration: Duration(milliseconds: 200),
+          ),
+          AnimationStep.custom(() async {
+            // Brief pulse for satisfaction
+            await _ambientController.forward();
+            await _ambientController.reverse();
+          }),
+        ],
+      );
     }
   }
 
@@ -274,13 +154,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
 
   @override
   void dispose() {
-    _rotationController.dispose();
-    _pulseController.dispose();
-    _xpRingController.dispose();
-    _rankRingController.dispose();
-    _taskRingController.dispose();
-    _xpProgressController.dispose();
-    _celebrationController.dispose();
+    // OrchestrationMixin automatically handles disposal
     super.dispose();
   }
 
@@ -308,7 +182,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
         if (mounted && _isInitialized) {
           final xpIncreased = user.currentXp > _previousXP;
           debugPrint(
-              '🎯 XP changed: ${_previousXP} -> ${user.currentXp}, animating from $_currentDisplayedXPProgress to $currentXPProgress');
+              '🎯 XP changed: $_previousXP -> ${user.currentXp}, animating from $_currentDisplayedXPProgress to $currentXPProgress');
           _animateXPProgress(currentXPProgress,
               triggerCelebration: xpIncreased);
           _previousXP = user.currentXp;
@@ -354,23 +228,17 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
                     child: Text('Test XP Animation (+25 XP)'),
                   ),
 
-                // The main wheel
+                // The main wheel - now with streamlined animations
                 AnimatedBuilder(
                   animation: Listenable.merge([
-                    _rotationController,
-                    _pulseController,
-                    _xpRingController,
-                    _rankRingController,
-                    _taskRingController,
-                    _xpProgressController,
-                    _celebrationController, // Add celebration animation
+                    _ambientController,
+                    _progressController,
                   ]),
                   builder: (context, child) {
-                    // Use the animated XP progress value - with safety check
-                    final displayedXPProgress =
-                        _xpProgressController.isAnimating
-                            ? _xpProgressAnimation.value
-                            : currentXPProgress;
+                    // Use the animated XP progress value
+                    final displayedXPProgress = _progressController.isAnimating
+                        ? _xpProgressAnimation.value
+                        : currentXPProgress;
 
                     return Transform.scale(
                       scale: _pulseAnimation.value,
@@ -382,19 +250,17 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
                           height: 200,
                           child: CustomPaint(
                             painter: WheelOfTimeRingsPainter(
-                              xpProgress:
-                                  displayedXPProgress * _xpRingAnimation.value,
-                              rankProgress:
-                                  rankProgress * _rankRingAnimation.value,
-                              tasksProgress:
-                                  tasksProgress * _taskRingAnimation.value,
+                              xpProgress: displayedXPProgress,
+                              rankProgress: rankProgress,
+                              tasksProgress: tasksProgress,
                               xpColor: theme.colorScheme.primary,
                               rankColor: currentRank.color,
                               tasksColor: theme.colorScheme.secondary,
-                              backgroundColor: theme.colorScheme.surfaceVariant,
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
                               pulseValue: _pulseAnimation.value,
                               // Add visual feedback for XP animation
-                              isXPAnimating: _xpProgressController.isAnimating,
+                              isXPAnimating: _progressController.isAnimating,
                             ),
                           ),
                         ),
@@ -429,9 +295,9 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
 
     return Column(
       children: [
-        // XP Progress - now with smooth animation feedback
+        // XP Progress - now with streamlined animation feedback
         AnimatedBuilder(
-          animation: _xpProgressController,
+          animation: _progressController,
           builder: (context, child) {
             return _buildLegendItem(
               context,
@@ -439,7 +305,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
               label: 'XP Progress',
               current: user.currentXp,
               max: userProvider.nextLevelXp,
-              isAnimating: _xpProgressController.isAnimating,
+              isAnimating: _progressController.isAnimating,
             );
           },
         ),
