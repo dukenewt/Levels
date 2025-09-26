@@ -524,7 +524,7 @@ class AppTheme {
       ),
 
       // Enhanced card theme with subtle gradients
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shadowColor: primaryColor.withOpacity(0.1),
         shape: RoundedRectangleBorder(
