@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../models/user_rank.dart';
 import 'unified_progress_bar.dart';
+import '../core/animation/animation_orchestrator.dart';
 
 class LevelProgressCard extends StatefulWidget {
   final int level;
@@ -21,7 +22,7 @@ class LevelProgressCard extends StatefulWidget {
 }
 
 class _LevelProgressCardState extends State<LevelProgressCard>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, OrchestrationMixin {
   late AnimationController _animationController;
   late Animation<double> _progressAnimation;
   late int _displayedXp;
@@ -36,25 +37,28 @@ class _LevelProgressCardState extends State<LevelProgressCard>
     _displayedXp = widget.currentXp;
     _displayedLevel = widget.level;
 
-    _animationController = AnimationController(
-      vsync: this,
+    _animationController = getAnimationController(
+      'levelProgress',
       duration: const Duration(milliseconds: 1000),
     );
 
-    _progressAnimation = Tween<double>(
-      begin: _displayedXp / widget.nextLevelXp,
-      end: _displayedXp / widget.nextLevelXp,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
+    _progressAnimation = createAnimation(
+      _animationController,
+      Tween<double>(
+        begin: _displayedXp / widget.nextLevelXp,
+        end: _displayedXp / widget.nextLevelXp,
+      ),
       curve: Curves.easeInOut,
-    ));
+    );
 
-    _tileScaleController = AnimationController(
-      vsync: this,
+    _tileScaleController = getAnimationController(
+      'levelScale',
       duration: const Duration(milliseconds: 400),
     );
-    _tileScaleAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(parent: _tileScaleController, curve: Curves.easeOutBack),
+    _tileScaleAnimation = createAnimation(
+      _tileScaleController,
+      Tween<double>(begin: 1.0, end: 1.05), // Reduced scale for subtlety
+      curve: Curves.easeOutBack,
     );
   }
 
@@ -86,20 +90,24 @@ class _LevelProgressCardState extends State<LevelProgressCard>
       _tileScaleController.forward(from: 0.0).then((_) {
         _tileScaleController.reverse();
       });
-      Future.delayed(const Duration(seconds: 4), () {
-        if (mounted) {
-          setState(() {
-            _showShimmer = false;
-          });
-        }
-      });
+      Future.delayed(
+        AnimationOrchestrator.instance.reducedMotion
+            ? const Duration(milliseconds: 1500) // Shorter for reduced motion
+            : const Duration(seconds: 3), // Reduced from 4 seconds
+        () {
+          if (mounted) {
+            setState(() {
+              _showShimmer = false;
+            });
+          }
+        },
+      );
     }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _tileScaleController.dispose();
+    // OrchestrationMixin automatically handles controller disposal
     super.dispose();
   }
 

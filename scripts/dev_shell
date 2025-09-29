@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# dev_shell: Launch a clean, reliable shell for project work
+# - Uses a safe baseline PATH so core tools (ls, uname, ps) are always available
+# - Optionally prepends the repo's bin/ to PATH
+# - Skips heavy rc initializers (rvm/nvm/pyenv/etc.) by default to avoid non-interactive breakage
+#
+# Usage examples:
+#   scripts/dev_shell                    # clean shell, safe PATH
+#   scripts/dev_shell -p                 # add ./bin to PATH
+#   scripts/dev_shell -v -p              # verbose diagnostics + ./bin
+#   scripts/dev_shell -s zsh             # use zsh instead of bash
+#   scripts/dev_shell -r                 # allow rc files (opt-in)
+
+usage() {
+  cat <<'USAGE'
+dev_shell - spawn a clean shell with a safe PATH
+
+Options:
+  -p        Prepend the repo's ./bin to PATH
+  -s SHELL  Shell to run (bash|zsh|path); default: current $SHELL or bash
+  -r        Allow shell rc files (default: skip rc for reliability)
+  -v        Verbose: print diagnostics before launching
+  -h        Show this help
+
+Examples:
+  scripts/dev_shell -p
+  scripts/dev_shell -v -s zsh
+  scripts/dev_shell -r   # use your rc files if you know they're safe
+USAGE
+}
+
+prepend_bin=false
+chosen_shell="${SHELL:-}"
+allow_rc=false
+verbose=false
+
+while getopts ":ps:rvh" opt; do
+  case "$opt" in
+    p) prepend_bin=true ;;
+    s) chosen_shell="$OPTARG" ;;
+    r) allow_rc=true ;;
+    v) verbose=true ;;
+    h) usage; exit 0 ;;
+    :) echo "Missing argument for -$OPTARG" >&2; usage; exit 2 ;;
+    \?) echo "Unknown option: -$OPTARG" >&2; usage; exit 2 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+# Resolve shell binary
+if [[ -z "${chosen_shell}" ]]; then
+  chosen_shell=bash
+fi
+if [[ "${chosen_shell}" != /* ]]; then
+  # Allow passing a program name like "zsh" or "bash"
+  if ! chosen_shell_path="$(command -v "${chosen_shell}" 2>/dev/null)"; then
+    echo "Requested shell '${chosen_shell}' not found in PATH." >&2
+    exit 127
+  fi
+else
+  chosen_shell_path="${chosen_shell}"
+fi
+
+# Baseline safe PATH for macOS/Linux
+BASE_PATH="/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:/usr/local/bin"
+
+PROJECT_PATH="${BASE_PATH}"
+if ${prepend_bin}; then
+  PROJECT_PATH="$(pwd)/bin:${PROJECT_PATH}"
+fi
+
+# Choose flags to disable rc files, per shell
+rc_flags=()
+if ! ${allow_rc}; then
+  case "${chosen_shell_path}" in
+    *zsh) rc_flags=("-f") ;;            # zsh -f: don't source startup files
+    *bash) rc_flags=("--noprofile" "--norc") ;;
+    *) rc_flags=() ;;                    # unknown shell: best-effort
+  esac
+fi
+
+if ${verbose}; then
+  echo "dev_shell diagnostics:" >&2
+  echo "  shell: ${chosen_shell_path}" >&2
+  echo "  allow_rc: ${allow_rc}" >&2
+  echo "  prepend_bin: ${prepend_bin}" >&2
+  echo "  PATH: ${PROJECT_PATH}" >&2
+  echo -n "  which ls: "; (PATH="${PROJECT_PATH}" command -v ls || true) >&2
+  echo -n "  which uname: "; (PATH="${PROJECT_PATH}" command -v uname || true) >&2
+  echo -n "  which ps: "; (PATH="${PROJECT_PATH}" command -v ps || true) >&2
+fi
+
+# Preserve minimal env for a pleasant shell; wipe the rest to avoid polluted state
+preserve_env=(
+  "HOME=${HOME:-}"
+  "TERM=${TERM:-xterm-256color}"
+  "USER=${USER:-}"
+  "PATH=${PROJECT_PATH}"
+)
+
+exec env -i "${preserve_env[@]}" "${chosen_shell_path}" -l "${rc_flags[@]}"
+

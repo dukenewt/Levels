@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/animation/animation_orchestrator.dart';
 
 class SettingsProvider with ChangeNotifier {
   // Task filter settings
@@ -81,6 +82,8 @@ class SettingsProvider with ChangeNotifier {
       _reminderMinutesBefore = _prefs?.getInt('reminderMinutesBefore') ?? 30;
 
       _isInitialized = true;
+      // Sync Reduced Motion to the global AnimationOrchestrator
+      AnimationOrchestrator.instance.setReducedMotion(_reducedMotion);
     } catch (e) {
       debugPrint('Error loading settings: $e');
       // Keep default values if loading fails
@@ -204,6 +207,8 @@ class SettingsProvider with ChangeNotifier {
         _prefs = await SharedPreferences.getInstance();
       }
       await _prefs?.setBool('reducedMotion', value);
+      // Propagate to orchestrator immediately so animations adapt
+      AnimationOrchestrator.instance.setReducedMotion(value);
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving reducedMotion setting: $e');

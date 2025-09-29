@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Gem shatter overlay effect on task completion with OrchestrationMixin integration
+- XP orbs overlay with deterministic energy streams flowing to ring progress endpoints
+- Level number badge over the ring (temporary visual until final badge art)
+- Visual debug indicators for orb targeting during development
+
+### Changed
+- Enhanced ring unraveling celebration with performance optimizations
+  - Reduced segment count from 120 to 60 for smoother animation
+  - Simplified physics simulation with clean easing curves instead of complex calculations
+  - Modernized visual effects with subtle shadows and improved timing
+- Improved XP orb visual design and behavior
+  - Redesigned orb system as energy streams instead of random bubbles
+  - Added deterministic targeting to ring progress endpoints
+  - Enhanced particle appearance with bright cores and improved glow effects
+  - Dynamic orb count based on XP amount (2-6 orbs)
+- Refined ring rotation during animations
+  - Smooth slowdown instead of abrupt stopping during orb flight
+  - Maintains visual continuity while ensuring accurate orb targeting
+- Updated level progress card animation system
+  - Integrated OrchestrationMixin for proper lifecycle management
+  - Added adaptive timing for Reduced Motion support
+  - Reduced shimmer duration and scale effects for subtlety
+
+### Fixed
+- Ring visibility issue resolved by adding explicit size constraints to CustomPaint
+- XP orb targeting accuracy improved with proper ring anchor endpoint calculations
+- Ring rotation interference with orb targeting eliminated
+- Talent dialog blocking issue when no choices available at level unlock
+- iOS dialog assertion by providing barrierLabel to showGeneralDialog
+- Multiple layout assertions by ensuring painters are wrapped with SizedBox.expand
+- Debug logging spam removed from console output
+
+### Removed
+- Complex physics simulation in ring unraveling (replaced with cleaner easing)
+- Excessive debug logging throughout animation system
+- Visual debug markers from production builds
+
+### Known issues / Follow‑ups
+- XP orb visual refinement still in progress for professional polish
+- Level badge visual needs refinement to match design language; awaiting art assets
+- Carryover XP fill after level-up not yet implemented
+- Animation system requires further professional polish despite functional improvements
+
+
 ## [0.8.1] - 2025-09-26
 
 ### Changed — Animation Architecture Overhaul

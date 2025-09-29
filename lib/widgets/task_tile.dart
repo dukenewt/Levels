@@ -10,6 +10,8 @@ import '../core/error_handling.dart';
 import '../core/theme/app_design_tokens.dart';
 import '../core/utils/date_helpers.dart';
 import '../features/task_management/application/task_completion_service.dart';
+import '../services/xp_flow_service.dart';
+import './gem_shatter_overlay.dart';
 import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../providers/user_provider.dart';
 
@@ -48,6 +50,21 @@ class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
   bool _isHovered = false;
 
   bool _animationsInitialized = false;
+  final GlobalKey _tileKey = GlobalKey(debugLabel: 'TaskTileKey');
+
+  // Difficulty color mapping for tile accents and effects
+  Color _difficultyColor() {
+    switch (widget.task.difficulty) {
+      case TaskDifficulty.easy:
+        return Colors.green;
+      case TaskDifficulty.medium:
+        return Colors.blue;
+      case TaskDifficulty.hard:
+        return Colors.purple;
+      case TaskDifficulty.epic:
+        return Colors.orange;
+    }
+  }
 
   @override
   void initState() {
@@ -117,10 +134,10 @@ class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
       curve: const Interval(0.5, 1.0, curve: Curves.easeInOut),
     ));
 
-    // Color shift during completion
+    // Color shift during completion — tinted by difficulty
     _colorAnimation = ColorTween(
       begin: Colors.transparent,
-      end: theme.colorScheme.primary.withOpacity(0.1),
+      end: _difficultyColor().withOpacity(0.12),
     ).animate(CurvedAnimation(
       parent: _completionController,
       curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
@@ -163,6 +180,39 @@ class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
 
       // Start completion animation
       _completionController.forward();
+
+      // Launch visual effects immediately for responsiveness
+      try {
+        final ctx = _tileKey.currentContext;
+        if (ctx != null) {
+          final box = ctx.findRenderObject() as RenderBox?;
+          if (box != null && box.attached) {
+            final topLeft = box.localToGlobal(Offset.zero);
+            final center =
+                topLeft + Offset(box.size.width / 2, box.size.height / 2);
+            GemShatterOverlay.show(
+              context: context,
+              position: center,
+              color: _difficultyColor(),
+            );
+            // Get current XP progress before the task completion
+            final userProvider =
+                Provider.of<UserProvider>(context, listen: false);
+            final currentXPProgress =
+                userProvider.user != null && userProvider.nextLevelXp > 0
+                    ? userProvider.user!.currentXp / userProvider.nextLevelXp
+                    : 0.0;
+
+            XPFlowService.instance.feedXP(
+              context: context,
+              startPosition: center,
+              xpAmount: widget.task.xpReward,
+              currentProgress:
+                  currentXPProgress, // Target current ring endpoint
+            );
+          }
+        }
+      } catch (_) {}
 
       try {
         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
@@ -342,28 +392,43 @@ class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
-      child: Card(
-        elevation: _isHovered ? 6 : 2,
-        shadowColor: theme.colorScheme.primary.withOpacity(0.2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: widget.task.isCompleted
-                ? theme.colorScheme.primary.withOpacity(0.3)
-                : Colors.transparent,
-            width: 1,
+      child: KeyedSubtree(
+        key: _tileKey,
+        child: Card(
+          elevation: _isHovered ? 6 : 2,
+          shadowColor: _difficultyColor().withOpacity(0.25),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: widget.task.isCompleted
+                  ? _difficultyColor().withOpacity(0.35)
+                  : _difficultyColor().withOpacity(0.18),
+              width: 1,
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              _buildCompletionButton(theme),
-              const SizedBox(width: 16),
-              Expanded(child: _buildTaskContent(theme)),
-              _buildXpBadge(theme),
-              _buildMenuButton(theme),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Difficulty accent bar
+                  Container(
+                    width: 6,
+                    decoration: BoxDecoration(
+                      color: _difficultyColor().withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildCompletionButton(theme),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildTaskContent(theme)),
+                  _buildXpBadge(theme),
+                  _buildMenuButton(theme),
+                ],
+              ),
+            ),
           ),
         ),
       ),
