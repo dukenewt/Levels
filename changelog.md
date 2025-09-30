@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RingAnchor and XPFlowService utilities for accurate overlay targeting
 - XPOrbOverlay.showFromAnchors helper for overlay-space coordinates
 - Link: ADR-0003 AnimationOrchestrator and Reduced Motion Policy
+- Custom bottom navigation bar with Material 3 and Apple HIG compliance
 
 ### Changed
 - Default to Basic Motion for all users; Advanced Motion is opt-in via flag
@@ -24,14 +25,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Gated RingUnravelingCelebration behind Advanced Motion; LevelUpPanel used by default
 - Removed level number badge from ring center for a cleaner, less busy design
 - MaterialApp wired to MotionDebugGate; showPerformanceOverlay controllable in debug
+- Task creation dialog converted to modal bottom sheet for better mobile UX
+- Bottom navigation bar redesigned: thinner (64dp), individual button style, Material 3 color tokens
 
 ### Fixed
 - Reduced jank in animation flows by eliminating widget rebuilds per frame in orbs path
 - Improved coordinate handling for overlays with showFromAnchors and RingAnchor
+- Task creation dialog keyboard handling with proper viewport insets and SafeArea
+- Task creation dialog content no longer hidden behind keyboard
+- Bottom nav drag handle now visible below iPhone notch with proper spacing
 
 ### Removed
 - Center level indicator inside the rings (superseded by cleaner ring focus)
 - Heavy celebration visuals disabled by default (now under Advanced Motion flag)
+- Test XP Animation debug button from Wheel of Time widget
 
 ### Notes
 - Accessibility: Reduced Motion honored globally via orchestrator; Basic Motion uses short crossfades

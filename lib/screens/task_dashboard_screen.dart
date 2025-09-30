@@ -220,8 +220,12 @@ class _TaskDashboardScreenState extends State<TaskDashboardScreen>
             ),
           FloatingActionButton(
             heroTag: 'addTask',
-            onPressed: () => showDialog(
-                context: context, builder: (context) => TaskCreationDialog()),
+            onPressed: () => showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => const TaskCreationDialog(),
+            ),
             child: const Icon(Icons.add),
           ),
         ],
