@@ -26,6 +26,8 @@ import 'controllers/talent_perk_controller.dart';
 import 'services/talent_trigger_service.dart';
 import 'config/feature_flags.dart';
 import 'debug/gameplay_debug_panel.dart';
+import 'debug/motion_debug.dart';
+import 'debug/motion_debug_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -124,9 +126,16 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
+        final motion = MotionDebug.instance;
         return MaterialApp(
           title: 'Daily XP',
           theme: themeProvider.currentThemeData,
+          showPerformanceOverlay: motion.showPerformanceOverlay,
+          builder: (context, child) {
+            if (child == null) return const SizedBox.shrink();
+            // Wrap app with motion debug gate in debug builds
+            return MotionDebugGate(child: child);
+          },
           home: const AuthWrapper(
             mainApp: MainTabScaffold(),
           ),

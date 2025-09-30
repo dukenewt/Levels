@@ -1,0 +1,2783 @@
+diff --git a/ROADMAP.md b/ROADMAP.md
+index bef9392..d243178 100644
+--- a/ROADMAP.md
++++ b/ROADMAP.md
+@@ -36,10 +36,23 @@ Goal: prove the core loop is fun and understandable for new users before broader
+ 
+ ## Now / Next / Later
+ - Now:
+-  - **Progression UI Polish**: Add celebration dialogs for perk unlocks and theme unlocks to match talent choice experience
+-  - **Enhanced Celebrations**: Replace snackbar with orchestrated celebration overlay (Reduced Motion aware) for perk/theme unlocks
+-  - **Progression Testing**: Add unit tests for conditional bonus evaluation, theme unlocking, and new perk effects
+-  - **Balance Tuning**: Gather gameplay data to tune XP bonus percentages and conditional thresholds for optimal fun
++  - **Animation Professional Polish (Priority)**
++    - Complete XP orb visual refinement for professional appearance
++    - Further refine ring unraveling celebration timing and visual effects
++    - Implement consistent animation timing throughout all celebration sequences
++    - Address remaining choppy transitions in level-up flows
++  - **Ring System Polish**
++    - Center level badge visual refinement to match design language
++    - Carryover XP fill after level-up (resume aggregate fill post-reform)
++    - Fine-tune ring rotation behavior during animations
++  - **User Experience Consistency**
++    - Standardize all animations to use OrchestrationMixin pattern
++    - Ensure all visual effects meet professional standards
++    - Complete Reduced Motion implementation across all components
++  - **Code Quality**
++    - Remove remaining debug artifacts and improve production code clarity
++    - Consolidate animation architecture improvements
++    - Add unit tests for enhanced animation system components
+ - Next:
+   - **Animation Polish**: Implement Reduced Motion in progression celebrations; centralize timings in `AppDesignTokens`
+   - **Persistence Safety**: Use Firestore transactions for XP/level-up, perk unlocks, and theme unlocks to avoid races
+@@ -56,13 +69,34 @@ Goal: prove the core loop is fun and understandable for new users before broader
+ - ✅ **Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.** (COMPLETED)
+ - ✅ **Animations: centralized animation system with enhanced `AnimationOrchestrator`, controller lifecycle management, and built-in Reduced Motion support.** (COMPLETED)
+ 
+-## Recently Completed (v0.8.1)
++## Recently Completed (v0.8.1 - Animation Polish Phase)
+ - **Animation Architecture Overhaul**: Major refactor of animation system for gaming-level polish and maintainability
+   - **Enhanced AnimationOrchestrator**: Added controller lifecycle management, choreographed sequences, and automatic disposal
+   - **Streamlined Wheel of Time Widget**: Reduced from 7 animation controllers to 2, significantly cleaner codebase
+-  - **Centralized Animation Management**: All animations now use orchestrator with consistent timing and Reduced Motion support
+   - **OrchestrationMixin**: Provided clean widget integration pattern for managed animations
+-  - **Gaming-Level Polish**: Foundation ready for sophisticated celebration sequences and visual feedback
++
++- **Ring Visualization System**: Resolved critical rendering issues and improved visual feedback
++  - **Fixed Ring Visibility**: Added explicit size constraints to CustomPaint resolving invisible ring issue
++  - **Enhanced XP Orb System**: Redesigned from random bubbles to deterministic energy streams
++  - **Improved Targeting**: Implemented accurate orb targeting to ring progress endpoints
++  - **Smooth Ring Rotation**: Eliminated jarring stops during animations with gradual slowdown
++
++- **Level-Up Animation Enhancements**: Performance and visual improvements to celebration sequences
++  - **Ring Unraveling Optimization**: Reduced segment count from 120 to 60 for smoother performance
++  - **Simplified Physics**: Replaced complex gravity simulation with clean easing curves
++  - **Professional Visual Effects**: Modernized shadows and timing for polished appearance
++  - **Adaptive Timing**: Implemented Reduced Motion support with shorter durations
++
++- **System Integration**: Comprehensive cleanup and professional polish
++  - **Talent Dialog Fix**: Resolved blocking issue when no talent choices available
++  - **Debug System Cleanup**: Removed excessive logging and debug markers from production
++  - **Level Progress Card**: Integrated OrchestrationMixin with proper lifecycle management
++  - **Animation Consistency**: Standardized timing and reduced motion support across components
++
++- **Code Quality Improvements**: Enhanced maintainability and professional standards
++  - **Removed Legacy Code**: Eliminated complex physics calculations in favor of Flutter curves
++  - **Improved Documentation**: Updated animation system with clear architectural patterns
++  - **Performance Optimization**: Reduced computational overhead in custom painters
+ 
+ ## Recently Completed (v0.8.0)
+ - **Enhanced Progression System**: Complete redesign of level progression with alternating perk/theme rewards
+diff --git a/changelog.md b/changelog.md
+index 5d18468..b2f7bc6 100644
+--- a/changelog.md
++++ b/changelog.md
+@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ 
+ ## [Unreleased]
+ 
++### Added
++- Gem shatter overlay effect on task completion with OrchestrationMixin integration
++- XP orbs overlay with deterministic energy streams flowing to ring progress endpoints
++- Level number badge over the ring (temporary visual until final badge art)
++- Visual debug indicators for orb targeting during development
++
++### Changed
++- Enhanced ring unraveling celebration with performance optimizations
++  - Reduced segment count from 120 to 60 for smoother animation
++  - Simplified physics simulation with clean easing curves instead of complex calculations
++  - Modernized visual effects with subtle shadows and improved timing
++- Improved XP orb visual design and behavior
++  - Redesigned orb system as energy streams instead of random bubbles
++  - Added deterministic targeting to ring progress endpoints
++  - Enhanced particle appearance with bright cores and improved glow effects
++  - Dynamic orb count based on XP amount (2-6 orbs)
++- Refined ring rotation during animations
++  - Smooth slowdown instead of abrupt stopping during orb flight
++  - Maintains visual continuity while ensuring accurate orb targeting
++- Updated level progress card animation system
++  - Integrated OrchestrationMixin for proper lifecycle management
++  - Added adaptive timing for Reduced Motion support
++  - Reduced shimmer duration and scale effects for subtlety
++
++### Fixed
++- Ring visibility issue resolved by adding explicit size constraints to CustomPaint
++- XP orb targeting accuracy improved with proper ring anchor endpoint calculations
++- Ring rotation interference with orb targeting eliminated
++- Talent dialog blocking issue when no choices available at level unlock
++- iOS dialog assertion by providing barrierLabel to showGeneralDialog
++- Multiple layout assertions by ensuring painters are wrapped with SizedBox.expand
++- Debug logging spam removed from console output
++
++### Removed
++- Complex physics simulation in ring unraveling (replaced with cleaner easing)
++- Excessive debug logging throughout animation system
++- Visual debug markers from production builds
++
++### Known issues / Follow‑ups
++- XP orb visual refinement still in progress for professional polish
++- Level badge visual needs refinement to match design language; awaiting art assets
++- Carryover XP fill after level-up not yet implemented
++- Animation system requires further professional polish despite functional improvements
++
++
+ ## [0.8.1] - 2025-09-26
+ 
+ ### Changed — Animation Architecture Overhaul
+diff --git a/lib/core/animation/ring_anchor.dart b/lib/core/animation/ring_anchor.dart
+new file mode 100644
+index 0000000..8b37949
+--- /dev/null
++++ b/lib/core/animation/ring_anchor.dart
+@@ -0,0 +1,48 @@
++import 'package:flutter/widgets.dart';
++import 'dart:math' as math;
++
++/// Singleton to expose the global position/size of the primary XP ring.
++class RingAnchor {
++  RingAnchor._();
++  static final RingAnchor instance = RingAnchor._();
++
++  /// Attach this key to the widget that visually represents the outer ring.
++  final GlobalKey ringKey = GlobalKey(debugLabel: 'OuterRingAnchor');
++
++  Rect? globalBounds(BuildContext context) {
++    final ctx = ringKey.currentContext;
++    if (ctx == null) return null;
++    final box = ctx.findRenderObject() as RenderBox?;
++    if (box == null || !box.attached) return null;
++    final topLeft = box.localToGlobal(Offset.zero);
++    return topLeft & box.size;
++  }
++
++  Offset? globalCenter(BuildContext context) {
++    final r = globalBounds(context);
++    if (r == null) return null;
++    return r.center;
++  }
++
++  /// Calculate the endpoint of the current XP progress arc
++  Offset? getProgressEndpoint(BuildContext context, double progress) {
++    final bounds = globalBounds(context);
++    if (bounds == null) return null;
++
++    final center = bounds.center;
++
++    // Match exact calculation from WheelOfTimeRingsPainter
++    final maxRadius = bounds.width / 2;
++    final outerRadius = maxRadius - 10; // This is the XP progress ring radius
++
++    // Ring starts at top (-pi/2) and progresses clockwise
++    final startAngle = -math.pi / 2;
++    final currentAngle = startAngle + (2 * math.pi * progress);
++
++    // Calculate the position at the current progress point
++    final endX = center.dx + math.cos(currentAngle) * outerRadius;
++    final endY = center.dy + math.sin(currentAngle) * outerRadius;
++
++    return Offset(endX, endY);
++  }
++}
+diff --git a/lib/core/theme/app_design_tokens.dart b/lib/core/theme/app_design_tokens.dart
+index 98e2835..5809440 100644
+--- a/lib/core/theme/app_design_tokens.dart
++++ b/lib/core/theme/app_design_tokens.dart
+@@ -81,6 +81,22 @@ class AppDesignTokens {
+   static const Duration medium = Duration(milliseconds: 300);
+   static const Duration slow = Duration(milliseconds: 600);
+ 
++  // Neutral ring track tokens for Wheel of Time visibility across themes
++  static const Color neutralRingTrack = Color(0xFF9E9E9E); // Grey 600
++  static const double neutralRingTrackOpacity = 0.65;
++
++  // Ring visuals
++  // moved to inside AppDesignTokens above to avoid top-level static
++  // static const Color neutralRingTrack = Color(0xFF9E9E9E);
++  // static const double neutralRingTrackOpacity = 0.65;
++  // Celebration-specific durations
++  static const Duration shatterBurst = Duration(milliseconds: 220);
++  static const Duration orbFlightBase = Duration(milliseconds: 900);
++  static const Duration orbFlightMax = Duration(milliseconds: 1400);
++  static const Duration ringUnravel = Duration(milliseconds: 1200);
++  static const Duration ringExpand = Duration(milliseconds: 1500);
++  static const Duration ringReform = Duration(milliseconds: 900);
++
+   // Micro Interaction Design Tokens
+   static const Duration microFast = Duration(milliseconds: 100);
+   static const Duration microMedium = Duration(milliseconds: 150);
+@@ -94,10 +110,12 @@ class AppDesignTokens {
+   // Haptic feedback timing
+   static const Duration hapticDelay = Duration(milliseconds: 50);
+ 
+-  // Spring animation curves
++  // Motion curves
+   static const Curve springCurve = Curves.easeOutBack;
+   static const Curve dampedCurve = Curves.easeInOut;
+   static const Curve bounceCurve = Curves.elasticOut;
++  static const Curve asmrEase = Curves.easeInOutCubic;
++  static const Curve reformEase = Curves.easeInOut;
+ 
+   // Interaction states
+   static const double interactionOpacityPressed = 0.8;
+diff --git a/lib/debug/frame_timings_logger.dart b/lib/debug/frame_timings_logger.dart
+new file mode 100644
+index 0000000..e34d501
+--- /dev/null
++++ b/lib/debug/frame_timings_logger.dart
+@@ -0,0 +1,30 @@
++import 'dart:developer' as dev;
++import 'package:flutter/scheduler.dart';
++import 'package:flutter/foundation.dart';
++
++/// Registers a timings callback to log build/raster durations in debug/profile.
++class FrameTimingsLogger {
++  static final FrameTimingsLogger instance = FrameTimingsLogger._();
++  FrameTimingsLogger._();
++
++  bool _registered = false;
++
++  void ensureRegistered({bool enabled = true}) {
++    if (!kReleaseMode && enabled && !_registered) {
++      SchedulerBinding.instance.addTimingsCallback(_onTimings);
++      _registered = true;
++    }
++  }
++
++  void _onTimings(List<FrameTiming> timings) {
++    for (final t in timings) {
++      final buildMs = t.buildDuration.inMicroseconds / 1000.0;
++      final rasterMs = t.rasterDuration.inMicroseconds / 1000.0;
++      dev.log(
++        'frame build=${buildMs.toStringAsFixed(2)}ms raster=${rasterMs.toStringAsFixed(2)}ms',
++        name: 'motion.debug',
++        level: 800,
++      );
++    }
++  }
++}
+diff --git a/lib/debug/motion_debug.dart b/lib/debug/motion_debug.dart
+new file mode 100644
+index 0000000..44777f2
+--- /dev/null
++++ b/lib/debug/motion_debug.dart
+@@ -0,0 +1,50 @@
++import 'package:flutter/foundation.dart';
++
++/// Dev-only motion debug state (not persisted).
++/// Controls overlays, slow-mo, and markers to aid animation debugging.
++class MotionDebug with ChangeNotifier {
++  static final MotionDebug instance = MotionDebug._();
++  MotionDebug._();
++
++  bool _enabled = false;
++  bool _showPerformanceOverlay = false;
++  bool _showMarkers = false; // draw start/target markers, paths
++  double _timeDilation = 1.0; // 1.0 normal, >1.0 slow
++  bool _logFrameTimings = false;
++
++  bool get enabled => _enabled && kDebugMode;
++  bool get showPerformanceOverlay => _showPerformanceOverlay && enabled;
++  bool get showMarkers => _showMarkers && enabled;
++  double get timeDilation => _timeDilation;
++  bool get logFrameTimings => _logFrameTimings && enabled;
++
++  void toggleEnabled() {
++    _enabled = !_enabled;
++    notifyListeners();
++  }
++
++  void setEnabled(bool v) {
++    _enabled = v;
++    notifyListeners();
++  }
++
++  void setShowPerformanceOverlay(bool v) {
++    _showPerformanceOverlay = v;
++    notifyListeners();
++  }
++
++  void setShowMarkers(bool v) {
++    _showMarkers = v;
++    notifyListeners();
++  }
++
++  void setTimeDilation(double v) {
++    _timeDilation = v.clamp(0.1, 10.0);
++    notifyListeners();
++  }
++
++  void setLogFrameTimings(bool v) {
++    _logFrameTimings = v;
++    notifyListeners();
++  }
++}
+diff --git a/lib/debug/motion_debug_overlay.dart b/lib/debug/motion_debug_overlay.dart
+new file mode 100644
+index 0000000..dabeb67
+--- /dev/null
++++ b/lib/debug/motion_debug_overlay.dart
+@@ -0,0 +1,191 @@
++import 'package:flutter/foundation.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter/scheduler.dart' show timeDilation;
++import '../providers/settings_provider.dart';
++import 'motion_debug.dart';
++import 'frame_timings_logger.dart';
++import 'package:provider/provider.dart';
++
++/// Wraps the app and conditionally overlays a small dev-only motion debug panel.
++class MotionDebugGate extends StatefulWidget {
++  final Widget child;
++  const MotionDebugGate({super.key, required this.child});
++
++  @override
++  State<MotionDebugGate> createState() => _MotionDebugGateState();
++}
++
++class _MotionDebugGateState extends State<MotionDebugGate> {
++  final debug = MotionDebug.instance;
++
++  @override
++  void initState() {
++    super.initState();
++    // Start with normal speed
++    timeDilation = 1.0;
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    if (!kDebugMode) return widget.child;
++
++    return AnimatedBuilder(
++      animation: debug,
++      builder: (context, _) {
++        // Keep global timeDilation in sync
++        timeDilation = debug.enabled ? debug.timeDilation : 1.0;
++
++        // Optionally register frame timings logger
++        FrameTimingsLogger.instance
++            .ensureRegistered(enabled: debug.logFrameTimings);
++
++        return Stack(
++          children: [
++            // Hot corner toggle: double-tap top-right to show/hide panel
++            Positioned(
++              right: 0,
++              top: 0,
++              width: 32,
++              height: 32,
++              child: GestureDetector(
++                behavior: HitTestBehavior.translucent,
++                onDoubleTap: () => setState(() {
++                  MotionDebug.instance.toggleEnabled();
++                }),
++              ),
++            ),
++            widget.child,
++            if (debug.enabled) const _DebugHandle(),
++          ],
++        );
++      },
++    );
++  }
++}
++
++class _DebugHandle extends StatefulWidget {
++  const _DebugHandle();
++  @override
++  State<_DebugHandle> createState() => _DebugHandleState();
++}
++
++class _DebugHandleState extends State<_DebugHandle> {
++  Offset pos = const Offset(16, 120);
++
++  @override
++  Widget build(BuildContext context) {
++    final theme = Theme.of(context);
++    return Positioned(
++      left: pos.dx,
++      top: pos.dy,
++      child: Draggable(
++        feedback: _chip(theme, opacity: 0.85),
++        childWhenDragging: const SizedBox.shrink(),
++        onDragEnd: (d) => setState(() => pos = d.offset),
++        child: GestureDetector(
++          onTap: () => _openPanel(context),
++          child: _chip(theme),
++        ),
++      ),
++    );
++  }
++
++  Widget _chip(ThemeData theme, {double opacity = 1}) => Opacity(
++        opacity: opacity,
++        child: Chip(
++          backgroundColor: theme.colorScheme.primary,
++          labelPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
++          avatar: const Icon(Icons.play_circle_outline, color: Colors.white),
++          label: const Text('Motion',
++              style:
++                  TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
++        ),
++      );
++
++  Future<void> _openPanel(BuildContext context) async {
++    final debug = MotionDebug.instance;
++    final settings = context.read<SettingsProvider>();
++    final reduced = settings.reducedMotion;
++
++    await showModalBottomSheet(
++      context: context,
++      isScrollControlled: true,
++      builder: (ctx) {
++        return Padding(
++          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
++          child: Column(
++            mainAxisSize: MainAxisSize.min,
++            crossAxisAlignment: CrossAxisAlignment.start,
++            children: [
++              Row(
++                children: [
++                  const Icon(Icons.movie_filter),
++                  const SizedBox(width: 8),
++                  const Text('Motion Debug',
++                      style:
++                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
++                  const Spacer(),
++                  IconButton(
++                    icon: const Icon(Icons.close),
++                    onPressed: () => Navigator.of(ctx).pop(),
++                  ),
++                ],
++              ),
++              const SizedBox(height: 12),
++              SwitchListTile.adaptive(
++                value: debug.showPerformanceOverlay,
++                onChanged: (v) => setState(() {
++                  MotionDebug.instance.setShowPerformanceOverlay(v);
++                }),
++                title: const Text('Show Performance Overlay'),
++                subtitle: const Text('Flutter frame build/raster on screen'),
++              ),
++              SwitchListTile.adaptive(
++                value: debug.showMarkers,
++                onChanged: (v) => setState(() {
++                  MotionDebug.instance.setShowMarkers(v);
++                }),
++                title: const Text('Show Markers/Paths'),
++                subtitle: const Text('Draw targets, paths for diagnostics'),
++              ),
++              SwitchListTile.adaptive(
++                value: debug.logFrameTimings,
++                onChanged: (v) => setState(() {
++                  MotionDebug.instance.setLogFrameTimings(v);
++                }),
++                title: const Text('Log Frame Timings'),
++                subtitle: const Text('Build/raster durations in console'),
++              ),
++              const SizedBox(height: 8),
++              const Text('Slow Motion'),
++              Row(children: [
++                for (final f in const [1.0, 0.75, 0.5, 0.25])
++                  Padding(
++                    padding: const EdgeInsets.only(right: 8),
++                    child: ChoiceChip(
++                      label: Text('${(f * 100).toInt()}%'),
++                      selected: debug.timeDilation == f,
++                      onSelected: (_) => setState(() {
++                        MotionDebug.instance.setTimeDilation(f);
++                      }),
++                    ),
++                  ),
++              ]),
++              const Divider(height: 24),
++              SwitchListTile.adaptive(
++                value: reduced,
++                onChanged: (v) async {
++                  await settings.setReducedMotion(v);
++                  setState(() {});
++                },
++                title: const Text('Reduced Motion (App Setting)'),
++                subtitle: const Text('Uses accessible motion path'),
++              ),
++              const SizedBox(height: 8),
++            ],
++          ),
++        );
++      },
++    );
++  }
++}
+diff --git a/lib/main.dart b/lib/main.dart
+index 6ba9ae6..3a6f868 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -26,6 +26,8 @@ import 'controllers/talent_perk_controller.dart';
+ import 'services/talent_trigger_service.dart';
+ import 'config/feature_flags.dart';
+ import 'debug/gameplay_debug_panel.dart';
++import 'debug/motion_debug.dart';
++import 'debug/motion_debug_overlay.dart';
+ 
+ void main() async {
+   WidgetsFlutterBinding.ensureInitialized();
+@@ -124,9 +126,16 @@ class _MyAppState extends State<MyApp> {
+   Widget build(BuildContext context) {
+     return Consumer<ThemeProvider>(
+       builder: (context, themeProvider, _) {
++        final motion = MotionDebug.instance;
+         return MaterialApp(
+           title: 'Daily XP',
+           theme: themeProvider.currentThemeData,
++          showPerformanceOverlay: motion.showPerformanceOverlay,
++          builder: (context, child) {
++            if (child == null) return const SizedBox.shrink();
++            // Wrap app with motion debug gate in debug builds
++            return MotionDebugGate(child: child);
++          },
+           home: const AuthWrapper(
+             mainApp: MainTabScaffold(),
+           ),
+diff --git a/lib/providers/settings_provider.dart b/lib/providers/settings_provider.dart
+index fdd413e..0f57da7 100644
+--- a/lib/providers/settings_provider.dart
++++ b/lib/providers/settings_provider.dart
+@@ -1,5 +1,6 @@
+ import 'package:flutter/foundation.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
++import '../core/animation/animation_orchestrator.dart';
+ 
+ class SettingsProvider with ChangeNotifier {
+   // Task filter settings
+@@ -81,6 +82,8 @@ class SettingsProvider with ChangeNotifier {
+       _reminderMinutesBefore = _prefs?.getInt('reminderMinutesBefore') ?? 30;
+ 
+       _isInitialized = true;
++      // Sync Reduced Motion to the global AnimationOrchestrator
++      AnimationOrchestrator.instance.setReducedMotion(_reducedMotion);
+     } catch (e) {
+       debugPrint('Error loading settings: $e');
+       // Keep default values if loading fails
+@@ -204,6 +207,8 @@ class SettingsProvider with ChangeNotifier {
+         _prefs = await SharedPreferences.getInstance();
+       }
+       await _prefs?.setBool('reducedMotion', value);
++      // Propagate to orchestrator immediately so animations adapt
++      AnimationOrchestrator.instance.setReducedMotion(value);
+       notifyListeners();
+     } catch (e) {
+       debugPrint('Error saving reducedMotion setting: $e');
+diff --git a/lib/services/xp_flow_service.dart b/lib/services/xp_flow_service.dart
+new file mode 100644
+index 0000000..5e91318
+--- /dev/null
++++ b/lib/services/xp_flow_service.dart
+@@ -0,0 +1,54 @@
++import 'package:flutter/widgets.dart';
++import '../core/animation/ring_anchor.dart';
++import '../widgets/xp_orb_overlay.dart';
++
++/// Helper to visualize XP flowing from a source into the outer ring.
++class XPFlowService {
++  XPFlowService._();
++  static final XPFlowService instance = XPFlowService._();
++
++  void feedXP({
++    required BuildContext context,
++    required Offset startPosition,
++    required int xpAmount,
++    double? currentProgress, // Current XP progress (0.0 to 1.0)
++    VoidCallback? onOrbsArrive, // Called when orbs reach the ring
++  }) {
++    // Add post-frame callback to ensure ring anchor is properly positioned
++    WidgetsBinding.instance.addPostFrameCallback((_) {
++      if (context.mounted) {
++        Offset? target;
++
++        // If we have current progress, target the end of the progress arc
++        if (currentProgress != null) {
++          target =
++              RingAnchor.instance.getProgressEndpoint(context, currentProgress);
++        }
++
++        // Fallback to ring center if progress endpoint unavailable
++        target ??= RingAnchor.instance.globalCenter(context);
++
++        if (target == null) {
++          target = _getScreenCenter(context);
++        }
++
++        XPOrbOverlay.show(
++          context: context,
++          startPosition: startPosition,
++          xpAmount: xpAmount,
++          targetPosition: target,
++          onOrbsArrive: onOrbsArrive,
++        );
++      }
++    });
++  }
++
++  /// Get screen center as fallback when ring anchor unavailable
++  Offset _getScreenCenter(BuildContext context) {
++    final mediaQuery = MediaQuery.of(context);
++    return Offset(
++      mediaQuery.size.width / 2,
++      mediaQuery.size.height / 2,
++    );
++  }
++}
+diff --git a/lib/widgets/gem_shatter_overlay.dart b/lib/widgets/gem_shatter_overlay.dart
+new file mode 100644
+index 0000000..7071aca
+--- /dev/null
++++ b/lib/widgets/gem_shatter_overlay.dart
+@@ -0,0 +1,213 @@
++import 'dart:math' as math;
++import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++import '../core/animation/animation_orchestrator.dart';
++
++/// Overlay effect that creates a brief gem-like shatter burst at a point.
++class GemShatterOverlay {
++  static OverlayEntry? _entry;
++
++  static void show({
++    required BuildContext context,
++    required Offset position,
++    required Color color,
++  }) {
++    hide();
++
++    final reduced = AnimationOrchestrator.instance.reducedMotion;
++    final overlay = Overlay.of(context);
++    _entry = OverlayEntry(
++      builder: (context) => _GemShatterWidget(
++        position: position,
++        color: color,
++        reducedMotion: reduced,
++        onDone: hide,
++      ),
++    );
++    overlay.insert(_entry!);
++  }
++
++  static void hide() {
++    _entry?.remove();
++    _entry = null;
++  }
++}
++
++class _GemShatterWidget extends StatefulWidget {
++  final Offset position;
++  final Color color;
++  final bool reducedMotion;
++  final VoidCallback onDone;
++
++  const _GemShatterWidget({
++    Key? key,
++    required this.position,
++    required this.color,
++    required this.reducedMotion,
++    required this.onDone,
++  }) : super(key: key);
++
++  @override
++  State<_GemShatterWidget> createState() => _GemShatterWidgetState();
++}
++
++class _GemShatterWidgetState extends State<_GemShatterWidget>
++    with TickerProviderStateMixin, OrchestrationMixin {
++  late AnimationController _controller;
++  late List<_Shard> _shards;
++
++  @override
++  void initState() {
++    super.initState();
++
++    // Use orchestrated controller with automatic lifecycle management
++    _controller = getAnimationController(
++      'shatter',
++      duration: widget.reducedMotion
++          ? const Duration(milliseconds: 260)
++          : const Duration(milliseconds: 500),
++    )
++      ..addStatusListener((s) {
++        if (s == AnimationStatus.completed) {
++          widget.onDone();
++        }
++      })
++      ..addListener(() => setState(() {}));
++
++    _shards = _createShards(widget.position, widget.color,
++        reduced: widget.reducedMotion);
++    _controller.forward();
++
++    // Skip haptic feedback if reduced motion is enabled
++    if (!widget.reducedMotion) {
++      try {
++        HapticFeedback.selectionClick();
++      } catch (_) {}
++    }
++  }
++
++  @override
++  void dispose() {
++    // OrchestrationMixin automatically handles controller disposal
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return Positioned.fill(
++      child: CustomPaint(
++        painter: _GemShatterPainter(
++          shards: _shards,
++          t: _controller.value,
++          reduced: widget.reducedMotion,
++        ),
++      ),
++    );
++  }
++
++  List<_Shard> _createShards(Offset origin, Color color,
++      {bool reduced = false}) {
++    final rng = math.Random();
++    final count = reduced ? 6 : 14;
++    final baseSpeed = reduced ? 120.0 : 220.0;
++    final shards = <_Shard>[];
++    for (int i = 0; i < count; i++) {
++      final angle = (i / count) * 2 * math.pi + (rng.nextDouble() - 0.5) * 0.4;
++      final speed = baseSpeed * (0.7 + rng.nextDouble() * 0.6);
++      final size = reduced
++          ? (3.0 + rng.nextDouble() * 3.0)
++          : (4.0 + rng.nextDouble() * 5.0);
++      final rotSpeed = (rng.nextDouble() - 0.5) * (reduced ? 2.0 : 4.0);
++      shards.add(_Shard(
++        origin: origin,
++        angle: angle,
++        speed: speed,
++        size: size,
++        color: color,
++        rotationSpeed: rotSpeed,
++      ));
++    }
++    return shards;
++  }
++}
++
++class _GemShatterPainter extends CustomPainter {
++  final List<_Shard> shards;
++  final double t; // 0..1
++  final bool reduced;
++
++  _GemShatterPainter({
++    required this.shards,
++    required this.t,
++    required this.reduced,
++  });
++
++  @override
++  void paint(Canvas canvas, Size size) {
++    final fade = CurvedAnimation(
++      parent: AlwaysStoppedAnimation(t),
++      curve: reduced ? Curves.easeOut : Curves.easeOutCubic,
++    ).value;
++
++    final opacity = 1.0 - fade;
++    for (final s in shards) {
++      final dx = math.cos(s.angle) * s.speed * fade;
++      final dy = math.sin(s.angle) * s.speed * fade;
++      final pos = s.origin + Offset(dx, dy);
++
++      final paint = Paint()
++        ..color = s.color.withOpacity(opacity.clamp(0.0, 1.0))
++        ..style = PaintingStyle.fill;
++
++      // Draw a simple triangle shard
++      final path = Path();
++      final rot = s.rotationSpeed * fade * math.pi;
++      final p1 = _rotate(Offset(0, -s.size), rot);
++      final p2 = _rotate(Offset(s.size * 0.6, s.size * 0.8), rot);
++      final p3 = _rotate(Offset(-s.size * 0.6, s.size * 0.8), rot);
++
++      path.moveTo(pos.dx + p1.dx, pos.dy + p1.dy);
++      path.lineTo(pos.dx + p2.dx, pos.dy + p2.dy);
++      path.lineTo(pos.dx + p3.dx, pos.dy + p3.dy);
++      path.close();
++      canvas.drawPath(path, paint);
++
++      // Subtle glow at origin early on
++      if (!reduced && t < 0.3) {
++        final glowPaint = Paint()
++          ..color = s.color.withOpacity(0.2)
++          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
++        canvas.drawCircle(s.origin, 18 * (1 - t / 0.3), glowPaint);
++      }
++    }
++  }
++
++  Offset _rotate(Offset o, double r) {
++    final c = math.cos(r);
++    final s = math.sin(r);
++    return Offset(o.dx * c - o.dy * s, o.dx * s + o.dy * c);
++  }
++
++  @override
++  bool shouldRepaint(covariant _GemShatterPainter oldDelegate) {
++    return oldDelegate.t != t || oldDelegate.shards != shards;
++  }
++}
++
++class _Shard {
++  final Offset origin;
++  final double angle;
++  final double speed;
++  final double size;
++  final Color color;
++  final double rotationSpeed;
++
++  _Shard({
++    required this.origin,
++    required this.angle,
++    required this.speed,
++    required this.size,
++    required this.color,
++    required this.rotationSpeed,
++  });
++}
+diff --git a/lib/widgets/level_progress_card.dart b/lib/widgets/level_progress_card.dart
+index 5873fba..3fcff88 100644
+--- a/lib/widgets/level_progress_card.dart
++++ b/lib/widgets/level_progress_card.dart
+@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
+ import '../providers/user_provider.dart';
+ import '../models/user_rank.dart';
+ import 'unified_progress_bar.dart';
++import '../core/animation/animation_orchestrator.dart';
+ 
+ class LevelProgressCard extends StatefulWidget {
+   final int level;
+@@ -21,7 +22,7 @@ class LevelProgressCard extends StatefulWidget {
+ }
+ 
+ class _LevelProgressCardState extends State<LevelProgressCard>
+-    with TickerProviderStateMixin {
++    with TickerProviderStateMixin, OrchestrationMixin {
+   late AnimationController _animationController;
+   late Animation<double> _progressAnimation;
+   late int _displayedXp;
+@@ -36,25 +37,28 @@ class _LevelProgressCardState extends State<LevelProgressCard>
+     _displayedXp = widget.currentXp;
+     _displayedLevel = widget.level;
+ 
+-    _animationController = AnimationController(
+-      vsync: this,
++    _animationController = getAnimationController(
++      'levelProgress',
+       duration: const Duration(milliseconds: 1000),
+     );
+ 
+-    _progressAnimation = Tween<double>(
+-      begin: _displayedXp / widget.nextLevelXp,
+-      end: _displayedXp / widget.nextLevelXp,
+-    ).animate(CurvedAnimation(
+-      parent: _animationController,
++    _progressAnimation = createAnimation(
++      _animationController,
++      Tween<double>(
++        begin: _displayedXp / widget.nextLevelXp,
++        end: _displayedXp / widget.nextLevelXp,
++      ),
+       curve: Curves.easeInOut,
+-    ));
++    );
+ 
+-    _tileScaleController = AnimationController(
+-      vsync: this,
++    _tileScaleController = getAnimationController(
++      'levelScale',
+       duration: const Duration(milliseconds: 400),
+     );
+-    _tileScaleAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
+-      CurvedAnimation(parent: _tileScaleController, curve: Curves.easeOutBack),
++    _tileScaleAnimation = createAnimation(
++      _tileScaleController,
++      Tween<double>(begin: 1.0, end: 1.05), // Reduced scale for subtlety
++      curve: Curves.easeOutBack,
+     );
+   }
+ 
+@@ -86,20 +90,24 @@ class _LevelProgressCardState extends State<LevelProgressCard>
+       _tileScaleController.forward(from: 0.0).then((_) {
+         _tileScaleController.reverse();
+       });
+-      Future.delayed(const Duration(seconds: 4), () {
+-        if (mounted) {
+-          setState(() {
+-            _showShimmer = false;
+-          });
+-        }
+-      });
++      Future.delayed(
++        AnimationOrchestrator.instance.reducedMotion
++            ? const Duration(milliseconds: 1500) // Shorter for reduced motion
++            : const Duration(seconds: 3), // Reduced from 4 seconds
++        () {
++          if (mounted) {
++            setState(() {
++              _showShimmer = false;
++            });
++          }
++        },
++      );
+     }
+   }
+ 
+   @override
+   void dispose() {
+-    _animationController.dispose();
+-    _tileScaleController.dispose();
++    // OrchestrationMixin automatically handles controller disposal
+     super.dispose();
+   }
+ 
+diff --git a/lib/widgets/level_up_celebration.dart b/lib/widgets/level_up_celebration.dart
+deleted file mode 100644
+index ad6d87e..0000000
+--- a/lib/widgets/level_up_celebration.dart
++++ /dev/null
+@@ -1,536 +0,0 @@
+-import 'package:flutter/material.dart';
+-import 'dart:math' as math;
+-import '../models/user_rank.dart';
+-import '../models/celebration_data.dart';
+-import '../core/theme/app_design_tokens.dart';
+-
+-/// Enhanced level up celebration widget with beautiful animations and confetti
+-/// This widget is purely presentational - it only handles the visual appearance
+-/// The logic for when and how to show celebrations is handled by EnhancedCelebrationController
+-class LevelUpCelebration extends StatefulWidget {
+-  final CelebrationData celebrationData;
+-  final VoidCallback onDismiss;
+-
+-  const LevelUpCelebration({
+-    Key? key,
+-    required this.celebrationData,
+-    required this.onDismiss,
+-  }) : super(key: key);
+-
+-  @override
+-  State<LevelUpCelebration> createState() => _LevelUpCelebrationState();
+-}
+-
+-class _LevelUpCelebrationState extends State<LevelUpCelebration>
+-    with TickerProviderStateMixin {
+-  late AnimationController _mainController;
+-  late AnimationController _confettiController;
+-  late AnimationController _pulseController;
+-  late AnimationController _slideController;
+-
+-  late Animation<double> _scaleAnimation;
+-  late Animation<double> _fadeAnimation;
+-  late Animation<double> _slideAnimation;
+-  late Animation<double> _pulseAnimation;
+-  late Animation<Color?> _backgroundAnimation;
+-
+-  final List<_ConfettiParticle> _confetti = [];
+-  final int _confettiCount = 50;
+-
+-  @override
+-  void initState() {
+-    super.initState();
+-    _initializeAnimations();
+-    _generateConfetti();
+-    _startAnimations();
+-  }
+-
+-  void _initializeAnimations() {
+-    // Main celebration animation
+-    _mainController = AnimationController(
+-      duration: const Duration(milliseconds: 2000),
+-      vsync: this,
+-    );
+-
+-    // Confetti animation
+-    _confettiController = AnimationController(
+-      duration: const Duration(milliseconds: 4000),
+-      vsync: this,
+-    );
+-
+-    // Pulse animation for the level text
+-    _pulseController = AnimationController(
+-      duration: const Duration(milliseconds: 1500),
+-      vsync: this,
+-    );
+-
+-    // Slide animation for content
+-    _slideController = AnimationController(
+-      duration: const Duration(milliseconds: 1200),
+-      vsync: this,
+-    );
+-
+-    // Set up animations
+-    _scaleAnimation = Tween<double>(
+-      begin: 0.0,
+-      end: 1.0,
+-    ).animate(CurvedAnimation(
+-      parent: _mainController,
+-      curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+-    ));
+-
+-    _fadeAnimation = Tween<double>(
+-      begin: 0.0,
+-      end: 1.0,
+-    ).animate(CurvedAnimation(
+-      parent: _mainController,
+-      curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+-    ));
+-
+-    _slideAnimation = Tween<double>(
+-      begin: 50.0,
+-      end: 0.0,
+-    ).animate(CurvedAnimation(
+-      parent: _slideController,
+-      curve: Curves.easeOutBack,
+-    ));
+-
+-    _pulseAnimation = Tween<double>(
+-      begin: 1.0,
+-      end: 1.1,
+-    ).animate(CurvedAnimation(
+-      parent: _pulseController,
+-      curve: Curves.easeInOut,
+-    ));
+-
+-    _backgroundAnimation = ColorTween(
+-      begin: Colors.transparent,
+-      end: Colors.black.withOpacity(0.8),
+-    ).animate(CurvedAnimation(
+-      parent: _mainController,
+-      curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+-    ));
+-  }
+-
+-  void _generateConfetti() {
+-    final random = math.Random();
+-    for (int i = 0; i < _confettiCount; i++) {
+-      _confetti.add(_ConfettiParticle(
+-        x: random.nextDouble(),
+-        y: random.nextDouble() * 0.3 - 0.1, // Start above screen
+-        vx: (random.nextDouble() - 0.5) * 0.02,
+-        vy: random.nextDouble() * 0.01 + 0.005,
+-        color: _getRandomConfettiColor(),
+-        size: random.nextDouble() * 8 + 4,
+-        rotation: random.nextDouble() * math.pi * 2,
+-        rotationSpeed: (random.nextDouble() - 0.5) * 0.2,
+-      ));
+-    }
+-  }
+-
+-  Color _getRandomConfettiColor() {
+-    final colors = [
+-      Colors.amber,
+-      Colors.orange,
+-      Colors.red,
+-      Colors.pink,
+-      Colors.purple,
+-      Colors.blue,
+-      Colors.green,
+-      Colors.yellow,
+-    ];
+-    return colors[math.Random().nextInt(colors.length)];
+-  }
+-
+-  void _startAnimations() {
+-    _mainController.forward();
+-    _confettiController.forward();
+-    _slideController.forward();
+-
+-    // Start pulse animation after a delay
+-    Future.delayed(const Duration(milliseconds: 800), () {
+-      if (mounted) {
+-        _pulseController.safeRepeat(reverse: true);
+-      }
+-    });
+-
+-    // Auto dismiss after 6 seconds
+-    Future.delayed(const Duration(seconds: 6), () {
+-      if (mounted) {
+-        _dismiss();
+-      }
+-    });
+-  }
+-
+-  void _dismiss() {
+-    _pulseController.safeStop();
+-    _mainController.safeReverse()?.then((_) {
+-      if (mounted) {
+-        widget.onDismiss();
+-      }
+-    });
+-  }
+-
+-  @override
+-  void dispose() {
+-    _mainController.dispose();
+-    _confettiController.dispose();
+-    _pulseController.dispose();
+-    _slideController.dispose();
+-    super.dispose();
+-  }
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    final theme = Theme.of(context);
+-    final screenSize = MediaQuery.of(context).size;
+-
+-    return Material(
+-      color: Colors.transparent,
+-      child: AnimatedBuilder(
+-        animation: Listenable.merge([
+-          _mainController,
+-          _confettiController,
+-          _pulseController,
+-          _slideController,
+-        ]),
+-        builder: (context, child) {
+-          return Container(
+-            width: screenSize.width,
+-            height: screenSize.height,
+-            color: _backgroundAnimation.value,
+-            child: Stack(
+-              children: [
+-                // Confetti layer
+-                if (_confettiController.isAnimating)
+-                  CustomPaint(
+-                    size: screenSize,
+-                    painter: _ConfettiPainter(
+-                      confetti: _confetti,
+-                      animationValue: _confettiController.value,
+-                    ),
+-                  ),
+-
+-                // Main celebration content
+-                Center(
+-                  child: Transform.scale(
+-                    scale: _scaleAnimation.value,
+-                    child: Opacity(
+-                      opacity: _fadeAnimation.value,
+-                      child: Transform.translate(
+-                        offset: Offset(0, _slideAnimation.value),
+-                        child: Container(
+-                          margin: const EdgeInsets.symmetric(horizontal: 32),
+-                          padding: const EdgeInsets.all(32),
+-                          decoration: BoxDecoration(
+-                            color: theme.colorScheme.surface,
+-                            borderRadius: BorderRadius.circular(24),
+-                            boxShadow: [
+-                              BoxShadow(
+-                                color: Colors.black.withOpacity(0.3),
+-                                blurRadius: 20,
+-                                offset: const Offset(0, 10),
+-                              ),
+-                            ],
+-                          ),
+-                          child: Column(
+-                            mainAxisSize: MainAxisSize.min,
+-                            children: [
+-                              // Trophy icon with glow effect
+-                              Container(
+-                                width: 100,
+-                                height: 100,
+-                                decoration: BoxDecoration(
+-                                  shape: BoxShape.circle,
+-                                  gradient: RadialGradient(
+-                                    colors: [
+-                                      Colors.amber.withOpacity(0.3),
+-                                      Colors.transparent,
+-                                    ],
+-                                  ),
+-                                ),
+-                                child: Icon(
+-                                  Icons.emoji_events,
+-                                  size: 80,
+-                                  color: Colors.amber,
+-                                ),
+-                              ),
+-
+-                              const SizedBox(height: 24),
+-
+-                              // Level Up text with pulse animation
+-                              Transform.scale(
+-                                scale: _pulseAnimation.value,
+-                                child: Text(
+-                                  'LEVEL UP!',
+-                                  style:
+-                                      theme.textTheme.headlineLarge?.copyWith(
+-                                    fontWeight: FontWeight.bold,
+-                                    color: theme.colorScheme.primary,
+-                                    letterSpacing: 2,
+-                                  ),
+-                                ),
+-                              ),
+-
+-                              const SizedBox(height: 16),
+-
+-                              // Level progression
+-                              Row(
+-                                mainAxisAlignment: MainAxisAlignment.center,
+-                                children: [
+-                                  _buildLevelBadge(
+-                                      widget.celebrationData.oldLevel, false),
+-                                  const SizedBox(width: 16),
+-                                  Icon(
+-                                    Icons.arrow_forward,
+-                                    color: theme.colorScheme.primary,
+-                                    size: 32,
+-                                  ),
+-                                  const SizedBox(width: 16),
+-                                  _buildLevelBadge(
+-                                      widget.celebrationData.newLevel, true),
+-                                ],
+-                              ),
+-
+-                              const SizedBox(height: 20),
+-
+-                              // Rank information (if available)
+-                              if (widget.celebrationData.newRank != null) ...[
+-                                Container(
+-                                  padding: const EdgeInsets.symmetric(
+-                                    horizontal: 16,
+-                                    vertical: 8,
+-                                  ),
+-                                  decoration: BoxDecoration(
+-                                    color: widget.celebrationData.rankColor
+-                                        .withOpacity(0.1),
+-                                    borderRadius: BorderRadius.circular(20),
+-                                    border: Border.all(
+-                                      color: widget.celebrationData.rankColor
+-                                          .withOpacity(0.3),
+-                                    ),
+-                                  ),
+-                                  child: Row(
+-                                    mainAxisSize: MainAxisSize.min,
+-                                    children: [
+-                                      Icon(
+-                                        Icons.star,
+-                                        color: widget.celebrationData.rankColor,
+-                                        size: 20,
+-                                      ),
+-                                      const SizedBox(width: 8),
+-                                      Text(
+-                                        widget.celebrationData.rankName,
+-                                        style: theme.textTheme.titleMedium
+-                                            ?.copyWith(
+-                                          color:
+-                                              widget.celebrationData.rankColor,
+-                                          fontWeight: FontWeight.bold,
+-                                        ),
+-                                      ),
+-                                    ],
+-                                  ),
+-                                ),
+-                                const SizedBox(height: 24),
+-                              ],
+-
+-                              // Show unlocked perks if any
+-                              if (widget.celebrationData.hasUnlockedPerks) ...[
+-                                Container(
+-                                  padding: const EdgeInsets.all(16),
+-                                  decoration: BoxDecoration(
+-                                    color: theme.colorScheme.primaryContainer
+-                                        .withOpacity(0.1),
+-                                    borderRadius: BorderRadius.circular(12),
+-                                    border: Border.all(
+-                                      color: theme.colorScheme.primary
+-                                          .withOpacity(0.2),
+-                                    ),
+-                                  ),
+-                                  child: Column(
+-                                    children: [
+-                                      Text(
+-                                        'New Perks Unlocked!',
+-                                        style: theme.textTheme.titleSmall
+-                                            ?.copyWith(
+-                                          color: theme.colorScheme.primary,
+-                                          fontWeight: FontWeight.bold,
+-                                        ),
+-                                      ),
+-                                      const SizedBox(height: 8),
+-                                      ...widget.celebrationData.unlockedPerks
+-                                          .map(
+-                                        (perk) => Padding(
+-                                          padding: const EdgeInsets.symmetric(
+-                                              vertical: 2),
+-                                          child: Row(
+-                                            mainAxisSize: MainAxisSize.min,
+-                                            children: [
+-                                              Icon(
+-                                                Icons.fiber_new,
+-                                                size: 16,
+-                                                color:
+-                                                    theme.colorScheme.primary,
+-                                              ),
+-                                              const SizedBox(width: 4),
+-                                              Text(
+-                                                perk,
+-                                                style:
+-                                                    theme.textTheme.bodyMedium,
+-                                              ),
+-                                            ],
+-                                          ),
+-                                        ),
+-                                      ),
+-                                    ],
+-                                  ),
+-                                ),
+-                                const SizedBox(height: 24),
+-                              ],
+-
+-                              // Continue button
+-                              ElevatedButton(
+-                                onPressed: _dismiss,
+-                                style: ElevatedButton.styleFrom(
+-                                  backgroundColor: theme.colorScheme.primary,
+-                                  foregroundColor: theme.colorScheme.onPrimary,
+-                                  padding: const EdgeInsets.symmetric(
+-                                    horizontal: 32,
+-                                    vertical: 12,
+-                                  ),
+-                                  shape: RoundedRectangleBorder(
+-                                    borderRadius: BorderRadius.circular(24),
+-                                  ),
+-                                ),
+-                                child: Text(
+-                                  'Continue',
+-                                  style: theme.textTheme.titleMedium?.copyWith(
+-                                    fontWeight: FontWeight.bold,
+-                                  ),
+-                                ),
+-                              ),
+-                            ],
+-                          ),
+-                        ),
+-                      ),
+-                    ),
+-                  ),
+-                ),
+-              ],
+-            ),
+-          );
+-        },
+-      ),
+-    );
+-  }
+-
+-  Widget _buildLevelBadge(int level, bool isNew) {
+-    final theme = Theme.of(context);
+-    return Container(
+-      width: 60,
+-      height: 60,
+-      decoration: BoxDecoration(
+-        shape: BoxShape.circle,
+-        color: isNew ? theme.colorScheme.primary : Colors.grey,
+-        boxShadow: isNew
+-            ? [
+-                BoxShadow(
+-                  color: theme.colorScheme.primary.withOpacity(0.5),
+-                  blurRadius: 20,
+-                  spreadRadius: 2,
+-                ),
+-              ]
+-            : null,
+-      ),
+-      child: Center(
+-        child: Text(
+-          level.toString(),
+-          style: theme.textTheme.headlineMedium?.copyWith(
+-            color: Colors.white,
+-            fontWeight: FontWeight.bold,
+-          ),
+-        ),
+-      ),
+-    );
+-  }
+-}
+-
+-/// Confetti particle class for celebration effects
+-class _ConfettiParticle {
+-  double x, y, vx, vy;
+-  final Color color;
+-  final double size;
+-  double rotation;
+-  final double rotationSpeed;
+-
+-  _ConfettiParticle({
+-    required this.x,
+-    required this.y,
+-    required this.vx,
+-    required this.vy,
+-    required this.color,
+-    required this.size,
+-    required this.rotation,
+-    required this.rotationSpeed,
+-  });
+-
+-  void update() {
+-    x += vx;
+-    y += vy;
+-    vy += 0.0008; // Gravity
+-    rotation += rotationSpeed;
+-
+-    // Wind effect
+-    vx += (math.Random().nextDouble() - 0.5) * 0.0001;
+-  }
+-}
+-
+-/// Custom painter for confetti animation
+-class _ConfettiPainter extends CustomPainter {
+-  final List<_ConfettiParticle> confetti;
+-  final double animationValue;
+-
+-  _ConfettiPainter({
+-    required this.confetti,
+-    required this.animationValue,
+-  });
+-
+-  @override
+-  void paint(Canvas canvas, Size size) {
+-    for (final particle in confetti) {
+-      particle.update();
+-
+-      if (particle.y < 1.2) {
+-        // Only draw if still on screen
+-        final paint = Paint()..color = particle.color;
+-
+-        canvas.save();
+-        canvas.translate(
+-          particle.x * size.width,
+-          particle.y * size.height,
+-        );
+-        canvas.rotate(particle.rotation);
+-
+-        // Draw confetti as small rectangles
+-        canvas.drawRRect(
+-          RRect.fromRectAndRadius(
+-            Rect.fromCenter(
+-              center: Offset.zero,
+-              width: particle.size,
+-              height: particle.size * 0.6,
+-            ),
+-            const Radius.circular(2),
+-          ),
+-          paint,
+-        );
+-
+-        canvas.restore();
+-      }
+-    }
+-  }
+-
+-  @override
+-  bool shouldRepaint(covariant _ConfettiPainter oldDelegate) {
+-    return oldDelegate.animationValue != animationValue;
+-  }
+-}
+diff --git a/lib/widgets/ring_unraveling_celebration.dart b/lib/widgets/ring_unraveling_celebration.dart
+index a639a97..471ce82 100644
+--- a/lib/widgets/ring_unraveling_celebration.dart
++++ b/lib/widgets/ring_unraveling_celebration.dart
+@@ -1,5 +1,8 @@
+ import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++import '../core/theme/app_design_tokens.dart';
+ import 'dart:math' as math;
++import '../core/animation/animation_orchestrator.dart';
+ 
+ /// The foundation for your ring unraveling celebration animation
+ /// This breaks down the complex animation into understandable phases
+@@ -27,7 +30,7 @@ class RingUnravelingCelebration extends StatefulWidget {
+ }
+ 
+ class _RingUnravelingCelebrationState extends State<RingUnravelingCelebration>
+-    with TickerProviderStateMixin {
++    with TickerProviderStateMixin, OrchestrationMixin {
+   // Phase controllers - each controls a different part of the animation
+   late AnimationController _unravelController;
+   late AnimationController _expansionController;
+@@ -50,79 +53,75 @@ class _RingUnravelingCelebrationState extends State<RingUnravelingCelebration>
+ 
+   void _setupAnimations() {
+     // Phase 1: Unraveling (the ring breaks apart into segments)
+-    _unravelController = AnimationController(
+-      duration: const Duration(
+-          milliseconds: 1200), // Slightly longer for more dramatic effect
+-      vsync: this,
++    _unravelController = getAnimationController(
++      'unravel',
++      duration: AppDesignTokens.ringUnravel,
++    );
++    _unravelAnimation = createAnimation(
++      _unravelController,
++      Tween<double>(begin: 0.0, end: 1.0),
++      curve: AppDesignTokens.asmrEase,
+     );
+-    _unravelAnimation = Tween<double>(
+-      begin: 0.0,
+-      end: 1.0,
+-    ).animate(CurvedAnimation(
+-      parent: _unravelController,
+-      curve: Curves.easeInOutCubic, // Smooth acceleration and deceleration
+-    ));
+ 
+     // Phase 2: Expansion (segments spread across screen showing celebration)
+-    _expansionController = AnimationController(
+-      duration: const Duration(
+-          milliseconds: 1500), // Longer expansion for more impact
+-      vsync: this,
++    _expansionController = getAnimationController(
++      'expansion',
++      duration: AppDesignTokens.ringExpand,
++    );
++    _expansionAnimation = createAnimation(
++      _expansionController,
++      Tween<double>(begin: 0.0, end: 1.0),
++      curve: Curves.elasticOut,
+     );
+-    _expansionAnimation = Tween<double>(
+-      begin: 0.0,
+-      end: 1.0,
+-    ).animate(CurvedAnimation(
+-      parent: _expansionController,
+-      curve: Curves.elasticOut, // Bouncy expansion for excitement
+-    ));
+ 
+     // Phase 3: Reformation (segments come back together as new ring)
+-    _reformController = AnimationController(
+-      duration: const Duration(milliseconds: 1000),
+-      vsync: this,
++    _reformController = getAnimationController(
++      'reform',
++      duration: AppDesignTokens.ringReform,
++    );
++    _reformAnimation = createAnimation(
++      _reformController,
++      Tween<double>(begin: 0.0, end: 1.0),
++      curve: AppDesignTokens.reformEase,
+     );
+-    _reformAnimation = Tween<double>(
+-      begin: 0.0,
+-      end: 1.0,
+-    ).animate(CurvedAnimation(
+-      parent: _reformController,
+-      curve: Curves.easeInOut,
+-    ));
+   }
+ 
+   void _startCelebration() async {
+-    try {
+-      // Phase 1: Unravel the ring
+-      if (!mounted) return;
+-      setState(() => _currentPhase = AnimationPhase.unraveling);
+-      await _unravelController.forward();
+-
+-      // Phase 2: Expand and celebrate
+-      if (!mounted) return;
+-      setState(() => _currentPhase = AnimationPhase.expanding);
+-      await _expansionController.forward();
+-
+-      // Wait a moment for the user to enjoy the celebration
+-      if (!mounted) return;
+-      await Future.delayed(const Duration(milliseconds: 2000));
+-
+-      // Phase 3: Reform the ring for the new level
+-      if (!mounted) return;
+-      setState(() => _currentPhase = AnimationPhase.reforming);
+-      await _reformController.forward();
+-
+-      // Celebration complete - ensure widget is still mounted
+-      if (mounted) {
+-        widget.onComplete();
+-      }
+-    } catch (e) {
+-      debugPrint('Error in ring celebration animation: $e');
+-      // Ensure cleanup happens even if there's an error
+-      if (mounted) {
+-        widget.onComplete();
+-      }
+-    }
++    // Orchestrate the phases to avoid conflicts and respect Reduced Motion
++    await runAnimationSequence('ringCelebration', [
++      AnimationStep.custom(() async {
++        if (mounted) setState(() => _currentPhase = AnimationPhase.unraveling);
++        try {
++          await HapticFeedback.selectionClick();
++        } catch (_) {}
++      }),
++      AnimationStep(
++          type: AnimationStepType.forward, controller: _unravelController),
++      AnimationStep.custom(() async {
++        if (mounted) setState(() => _currentPhase = AnimationPhase.expanding);
++        try {
++          await HapticFeedback.lightImpact();
++        } catch (_) {}
++      }),
++      AnimationStep(
++          type: AnimationStepType.forward, controller: _expansionController),
++      AnimationStep(
++          type: AnimationStepType.delay,
++          duration: AnimationOrchestrator.instance.reducedMotion
++              ? const Duration(milliseconds: 800)
++              : const Duration(milliseconds: 1200)),
++      AnimationStep.custom(() async {
++        if (mounted) setState(() => _currentPhase = AnimationPhase.reforming);
++        try {
++          await HapticFeedback.selectionClick();
++        } catch (_) {}
++      }),
++      AnimationStep(
++          type: AnimationStepType.forward, controller: _reformController),
++      AnimationStep.custom(() async {
++        if (mounted) widget.onComplete();
++      }),
++    ]);
+   }
+ 
+   @override
+@@ -130,42 +129,67 @@ class _RingUnravelingCelebrationState extends State<RingUnravelingCelebration>
+     return Material(
+       color: Colors.black
+           .withOpacity(0.85), // Slightly darker overlay for better contrast
+-      child: Container(
+-        width: double.infinity,
+-        height: double.infinity,
+-        child: AnimatedBuilder(
+-          // Listen to all animation controllers
+-          animation: Listenable.merge([
+-            _unravelController,
+-            _expansionController,
+-            _reformController,
+-          ]),
+-          builder: (context, child) {
+-            return CustomPaint(
+-              painter: RingCelebrationPainter(
+-                progress: widget.initialProgress,
+-                unravelProgress: _unravelAnimation.value,
+-                expansionProgress: _expansionAnimation.value,
+-                reformProgress: _reformAnimation.value,
+-                currentPhase: _currentPhase,
+-                ringColor: widget.ringColor,
+-                oldLevel: widget.oldLevel,
+-                newLevel: widget.newLevel,
+-                unlockedPerks: widget.unlockedPerks,
+-              ),
+-              size: Size.infinite,
+-            );
+-          },
++      child: GestureDetector(
++        behavior: HitTestBehavior.opaque,
++        onDoubleTap: _handleDoubleTapDismiss,
++        child: SizedBox(
++          width: double.infinity,
++          height: double.infinity,
++          child: AnimatedBuilder(
++            // Listen to all animation controllers
++            animation: Listenable.merge([
++              _unravelController,
++              _expansionController,
++              _reformController,
++            ]),
++            builder: (context, child) {
++              return SizedBox.expand(
++                child: CustomPaint(
++                  painter: RingCelebrationPainter(
++                    progress: widget.initialProgress,
++                    unravelProgress: _unravelAnimation.value,
++                    expansionProgress: _expansionAnimation.value,
++                    reformProgress: _reformAnimation.value,
++                    currentPhase: _currentPhase,
++                    ringColor: widget.ringColor,
++                    oldLevel: widget.oldLevel,
++                    newLevel: widget.newLevel,
++                    unlockedPerks: widget.unlockedPerks,
++                  ),
++                ),
++              );
++            },
++          ),
+         ),
+       ),
+     );
+   }
+ 
++  void _handleDoubleTapDismiss() {
++    // Fast path to reform and complete
++    runAnimationSequence('ringEarlyDismiss', [
++      AnimationStep.custom(() async {
++        if (!mounted) return;
++        setState(() => _currentPhase = AnimationPhase.reforming);
++        try {
++          _unravelController.stop();
++          _expansionController.stop();
++        } catch (_) {}
++        try {
++          _reformController.reset();
++        } catch (_) {}
++      }),
++      AnimationStep(
++          type: AnimationStepType.forward, controller: _reformController),
++      AnimationStep.custom(() async {
++        if (mounted) widget.onComplete();
++      }),
++    ]);
++  }
++
+   @override
+   void dispose() {
+-    _unravelController.dispose();
+-    _expansionController.dispose();
+-    _reformController.dispose();
++    // Controllers are managed/disposed by OrchestrationMixin
+     super.dispose();
+   }
+ }
+@@ -183,8 +207,8 @@ class RingCelebrationPainter extends CustomPainter {
+   final int newLevel;
+   final List<String> unlockedPerks;
+ 
+-  // Enhanced number of segments for smoother unraveling
+-  static const int segmentCount = 120;
++  // Optimized segment count for better performance
++  static const int segmentCount = 60;
+ 
+   RingCelebrationPainter({
+     required this.progress,
+@@ -291,8 +315,9 @@ class RingCelebrationPainter extends CustomPainter {
+ 
+       // Enhanced unraveling with variable timing
+       final unravelDelay = segmentProgress * 0.3; // Stagger the unraveling
+-      final adjustedUnravelProgress =
+-          math.max(0, math.min(1, (unravelProgress - unravelDelay) / 0.7));
++      final adjustedUnravelProgress = math
++          .max(0.0, math.min(1.0, (unravelProgress - unravelDelay) / 0.7))
++          .toDouble();
+ 
+       if (adjustedUnravelProgress <= 0) {
+         // Still part of the ring - draw as connected segment
+@@ -313,32 +338,30 @@ class RingCelebrationPainter extends CustomPainter {
+         // Unraveling - break into dots with physics-like movement
+         final unravelFactor = adjustedUnravelProgress;
+ 
+-        // Calculate trajectory for more realistic physics
+-        final initialVelocity = 100 + (segmentProgress * 50); // Varying speeds
+-        final gravity = 50; // Slight downward pull
+-        final horizontalDrift = math.sin(startAngle) * 30; // Lateral movement
++        // Simplified curved trajectory using easing
++        final easedProgress =
++            Curves.easeOutCubic.transform(unravelFactor).toDouble();
++        final maxDistance =
++            150.0 + (segmentProgress * 50.0); // Varying distances
++        final currentDistance = radius + (maxDistance * easedProgress);
+ 
+-        // Position calculation with physics
+-        final time = unravelFactor;
+-        final distanceFromCenter = radius + (initialVelocity * time);
+-        final verticalOffset = (gravity * time * time) / 2;
+-        final horizontalOffset = horizontalDrift * time;
++        // Gentle arc movement instead of complex physics
++        final arcAmount = math.sin(easedProgress * math.pi) * 20.0;
++        final arcAngle = startAngle + (arcAmount / currentDistance);
+ 
+         final dotCenter = Offset(
+-          center.dx +
+-              math.cos(startAngle) * distanceFromCenter +
+-              horizontalOffset,
+-          center.dy +
+-              math.sin(startAngle) * distanceFromCenter +
+-              verticalOffset,
++          center.dx + math.cos(arcAngle) * currentDistance,
++          center.dy + math.sin(arcAngle) * currentDistance,
+         );
+ 
+         // Variable dot sizes based on position and timing
+-        final baseDotSize = 6.0 + (segmentProgress * 4.0); // 6-10 range
+-        final sizePulse = 1.0 + (math.sin(time * 10) * 0.3); // Pulsing effect
++        final baseDotSize =
++            6.0 + (segmentProgress * 2.0); // 6-8 range (smaller)
++        final sizePulse =
++            1.0 + (math.sin(easedProgress * 8) * 0.2); // Gentler pulse
+         final dotSize = baseDotSize *
+             sizePulse *
+-            (1.0 - unravelFactor * 0.3); // Shrink as they fly away
++            (1.0 - easedProgress * 0.2); // Subtle shrinking
+ 
+         // Color based on position in the gradient
+         final colorIndex = (segmentProgress * (baseColors.length - 1)).floor();
+@@ -428,9 +451,14 @@ class RingCelebrationPainter extends CustomPainter {
+           color: Colors.white,
+           shadows: [
+             Shadow(
+-              color: ringColor.withOpacity(0.8),
+-              blurRadius: 12,
+-              offset: const Offset(0, 4),
++              color: Colors.black.withOpacity(0.3),
++              blurRadius: 8,
++              offset: const Offset(0, 2),
++            ),
++            Shadow(
++              color: ringColor.withOpacity(0.4),
++              blurRadius: 4,
++              offset: const Offset(0, 1),
+             ),
+           ],
+         ),
+diff --git a/lib/widgets/talent_selection_dialog.dart b/lib/widgets/talent_selection_dialog.dart
+index 9b1cf96..b8eb093 100644
+--- a/lib/widgets/talent_selection_dialog.dart
++++ b/lib/widgets/talent_selection_dialog.dart
+@@ -104,7 +104,8 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
+     final theme = Theme.of(context);
+ 
+     return PopScope(
+-      canPop: false, // Prevent dismissal - talent choice is mandatory
++      canPop: widget.talentChoice.options
++          .isEmpty, // Allow dismissal if no choices available
+       child: FadeTransition(
+         opacity: _fadeAnimation,
+         child: Dialog(
+@@ -144,9 +145,14 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
+                         const SizedBox(height: 24),
+                         _buildChoiceInstructions(theme),
+                         const SizedBox(height: 32),
+-                        ...widget.talentChoice.options
+-                            .map((talent) => _buildTalentOption(talent, theme))
+-                            .toList(),
++                        // Safety check for empty talent choices
++                        if (widget.talentChoice.options.isEmpty)
++                          _buildNoChoicesAvailable(theme)
++                        else
++                          ...widget.talentChoice.options
++                              .map(
++                                  (talent) => _buildTalentOption(talent, theme))
++                              .toList(),
+                         const SizedBox(height: 16),
+                       ],
+                     ),
+@@ -474,4 +480,47 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
+         return Icons.psychology;
+     }
+   }
++
++  Widget _buildNoChoicesAvailable(ThemeData theme) {
++    return Container(
++      padding: const EdgeInsets.all(24),
++      decoration: BoxDecoration(
++        color: theme.colorScheme.errorContainer.withOpacity(0.1),
++        borderRadius: BorderRadius.circular(16),
++        border: Border.all(
++          color: theme.colorScheme.outline.withOpacity(0.3),
++        ),
++      ),
++      child: Column(
++        children: [
++          Icon(
++            Icons.info_outline,
++            size: 48,
++            color: theme.colorScheme.onSurfaceVariant,
++          ),
++          const SizedBox(height: 16),
++          Text(
++            'No Talents Available',
++            style: theme.textTheme.titleLarge?.copyWith(
++              fontWeight: FontWeight.bold,
++            ),
++            textAlign: TextAlign.center,
++          ),
++          const SizedBox(height: 8),
++          Text(
++            'All talents for this level have been unlocked or no new talents are available yet.',
++            style: theme.textTheme.bodyMedium?.copyWith(
++              color: theme.colorScheme.onSurfaceVariant,
++            ),
++            textAlign: TextAlign.center,
++          ),
++          const SizedBox(height: 20),
++          ElevatedButton(
++            onPressed: () => Navigator.of(context).pop(),
++            child: const Text('Continue'),
++          ),
++        ],
++      ),
++    );
++  }
+ }
+diff --git a/lib/widgets/task_tile.dart b/lib/widgets/task_tile.dart
+index bef9f52..d66a247 100644
+--- a/lib/widgets/task_tile.dart
++++ b/lib/widgets/task_tile.dart
+@@ -10,6 +10,8 @@ import '../core/error_handling.dart';
+ import '../core/theme/app_design_tokens.dart';
+ import '../core/utils/date_helpers.dart';
+ import '../features/task_management/application/task_completion_service.dart';
++import '../services/xp_flow_service.dart';
++import './gem_shatter_overlay.dart';
+ import '../features/character_progression/application/intelligent_xp_engine.dart';
+ import '../providers/user_provider.dart';
+ 
+@@ -48,6 +50,21 @@ class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
+   bool _isHovered = false;
+ 
+   bool _animationsInitialized = false;
++  final GlobalKey _tileKey = GlobalKey(debugLabel: 'TaskTileKey');
++
++  // Difficulty color mapping for tile accents and effects
++  Color _difficultyColor() {
++    switch (widget.task.difficulty) {
++      case TaskDifficulty.easy:
++        return Colors.green;
++      case TaskDifficulty.medium:
++        return Colors.blue;
++      case TaskDifficulty.hard:
++        return Colors.purple;
++      case TaskDifficulty.epic:
++        return Colors.orange;
++    }
++  }
+ 
+   @override
+   void initState() {
+@@ -117,10 +134,10 @@ class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
+       curve: const Interval(0.5, 1.0, curve: Curves.easeInOut),
+     ));
+ 
+-    // Color shift during completion
++    // Color shift during completion — tinted by difficulty
+     _colorAnimation = ColorTween(
+       begin: Colors.transparent,
+-      end: theme.colorScheme.primary.withOpacity(0.1),
++      end: _difficultyColor().withOpacity(0.12),
+     ).animate(CurvedAnimation(
+       parent: _completionController,
+       curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+@@ -164,6 +181,39 @@ class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
+       // Start completion animation
+       _completionController.forward();
+ 
++      // Launch visual effects immediately for responsiveness
++      try {
++        final ctx = _tileKey.currentContext;
++        if (ctx != null) {
++          final box = ctx.findRenderObject() as RenderBox?;
++          if (box != null && box.attached) {
++            final topLeft = box.localToGlobal(Offset.zero);
++            final center =
++                topLeft + Offset(box.size.width / 2, box.size.height / 2);
++            GemShatterOverlay.show(
++              context: context,
++              position: center,
++              color: _difficultyColor(),
++            );
++            // Get current XP progress before the task completion
++            final userProvider =
++                Provider.of<UserProvider>(context, listen: false);
++            final currentXPProgress =
++                userProvider.user != null && userProvider.nextLevelXp > 0
++                    ? userProvider.user!.currentXp / userProvider.nextLevelXp
++                    : 0.0;
++
++            XPFlowService.instance.feedXP(
++              context: context,
++              startPosition: center,
++              xpAmount: widget.task.xpReward,
++              currentProgress:
++                  currentXPProgress, // Target current ring endpoint
++            );
++          }
++        }
++      } catch (_) {}
++
+       try {
+         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+         // The provider now handles all completion logic
+@@ -342,28 +392,43 @@ class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
+       onTapDown: _handleTapDown,
+       onTapUp: _handleTapUp,
+       onTapCancel: _handleTapCancel,
+-      child: Card(
+-        elevation: _isHovered ? 6 : 2,
+-        shadowColor: theme.colorScheme.primary.withOpacity(0.2),
+-        shape: RoundedRectangleBorder(
+-          borderRadius: BorderRadius.circular(12),
+-          side: BorderSide(
+-            color: widget.task.isCompleted
+-                ? theme.colorScheme.primary.withOpacity(0.3)
+-                : Colors.transparent,
+-            width: 1,
++      child: KeyedSubtree(
++        key: _tileKey,
++        child: Card(
++          elevation: _isHovered ? 6 : 2,
++          shadowColor: _difficultyColor().withOpacity(0.25),
++          shape: RoundedRectangleBorder(
++            borderRadius: BorderRadius.circular(12),
++            side: BorderSide(
++              color: widget.task.isCompleted
++                  ? _difficultyColor().withOpacity(0.35)
++                  : _difficultyColor().withOpacity(0.18),
++              width: 1,
++            ),
+           ),
+-        ),
+-        child: Padding(
+-          padding: const EdgeInsets.all(16),
+-          child: Row(
+-            children: [
+-              _buildCompletionButton(theme),
+-              const SizedBox(width: 16),
+-              Expanded(child: _buildTaskContent(theme)),
+-              _buildXpBadge(theme),
+-              _buildMenuButton(theme),
+-            ],
++          child: Padding(
++            padding: const EdgeInsets.all(16),
++            child: IntrinsicHeight(
++              child: Row(
++                crossAxisAlignment: CrossAxisAlignment.stretch,
++                children: [
++                  // Difficulty accent bar
++                  Container(
++                    width: 6,
++                    decoration: BoxDecoration(
++                      color: _difficultyColor().withOpacity(0.25),
++                      borderRadius: BorderRadius.circular(3),
++                    ),
++                  ),
++                  const SizedBox(width: 12),
++                  _buildCompletionButton(theme),
++                  const SizedBox(width: 16),
++                  Expanded(child: _buildTaskContent(theme)),
++                  _buildXpBadge(theme),
++                  _buildMenuButton(theme),
++                ],
++              ),
++            ),
+           ),
+         ),
+       ),
+diff --git a/lib/widgets/wheel_of_time_progress.dart b/lib/widgets/wheel_of_time_progress.dart
+index c15270d..9c96ef1 100644
+--- a/lib/widgets/wheel_of_time_progress.dart
++++ b/lib/widgets/wheel_of_time_progress.dart
+@@ -9,6 +9,9 @@ import '../models/user.dart' as app;
+ import '../services/smooth_xp_animation_service.dart';
+ import '../core/animation/animation_orchestrator.dart';
+ import '../screens/stats_screen.dart';
++import 'ring_unraveling_celebration.dart';
++import '../core/theme/app_design_tokens.dart';
++import '../core/animation/ring_anchor.dart';
+ 
+ class WheelOfTimeProgress extends StatefulWidget {
+   const WheelOfTimeProgress({Key? key}) : super(key: key);
+@@ -34,6 +37,8 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
+   int _previousXP = 0;
+   int _previousNextLevelXP = 1;
+   bool _isInitialized = false;
++  int? _previousLevel;
++  bool _celebratingLevel = false;
+ 
+   @override
+   void initState() {
+@@ -50,6 +55,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
+               ? userProvider.user!.currentXp / userProvider.nextLevelXp
+               : 0.0;
+           _currentDisplayedXPProgress = _previousXPProgress;
++          _previousLevel = userProvider.user!.level;
+         }
+       }
+     });
+@@ -169,6 +175,36 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
+       return const SizedBox.shrink();
+     }
+ 
++    // Detect level up and show ring celebration
++    if (_previousLevel != null &&
++        user.level > _previousLevel! &&
++        !_celebratingLevel) {
++      _celebratingLevel = true;
++      WidgetsBinding.instance.addPostFrameCallback((_) {
++        if (!mounted) return;
++        showGeneralDialog(
++          context: context,
++          barrierDismissible: true,
++          barrierLabel: 'Dismiss',
++          barrierColor: Colors.black54,
++          pageBuilder: (ctx, a1, a2) {
++            return RingUnravelingCelebration(
++              initialProgress: 0.0,
++              oldLevel: _previousLevel!,
++              newLevel: user.level,
++              ringColor: Theme.of(context).colorScheme.primary,
++              unlockedPerks: const [],
++              onComplete: () {
++                Navigator.of(ctx).maybePop();
++                _celebratingLevel = false;
++              },
++            );
++          },
++        );
++      });
++    }
++    _previousLevel = user.level;
++
+     // Calculate the current XP progress
+     final currentXPProgress = userProvider.nextLevelXp > 0
+         ? user.currentXp / userProvider.nextLevelXp
+@@ -243,25 +279,49 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
+                     return Transform.scale(
+                       scale: _pulseAnimation.value,
+                       child: Transform.rotate(
+-                        angle: _rotationAnimation.value *
+-                            0.1, // Very slow rotation
++                        angle: _progressController.isAnimating
++                            ? _rotationAnimation.value *
++                                0.02 // Slow down but don't stop completely
++                            : _rotationAnimation.value *
++                                0.1, // Normal slow rotation
+                         child: SizedBox(
+                           width: 200,
+                           height: 200,
+-                          child: CustomPaint(
+-                            painter: WheelOfTimeRingsPainter(
+-                              xpProgress: displayedXPProgress,
+-                              rankProgress: rankProgress,
+-                              tasksProgress: tasksProgress,
+-                              xpColor: theme.colorScheme.primary,
+-                              rankColor: currentRank.color,
+-                              tasksColor: theme.colorScheme.secondary,
+-                              backgroundColor:
+-                                  theme.colorScheme.surfaceContainerHighest,
+-                              pulseValue: _pulseAnimation.value,
+-                              // Add visual feedback for XP animation
+-                              isXPAnimating: _progressController.isAnimating,
+-                            ),
++                          child: Stack(
++                            alignment: Alignment.center,
++                            children: [
++                              KeyedSubtree(
++                                key: RingAnchor.instance.ringKey,
++                                child: CustomPaint(
++                                  size: const Size(
++                                      200, 200), // Explicitly set size
++                                  painter: WheelOfTimeRingsPainter(
++                                    xpProgress: displayedXPProgress,
++                                    rankProgress: rankProgress,
++                                    tasksProgress: tasksProgress,
++                                    xpColor: theme.colorScheme.primary,
++                                    rankColor: currentRank.color,
++                                    tasksColor: theme.colorScheme.secondary,
++                                    backgroundColor:
++                                        AppDesignTokens.neutralRingTrack,
++                                    pulseValue: _pulseAnimation.value,
++                                    // Add visual feedback for XP animation
++                                    isXPAnimating:
++                                        _progressController.isAnimating,
++                                  ),
++                                ),
++                              ),
++                              _LevelNumberBadge(level: user.level),
++                              if (kDebugMode)
++                                Container(
++                                  width: 6,
++                                  height: 6,
++                                  decoration: BoxDecoration(
++                                    color: theme.colorScheme.primary,
++                                    shape: BoxShape.circle,
++                                  ),
++                                ),
++                            ],
+                           ),
+                         ),
+                       ),
+@@ -415,7 +475,7 @@ class WheelOfTimeRingsPainter extends CustomPainter {
+     final maxRadius = size.width / 2;
+ 
+     // Ring dimensions
+-    const ringWidth = 12.0;
++    const ringWidth = 14.0;
+     const gapBetweenRings = 8.0;
+ 
+     final outerRadius = maxRadius - 10;
+@@ -435,15 +495,14 @@ class WheelOfTimeRingsPainter extends CustomPainter {
+     _drawProgressRing(canvas, center, innerRadius, ringWidth, tasksProgress,
+         tasksColor, 2 * math.pi / 3, false);
+ 
+-    // Central mystical symbol
+-    _drawCentralSymbol(
+-        canvas, center, innerRadius - ringWidth - gapBetweenRings);
++    // Center content handled by overlay badge widget
+   }
+ 
+   void _drawBackgroundRing(
+       Canvas canvas, Offset center, double radius, double strokeWidth) {
+     final paint = Paint()
+-      ..color = backgroundColor.withOpacity(0.3)
++      ..color =
++          backgroundColor.withOpacity(AppDesignTokens.neutralRingTrackOpacity)
+       ..style = PaintingStyle.stroke
+       ..strokeWidth = strokeWidth
+       ..strokeCap = StrokeCap.round;
+@@ -471,11 +530,11 @@ class WheelOfTimeRingsPainter extends CustomPainter {
+       startAngle: startAngle + startAngleOffset,
+       endAngle: startAngle + startAngleOffset + sweepAngle,
+       colors: [
+-        color.withOpacity(0.3),
++        color.withOpacity(0.6),
+         color,
+-        color.withOpacity(0.8),
++        color.withOpacity(0.9),
+       ],
+-      stops: const [0.0, 0.5, 1.0],
++      stops: const [0.0, 0.45, 1.0],
+     );
+ 
+     final paint = Paint()
+@@ -485,13 +544,13 @@ class WheelOfTimeRingsPainter extends CustomPainter {
+       ..strokeCap = StrokeCap.round;
+ 
+     // Enhanced glow effect when animating
+-    final glowIntensity = isAnimating ? pulseValue * 0.8 : pulseValue * 0.4;
++    final glowIntensity = isAnimating ? pulseValue * 0.6 : pulseValue * 0.3;
+     final glowPaint = Paint()
+       ..color = color.withOpacity(glowIntensity)
+       ..style = PaintingStyle.stroke
+-      ..strokeWidth = strokeWidth + (isAnimating ? 8 : 4)
++      ..strokeWidth = strokeWidth + (isAnimating ? 6 : 3)
+       ..strokeCap = StrokeCap.round
+-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, isAnimating ? 6 : 3);
++      ..maskFilter = MaskFilter.blur(BlurStyle.normal, isAnimating ? 4 : 2);
+ 
+     canvas.drawArc(
+       rect,
+@@ -555,26 +614,6 @@ class WheelOfTimeRingsPainter extends CustomPainter {
+     canvas.drawPath(starPath, starPaint);
+   }
+ 
+-  void _drawCentralSymbol(Canvas canvas, Offset center, double maxRadius) {
+-    final symbolPaint = Paint()
+-      ..color = xpColor.withOpacity(0.4)
+-      ..style = PaintingStyle.stroke
+-      ..strokeWidth = 2;
+-
+-    // Draw interconnected circles representing the Wheel of Time
+-    for (int i = 0; i < 3; i++) {
+-      final angle = i * 2 * math.pi / 3;
+-      final symbolCenter = Offset(
+-        center.dx + math.cos(angle) * maxRadius * 0.3,
+-        center.dy + math.sin(angle) * maxRadius * 0.3,
+-      );
+-      canvas.drawCircle(symbolCenter, maxRadius * 0.2, symbolPaint);
+-    }
+-
+-    // Central binding circle
+-    canvas.drawCircle(center, maxRadius * 0.15, symbolPaint);
+-  }
+-
+   @override
+   bool shouldRepaint(covariant WheelOfTimeRingsPainter oldDelegate) {
+     return oldDelegate.xpProgress != xpProgress ||
+@@ -584,3 +623,39 @@ class WheelOfTimeRingsPainter extends CustomPainter {
+         oldDelegate.isXPAnimating != isXPAnimating;
+   }
+ }
++
++class _LevelNumberBadge extends StatelessWidget {
++  final int level;
++  const _LevelNumberBadge({required this.level});
++
++  @override
++  Widget build(BuildContext context) {
++    final theme = Theme.of(context);
++    final onSurface = theme.colorScheme.onSurface;
++    final primary = theme.colorScheme.primary;
++
++    return Container(
++      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
++      decoration: BoxDecoration(
++        color: theme.colorScheme.surface.withOpacity(0.8),
++        borderRadius: BorderRadius.circular(12),
++        boxShadow: [
++          BoxShadow(
++            color: primary.withOpacity(0.28),
++            blurRadius: 12,
++            spreadRadius: 1,
++          ),
++        ],
++        border: Border.all(color: primary.withOpacity(0.25), width: 1),
++      ),
++      child: Text(
++        level.toString(),
++        style: theme.textTheme.titleLarge?.copyWith(
++          fontWeight: FontWeight.w700,
++          color: onSurface,
++          letterSpacing: 0.4,
++        ),
++      ),
++    );
++  }
++}
+diff --git a/lib/widgets/xp_orb_overlay.dart b/lib/widgets/xp_orb_overlay.dart
+index c9570ef..54cecb5 100644
+--- a/lib/widgets/xp_orb_overlay.dart
++++ b/lib/widgets/xp_orb_overlay.dart
+@@ -1,5 +1,9 @@
+ import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++import 'dart:developer' as dev;
+ import 'dart:math';
++import '../core/animation/animation_orchestrator.dart';
++import '../debug/motion_debug.dart';
+ 
+ // Manages the overlay entry for the XP orbs
+ class XPOrbOverlay {
+@@ -9,6 +13,8 @@ class XPOrbOverlay {
+     required BuildContext context,
+     required Offset startPosition,
+     required int xpAmount,
++    Offset? targetPosition,
++    VoidCallback? onOrbsArrive, // Callback when orbs reach the ring
+   }) {
+     // Remove existing overlay if any
+     hide();
+@@ -19,7 +25,9 @@ class XPOrbOverlay {
+         return XPOrbAnimationWidget(
+           startPosition: startPosition,
+           xpAmount: xpAmount,
++          targetPosition: targetPosition,
+           onAnimationComplete: hide,
++          onOrbsArrive: onOrbsArrive,
+         );
+       },
+     );
+@@ -31,6 +39,37 @@ class XPOrbOverlay {
+     _overlayEntry?.remove();
+     _overlayEntry = null;
+   }
++
++  /// Convenience: compute start/target from widget GlobalKeys in overlay coords.
++  static void showFromAnchors({
++    required BuildContext context,
++    required GlobalKey startKey,
++    required GlobalKey targetKey,
++    required int xpAmount,
++    VoidCallback? onOrbsArrive,
++  }) {
++    final renderBoxStart =
++        startKey.currentContext?.findRenderObject() as RenderBox?;
++    final renderBoxTarget =
++        targetKey.currentContext?.findRenderObject() as RenderBox?;
++    final overlay =
++        Overlay.of(context).context.findRenderObject() as RenderBox?;
++    if (renderBoxStart == null || renderBoxTarget == null || overlay == null) {
++      return;
++    }
++    final start = renderBoxStart.localToGlobal(Offset.zero, ancestor: overlay) +
++        (renderBoxStart.size.center(Offset.zero));
++    final target =
++        renderBoxTarget.localToGlobal(Offset.zero, ancestor: overlay) +
++            (renderBoxTarget.size.center(Offset.zero));
++    show(
++      context: context,
++      startPosition: start,
++      targetPosition: target,
++      xpAmount: xpAmount,
++      onOrbsArrive: onOrbsArrive,
++    );
++  }
+ }
+ 
+ // The main widget that handles the animation of multiple orbs
+@@ -38,12 +77,17 @@ class XPOrbAnimationWidget extends StatefulWidget {
+   final Offset startPosition;
+   final int xpAmount;
+   final VoidCallback onAnimationComplete;
++  final Offset? targetPosition;
++  final VoidCallback?
++      onOrbsArrive; // Called when orbs reach target (~80% progress)
+ 
+   const XPOrbAnimationWidget({
+     Key? key,
+     required this.startPosition,
+     required this.xpAmount,
++    this.targetPosition,
+     required this.onAnimationComplete,
++    this.onOrbsArrive,
+   }) : super(key: key);
+ 
+   @override
+@@ -51,19 +95,36 @@ class XPOrbAnimationWidget extends StatefulWidget {
+ }
+ 
+ class _XPOrbAnimationWidgetState extends State<XPOrbAnimationWidget>
+-    with TickerProviderStateMixin {
++    with TickerProviderStateMixin, OrchestrationMixin {
+   late List<_Orb> _orbs;
+   late AnimationController _controller;
++  late Offset _target;
++  bool _orbsArrived = false;
++  late final bool _debugMarkers;
+ 
+   @override
+   void initState() {
+     super.initState();
++    _target = widget.targetPosition ?? const Offset(50.0, 50.0);
++    _debugMarkers = MotionDebug.instance.showMarkers;
+     _orbs = _createOrbs();
+-    _controller = AnimationController(
++    _controller = getAnimationController(
++      'xpOrbs',
+       duration: const Duration(milliseconds: 1200),
+-      vsync: this,
+     )
+       ..addListener(() {
++        // Notify when all orbs are >= 85% along their individual paths
++        if (!_orbsArrived) {
++          final allReached = _orbs.every((o) {
++            final p = ((_controller.value - o.startTime) / (1.0 - o.startTime))
++                .clamp(0.0, 1.0);
++            return p >= 0.85;
++          });
++          if (allReached) {
++            _orbsArrived = true;
++            widget.onOrbsArrive?.call();
++          }
++        }
+         setState(() {});
+       })
+       ..addStatusListener((status) {
+@@ -72,57 +133,90 @@ class _XPOrbAnimationWidgetState extends State<XPOrbAnimationWidget>
+         }
+       });
+ 
++    // Start animation and light haptic (iOS-friendly), skip if reduced motion
+     _controller.forward();
++    if (!AnimationOrchestrator.instance.reducedMotion) {
++      try {
++        HapticFeedback.selectionClick();
++      } catch (_) {}
++    }
++
++    // Timeline marker for profiling
++    if (_debugMarkers) {
++      dev.Timeline.startSync('xp_orb_flight');
++    }
+   }
+ 
+   @override
+   void dispose() {
+-    _controller.dispose();
++    if (_debugMarkers) {
++      dev.Timeline.finishSync();
++    }
++    // OrchestrationMixin automatically handles controller disposal
+     super.dispose();
+   }
+ 
+   List<_Orb> _createOrbs() {
+-    final random = Random();
+-    // Create fewer orbs for small XP amounts for performance and clarity
+-    final orbCount = (widget.xpAmount / 5).clamp(1, 15).toInt();
++    // Create deterministic energy streams based on XP amount
++    final reduced = AnimationOrchestrator.instance.reducedMotion;
++    final baseStreamCount =
++        (widget.xpAmount / 25).clamp(2, 6).round(); // 2-6 based on XP
++    final streamCount =
++        reduced ? (baseStreamCount * 0.6).round().clamp(2, 4) : baseStreamCount;
+ 
+-    return List.generate(orbCount, (index) {
+-      // Spread orbs out in an arc
+-      final angle = (random.nextDouble() - 0.5) * pi * 0.8;
+-      final distance = random.nextDouble() * 50 + 20;
++    return List.generate(streamCount, (index) {
++      // Create evenly distributed direct paths to ring
++      final streamAngle =
++          (index / streamCount) * pi * 0.6 - (pi * 0.3); // 60° spread
++      final directPath = _target - widget.startPosition;
++
++      // Slight arc for visual appeal, but mostly direct
++      final arcOffset = sin(streamAngle) * (reduced ? 15.0 : 25.0);
++      final controlPoint = widget.startPosition +
++          (directPath * 0.5) +
++          Offset(arcOffset, -arcOffset.abs() * 0.5); // Slight upward arc
+ 
+       return _Orb(
+         startX: widget.startPosition.dx,
+         startY: widget.startPosition.dy,
+-        controlX: widget.startPosition.dx + cos(angle) * distance * 2,
+-        controlY: widget.startPosition.dy +
+-            sin(angle) * distance -
+-            100, // Move upwards
+-        endX: 50.0, // Target X (e.g., corner of the screen)
+-        endY: 50.0, // Target Y (e.g., corner of the screen)
+-        startTime: index * 0.05, // Stagger start times
++        controlX: controlPoint.dx,
++        controlY: controlPoint.dy,
++        endX: _target.dx,
++        endY: _target.dy,
++        startTime:
++            index * (reduced ? 0.05 : 0.08), // More staggered for stream effect
++        streamIndex: index, // Add stream identifier
+       );
+     });
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
+-    return Positioned.fill(
+-      child: CustomPaint(
+-        painter: _OrbPainter(
+-          orbs: _orbs,
+-          animationValue: _controller.value,
+-          color: Theme.of(context).colorScheme.primary,
++    return IgnorePointer(
++      child: SizedBox.expand(
++        child: CustomPaint(
++          foregroundPainter: _debugMarkers
++              ? _MarkerPainter(
++                  start: widget.startPosition,
++                  target: _target,
++                )
++              : null,
++          painter: _OrbPainter(
++            orbs: _orbs,
++            animationValue: _controller.value,
++            color: Theme.of(context).colorScheme.primary,
++          ),
+         ),
+       ),
+     );
+   }
+ }
+ 
+-// Data class for a single orb's animation path
++// Data class for a single energy stream's animation path
+ class _Orb {
+   final double startX, startY, controlX, controlY, endX, endY;
+   final double startTime; // Value from 0.0 to 1.0
++  final int streamIndex; // Identifier for this stream
+ 
+   _Orb({
+     required this.startX,
+@@ -132,6 +226,7 @@ class _Orb {
+     required this.endX,
+     required this.endY,
+     required this.startTime,
++    required this.streamIndex,
+   });
+ 
+   Offset getPosition(double t) {
+@@ -152,7 +247,7 @@ class _Orb {
+   }
+ }
+ 
+-// The painter that draws all the orbs
++// The painter that draws energy streams flowing to the ring
+ class _OrbPainter extends CustomPainter {
+   final List<_Orb> orbs;
+   final double animationValue;
+@@ -166,24 +261,78 @@ class _OrbPainter extends CustomPainter {
+ 
+   @override
+   void paint(Canvas canvas, Size size) {
+-    final paint = Paint()..color = color;
+-
+     for (final orb in orbs) {
+       final progress =
+           ((animationValue - orb.startTime) / (1.0 - orb.startTime))
+               .clamp(0.0, 1.0);
+       if (progress > 0) {
+-        final position = orb.getPosition(animationValue);
+-        // Fade out and shrink the orb as it nears the end
+-        final sizeFactor = (1.0 - progress * 0.7).clamp(0.3, 1.0);
+-        paint.color = color.withOpacity((1.0 - progress).clamp(0.0, 1.0));
+-        canvas.drawCircle(position, 5.0 * sizeFactor, paint);
++        _drawEnergyStream(canvas, orb, progress);
+       }
+     }
+   }
+ 
++  void _drawEnergyStream(Canvas canvas, _Orb orb, double progress) {
++    // Simple energy particle moving along path
++    if (progress <= 0) return;
++
++    final currentPosition = orb.getPosition(progress + orb.startTime);
++
++    // Better sized particles - ring is 14px thick, so make particles more visible
++    final baseSize = 4.5; // Increased from 3.0 for better visibility
++    final particleSize =
++        baseSize + sin(progress * pi * 2) * 0.8; // More noticeable pulse
++
++    // Improved visual with more contrast
++    final particlePaint = Paint()
++      ..color = color
++      ..style = PaintingStyle.fill;
++
++    final glowPaint = Paint()
++      ..color = color.withOpacity(0.5) // Increased glow for better visibility
++      ..style = PaintingStyle.fill
++      ..maskFilter =
++          const MaskFilter.blur(BlurStyle.normal, 3.5); // Slightly larger glow
++
++    // Add a bright core for better visibility
++    final corePaint = Paint()
++      ..color = Colors.white.withOpacity(0.8)
++      ..style = PaintingStyle.fill;
++
++    // Draw layers: glow → particle → bright core
++    canvas.drawCircle(currentPosition, particleSize * 1.6, glowPaint);
++    canvas.drawCircle(currentPosition, particleSize, particlePaint);
++    canvas.drawCircle(
++        currentPosition, particleSize * 0.4, corePaint); // Bright center
++  }
++
+   @override
+   bool shouldRepaint(covariant _OrbPainter oldDelegate) {
+     return oldDelegate.animationValue != animationValue;
+   }
+ }
++
++class _MarkerPainter extends CustomPainter {
++  final Offset start;
++  final Offset target;
++  const _MarkerPainter({required this.start, required this.target});
++
++  @override
++  void paint(Canvas canvas, Size size) {
++    final paintStart = Paint()
++      ..color = const Color(0xff4caf50)
++      ..style = PaintingStyle.stroke
++      ..strokeWidth = 2;
++    final paintTarget = Paint()
++      ..color = const Color(0xfff44336)
++      ..style = PaintingStyle.stroke
++      ..strokeWidth = 2;
++    canvas.drawCircle(start, 10, paintStart);
++    canvas.drawLine(start, target, paintStart..strokeWidth = 1);
++    canvas.drawCircle(target, 10, paintTarget);
++  }
++
++  @override
++  bool shouldRepaint(covariant _MarkerPainter oldDelegate) {
++    return oldDelegate.start != start || oldDelegate.target != target;
++  }
++}
+diff --git a/scripts/dev_shell b/scripts/dev_shell
+new file mode 100755
+index 0000000..d1b1dbe
+--- /dev/null
++++ b/scripts/dev_shell
+@@ -0,0 +1,104 @@
++#!/usr/bin/env bash
++set -Eeuo pipefail
++
++# dev_shell: Launch a clean, reliable shell for project work
++# - Uses a safe baseline PATH so core tools (ls, uname, ps) are always available
++# - Optionally prepends the repo's bin/ to PATH
++# - Skips heavy rc initializers (rvm/nvm/pyenv/etc.) by default to avoid non-interactive breakage
++#
++# Usage examples:
++#   scripts/dev_shell                    # clean shell, safe PATH
++#   scripts/dev_shell -p                 # add ./bin to PATH
++#   scripts/dev_shell -v -p              # verbose diagnostics + ./bin
++#   scripts/dev_shell -s zsh             # use zsh instead of bash
++#   scripts/dev_shell -r                 # allow rc files (opt-in)
++
++usage() {
++  cat <<'USAGE'
++dev_shell - spawn a clean shell with a safe PATH
++
++Options:
++  -p        Prepend the repo's ./bin to PATH
++  -s SHELL  Shell to run (bash|zsh|path); default: current $SHELL or bash
++  -r        Allow shell rc files (default: skip rc for reliability)
++  -v        Verbose: print diagnostics before launching
++  -h        Show this help
++
++Examples:
++  scripts/dev_shell -p
++  scripts/dev_shell -v -s zsh
++  scripts/dev_shell -r   # use your rc files if you know they're safe
++USAGE
++}
++
++prepend_bin=false
++chosen_shell="${SHELL:-}"
++allow_rc=false
++verbose=false
++
++while getopts ":ps:rvh" opt; do
++  case "$opt" in
++    p) prepend_bin=true ;;
++    s) chosen_shell="$OPTARG" ;;
++    r) allow_rc=true ;;
++    v) verbose=true ;;
++    h) usage; exit 0 ;;
++    :) echo "Missing argument for -$OPTARG" >&2; usage; exit 2 ;;
++    \?) echo "Unknown option: -$OPTARG" >&2; usage; exit 2 ;;
++  esac
++done
++shift $((OPTIND - 1))
++
++# Resolve shell binary
++if [[ -z "${chosen_shell}" ]]; then
++  chosen_shell=bash
++fi
++if [[ "${chosen_shell}" != /* ]]; then
++  # Allow passing a program name like "zsh" or "bash"
++  if ! chosen_shell_path="$(command -v "${chosen_shell}" 2>/dev/null)"; then
++    echo "Requested shell '${chosen_shell}' not found in PATH." >&2
++    exit 127
++  fi
++else
++  chosen_shell_path="${chosen_shell}"
++fi
++
++# Baseline safe PATH for macOS/Linux
++BASE_PATH="/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:/usr/local/bin"
++
++PROJECT_PATH="${BASE_PATH}"
++if ${prepend_bin}; then
++  PROJECT_PATH="$(pwd)/bin:${PROJECT_PATH}"
++fi
++
++# Choose flags to disable rc files, per shell
++rc_flags=()
++if ! ${allow_rc}; then
++  case "${chosen_shell_path}" in
++    *zsh) rc_flags=("-f") ;;            # zsh -f: don't source startup files
++    *bash) rc_flags=("--noprofile" "--norc") ;;
++    *) rc_flags=() ;;                    # unknown shell: best-effort
++  esac
++fi
++
++if ${verbose}; then
++  echo "dev_shell diagnostics:" >&2
++  echo "  shell: ${chosen_shell_path}" >&2
++  echo "  allow_rc: ${allow_rc}" >&2
++  echo "  prepend_bin: ${prepend_bin}" >&2
++  echo "  PATH: ${PROJECT_PATH}" >&2
++  echo -n "  which ls: "; (PATH="${PROJECT_PATH}" command -v ls || true) >&2
++  echo -n "  which uname: "; (PATH="${PROJECT_PATH}" command -v uname || true) >&2
++  echo -n "  which ps: "; (PATH="${PROJECT_PATH}" command -v ps || true) >&2
++fi
++
++# Preserve minimal env for a pleasant shell; wipe the rest to avoid polluted state
++preserve_env=(
++  "HOME=${HOME:-}"
++  "TERM=${TERM:-xterm-256color}"
++  "USER=${USER:-}"
++  "PATH=${PROJECT_PATH}"
++)
++
++exec env -i "${preserve_env[@]}" "${chosen_shell_path}" -l "${rc_flags[@]}"
++

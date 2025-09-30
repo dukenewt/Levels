@@ -36,19 +36,30 @@ Goal: prove the core loop is fun and understandable for new users before broader
 
 ## Now / Next / Later
 - Now:
-  - **Progression UI Polish**: Add celebration dialogs for perk unlocks and theme unlocks to match talent choice experience
-  - **Enhanced Celebrations**: Replace snackbar with orchestrated celebration overlay (Reduced Motion aware) for perk/theme unlocks
-  - **Progression Testing**: Add unit tests for conditional bonus evaluation, theme unlocking, and new perk effects
-  - **Balance Tuning**: Gather gameplay data to tune XP bonus percentages and conditional thresholds for optimal fun
+  - **Motion Baseline + Gating (Priority)**
+    - Default to Basic Motion: progress fill (180–220ms), number count-up (≤300ms), subtle 1.02 tile pop
+    - Gate Advanced Motion (orbs, ring-unravel, shatter) behind feature flag (default off)
+    - Add dev override in Motion Debug panel (Off/Default/On)
+    - Remove center level badge; keep ring center clear for readability
+    - Tokenize durations/curves via AppDesignTokens; no raw constants in widgets
+    - Refactor orbs painter to use repaint:controller; reduce visual cost and jank
+    - Reduced Motion audit: crossfades only, no transforms/path motion
+  - **Instrumentation & Perf**
+    - Enable Performance Overlay and frame timing logs during playtests
+    - Set perf target: p95 frame ≤16.6ms, <1% dropped frames on Pixel 5 / iPhone 11
+    - Add timeline markers around key sequences (XP add, level-up)
 - Next:
-  - **Animation Polish**: Implement Reduced Motion in progression celebrations; centralize timings in `AppDesignTokens`
-  - **Persistence Safety**: Use Firestore transactions for XP/level-up, perk unlocks, and theme unlocks to avoid races
-  - **Material 3 Polish**: Update progression screens (perk display, theme selection) with Material 3 components
-  - **Analytics Foundation**: Track progression metrics (time to first perk, theme unlock engagement, etc.)
+  - **Advanced Motion Polish (behind flag)**
+    - Improve orb aesthetics (simplify glow, precompute paths, 2–4 streams)
+    - Shorten ring-unravel phases; ensure non-overlapping choreography
+    - Shared-element badge pop experiment; crossfade fallback under Reduced Motion
+  - **Persistence Safety**: Firestore transactions for XP/level-up, perk/theme unlocks
+  - **Material 3 Polish**: Progression surfaces and dialogs
+  - **Analytics Foundation**: Progression metrics (time to first perk, etc.)
 - Later:
-  - **Achievement System**: Build on the conditional bonus system for complex achievements
-  - **Intelligent Progression**: Personalized perk recommendations based on user task patterns
-  - **Advanced Mechanics**: Seasonal themes, limited-time perks, progression challenges
+  - **Achievement System**: Build on conditional bonus system
+  - **Intelligent Progression**: Personalized perk recommendations
+  - **Advanced Mechanics**: Seasonal themes, limited-time perks, challenges
 
 ## Consolidation Plan (Now)
 - Providers: unify on `user_provider_refactored.dart` and remove duplication.
@@ -56,13 +67,37 @@ Goal: prove the core loop is fun and understandable for new users before broader
 - ✅ **Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.** (COMPLETED)
 - ✅ **Animations: centralized animation system with enhanced `AnimationOrchestrator`, controller lifecycle management, and built-in Reduced Motion support.** (COMPLETED)
 
-## Recently Completed (v0.8.1)
+## Recently Completed (v0.8.1 - Animation Architecture Hardening)
 - **Animation Architecture Overhaul**: Major refactor of animation system for gaming-level polish and maintainability
   - **Enhanced AnimationOrchestrator**: Added controller lifecycle management, choreographed sequences, and automatic disposal
   - **Streamlined Wheel of Time Widget**: Reduced from 7 animation controllers to 2, significantly cleaner codebase
-  - **Centralized Animation Management**: All animations now use orchestrator with consistent timing and Reduced Motion support
   - **OrchestrationMixin**: Provided clean widget integration pattern for managed animations
-  - **Gaming-Level Polish**: Foundation ready for sophisticated celebration sequences and visual feedback
+  - **Motion Debug + Gating**: Added Motion Debug overlay, frame timing logger, and Advanced Motion flag (default off)
+  - **Basic Level-Up Panel**: Minimal scale+fade panel replaces heavy celebration by default
+  - **Ring Center Cleanup**: Removed level number badge from ring center
+
+- **Ring Visualization System**: Resolved critical rendering issues and improved visual feedback
+  - **Fixed Ring Visibility**: Added explicit size constraints to CustomPaint resolving invisible ring issue
+  - **Enhanced XP Orb System**: Redesigned from random bubbles to deterministic energy streams
+  - **Improved Targeting**: Implemented accurate orb targeting to ring progress endpoints
+  - **Smooth Ring Rotation**: Eliminated jarring stops during animations with gradual slowdown
+
+- **Level-Up Animation Enhancements**: Performance and visual improvements to celebration sequences
+  - **Ring Unraveling Optimization**: Reduced segment count from 120 to 60 for smoother performance
+  - **Simplified Physics**: Replaced complex gravity simulation with clean easing curves
+  - **Professional Visual Effects**: Modernized shadows and timing for polished appearance
+  - **Adaptive Timing**: Implemented Reduced Motion support with shorter durations
+
+- **System Integration**: Comprehensive cleanup and professional polish
+  - **Talent Dialog Fix**: Resolved blocking issue when no talent choices available
+  - **Debug System Cleanup**: Removed excessive logging and debug markers from production
+  - **Level Progress Card**: Integrated OrchestrationMixin with proper lifecycle management
+  - **Animation Consistency**: Standardized timing and reduced motion support across components
+
+- **Code Quality Improvements**: Enhanced maintainability and professional standards
+  - **Removed Legacy Code**: Eliminated complex physics calculations in favor of Flutter curves
+  - **Improved Documentation**: Updated animation system with clear architectural patterns
+  - **Performance Optimization**: Reduced computational overhead in custom painters
 
 ## Recently Completed (v0.8.0)
 - **Enhanced Progression System**: Complete redesign of level progression with alternating perk/theme rewards

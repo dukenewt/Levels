@@ -81,6 +81,22 @@ class AppDesignTokens {
   static const Duration medium = Duration(milliseconds: 300);
   static const Duration slow = Duration(milliseconds: 600);
 
+  // Neutral ring track tokens for Wheel of Time visibility across themes
+  static const Color neutralRingTrack = Color(0xFF9E9E9E); // Grey 600
+  static const double neutralRingTrackOpacity = 0.65;
+
+  // Ring visuals
+  // moved to inside AppDesignTokens above to avoid top-level static
+  // static const Color neutralRingTrack = Color(0xFF9E9E9E);
+  // static const double neutralRingTrackOpacity = 0.65;
+  // Celebration-specific durations
+  static const Duration shatterBurst = Duration(milliseconds: 220);
+  static const Duration orbFlightBase = Duration(milliseconds: 900);
+  static const Duration orbFlightMax = Duration(milliseconds: 1400);
+  static const Duration ringUnravel = Duration(milliseconds: 1200);
+  static const Duration ringExpand = Duration(milliseconds: 1500);
+  static const Duration ringReform = Duration(milliseconds: 900);
+
   // Micro Interaction Design Tokens
   static const Duration microFast = Duration(milliseconds: 100);
   static const Duration microMedium = Duration(milliseconds: 150);
@@ -94,10 +110,12 @@ class AppDesignTokens {
   // Haptic feedback timing
   static const Duration hapticDelay = Duration(milliseconds: 50);
 
-  // Spring animation curves
+  // Motion curves
   static const Curve springCurve = Curves.easeOutBack;
   static const Curve dampedCurve = Curves.easeInOut;
   static const Curve bounceCurve = Curves.elasticOut;
+  static const Curve asmrEase = Curves.easeInOutCubic;
+  static const Curve reformEase = Curves.easeInOut;
 
   // Interaction states
   static const double interactionOpacityPressed = 0.8;

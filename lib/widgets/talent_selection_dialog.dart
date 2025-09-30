@@ -104,7 +104,8 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
     final theme = Theme.of(context);
 
     return PopScope(
-      canPop: false, // Prevent dismissal - talent choice is mandatory
+      canPop: widget.talentChoice.options
+          .isEmpty, // Allow dismissal if no choices available
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Dialog(
@@ -144,9 +145,14 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
                         const SizedBox(height: 24),
                         _buildChoiceInstructions(theme),
                         const SizedBox(height: 32),
-                        ...widget.talentChoice.options
-                            .map((talent) => _buildTalentOption(talent, theme))
-                            .toList(),
+                        // Safety check for empty talent choices
+                        if (widget.talentChoice.options.isEmpty)
+                          _buildNoChoicesAvailable(theme)
+                        else
+                          ...widget.talentChoice.options
+                              .map(
+                                  (talent) => _buildTalentOption(talent, theme))
+                              .toList(),
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -473,5 +479,48 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
       case TalentType.nlpCategorization:
         return Icons.psychology;
     }
+  }
+
+  Widget _buildNoChoicesAvailable(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 48,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No Talents Available',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'All talents for this level have been unlocked or no new talents are available yet.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
   }
 }

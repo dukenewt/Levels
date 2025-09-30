@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../core/theme/app_design_tokens.dart';
 import 'dart:math' as math;
+import '../core/animation/animation_orchestrator.dart';
 
 /// The foundation for your ring unraveling celebration animation
 /// This breaks down the complex animation into understandable phases
@@ -27,7 +30,7 @@ class RingUnravelingCelebration extends StatefulWidget {
 }
 
 class _RingUnravelingCelebrationState extends State<RingUnravelingCelebration>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, OrchestrationMixin {
   // Phase controllers - each controls a different part of the animation
   late AnimationController _unravelController;
   late AnimationController _expansionController;
@@ -50,79 +53,75 @@ class _RingUnravelingCelebrationState extends State<RingUnravelingCelebration>
 
   void _setupAnimations() {
     // Phase 1: Unraveling (the ring breaks apart into segments)
-    _unravelController = AnimationController(
-      duration: const Duration(
-          milliseconds: 1200), // Slightly longer for more dramatic effect
-      vsync: this,
+    _unravelController = getAnimationController(
+      'unravel',
+      duration: AppDesignTokens.ringUnravel,
     );
-    _unravelAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _unravelController,
-      curve: Curves.easeInOutCubic, // Smooth acceleration and deceleration
-    ));
+    _unravelAnimation = createAnimation(
+      _unravelController,
+      Tween<double>(begin: 0.0, end: 1.0),
+      curve: AppDesignTokens.asmrEase,
+    );
 
     // Phase 2: Expansion (segments spread across screen showing celebration)
-    _expansionController = AnimationController(
-      duration: const Duration(
-          milliseconds: 1500), // Longer expansion for more impact
-      vsync: this,
+    _expansionController = getAnimationController(
+      'expansion',
+      duration: AppDesignTokens.ringExpand,
     );
-    _expansionAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _expansionController,
-      curve: Curves.elasticOut, // Bouncy expansion for excitement
-    ));
+    _expansionAnimation = createAnimation(
+      _expansionController,
+      Tween<double>(begin: 0.0, end: 1.0),
+      curve: Curves.elasticOut,
+    );
 
     // Phase 3: Reformation (segments come back together as new ring)
-    _reformController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
+    _reformController = getAnimationController(
+      'reform',
+      duration: AppDesignTokens.ringReform,
     );
-    _reformAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _reformController,
-      curve: Curves.easeInOut,
-    ));
+    _reformAnimation = createAnimation(
+      _reformController,
+      Tween<double>(begin: 0.0, end: 1.0),
+      curve: AppDesignTokens.reformEase,
+    );
   }
 
   void _startCelebration() async {
-    try {
-      // Phase 1: Unravel the ring
-      if (!mounted) return;
-      setState(() => _currentPhase = AnimationPhase.unraveling);
-      await _unravelController.forward();
-
-      // Phase 2: Expand and celebrate
-      if (!mounted) return;
-      setState(() => _currentPhase = AnimationPhase.expanding);
-      await _expansionController.forward();
-
-      // Wait a moment for the user to enjoy the celebration
-      if (!mounted) return;
-      await Future.delayed(const Duration(milliseconds: 2000));
-
-      // Phase 3: Reform the ring for the new level
-      if (!mounted) return;
-      setState(() => _currentPhase = AnimationPhase.reforming);
-      await _reformController.forward();
-
-      // Celebration complete - ensure widget is still mounted
-      if (mounted) {
-        widget.onComplete();
-      }
-    } catch (e) {
-      debugPrint('Error in ring celebration animation: $e');
-      // Ensure cleanup happens even if there's an error
-      if (mounted) {
-        widget.onComplete();
-      }
-    }
+    // Orchestrate the phases to avoid conflicts and respect Reduced Motion
+    await runAnimationSequence('ringCelebration', [
+      AnimationStep.custom(() async {
+        if (mounted) setState(() => _currentPhase = AnimationPhase.unraveling);
+        try {
+          await HapticFeedback.selectionClick();
+        } catch (_) {}
+      }),
+      AnimationStep(
+          type: AnimationStepType.forward, controller: _unravelController),
+      AnimationStep.custom(() async {
+        if (mounted) setState(() => _currentPhase = AnimationPhase.expanding);
+        try {
+          await HapticFeedback.lightImpact();
+        } catch (_) {}
+      }),
+      AnimationStep(
+          type: AnimationStepType.forward, controller: _expansionController),
+      AnimationStep(
+          type: AnimationStepType.delay,
+          duration: AnimationOrchestrator.instance.reducedMotion
+              ? const Duration(milliseconds: 800)
+              : const Duration(milliseconds: 1200)),
+      AnimationStep.custom(() async {
+        if (mounted) setState(() => _currentPhase = AnimationPhase.reforming);
+        try {
+          await HapticFeedback.selectionClick();
+        } catch (_) {}
+      }),
+      AnimationStep(
+          type: AnimationStepType.forward, controller: _reformController),
+      AnimationStep.custom(() async {
+        if (mounted) widget.onComplete();
+      }),
+    ]);
   }
 
   @override
@@ -130,42 +129,67 @@ class _RingUnravelingCelebrationState extends State<RingUnravelingCelebration>
     return Material(
       color: Colors.black
           .withOpacity(0.85), // Slightly darker overlay for better contrast
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        child: AnimatedBuilder(
-          // Listen to all animation controllers
-          animation: Listenable.merge([
-            _unravelController,
-            _expansionController,
-            _reformController,
-          ]),
-          builder: (context, child) {
-            return CustomPaint(
-              painter: RingCelebrationPainter(
-                progress: widget.initialProgress,
-                unravelProgress: _unravelAnimation.value,
-                expansionProgress: _expansionAnimation.value,
-                reformProgress: _reformAnimation.value,
-                currentPhase: _currentPhase,
-                ringColor: widget.ringColor,
-                oldLevel: widget.oldLevel,
-                newLevel: widget.newLevel,
-                unlockedPerks: widget.unlockedPerks,
-              ),
-              size: Size.infinite,
-            );
-          },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onDoubleTap: _handleDoubleTapDismiss,
+        child: SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: AnimatedBuilder(
+            // Listen to all animation controllers
+            animation: Listenable.merge([
+              _unravelController,
+              _expansionController,
+              _reformController,
+            ]),
+            builder: (context, child) {
+              return SizedBox.expand(
+                child: CustomPaint(
+                  painter: RingCelebrationPainter(
+                    progress: widget.initialProgress,
+                    unravelProgress: _unravelAnimation.value,
+                    expansionProgress: _expansionAnimation.value,
+                    reformProgress: _reformAnimation.value,
+                    currentPhase: _currentPhase,
+                    ringColor: widget.ringColor,
+                    oldLevel: widget.oldLevel,
+                    newLevel: widget.newLevel,
+                    unlockedPerks: widget.unlockedPerks,
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
+  void _handleDoubleTapDismiss() {
+    // Fast path to reform and complete
+    runAnimationSequence('ringEarlyDismiss', [
+      AnimationStep.custom(() async {
+        if (!mounted) return;
+        setState(() => _currentPhase = AnimationPhase.reforming);
+        try {
+          _unravelController.stop();
+          _expansionController.stop();
+        } catch (_) {}
+        try {
+          _reformController.reset();
+        } catch (_) {}
+      }),
+      AnimationStep(
+          type: AnimationStepType.forward, controller: _reformController),
+      AnimationStep.custom(() async {
+        if (mounted) widget.onComplete();
+      }),
+    ]);
+  }
+
   @override
   void dispose() {
-    _unravelController.dispose();
-    _expansionController.dispose();
-    _reformController.dispose();
+    // Controllers are managed/disposed by OrchestrationMixin
     super.dispose();
   }
 }
@@ -183,8 +207,8 @@ class RingCelebrationPainter extends CustomPainter {
   final int newLevel;
   final List<String> unlockedPerks;
 
-  // Enhanced number of segments for smoother unraveling
-  static const int segmentCount = 120;
+  // Optimized segment count for better performance
+  static const int segmentCount = 60;
 
   RingCelebrationPainter({
     required this.progress,
@@ -291,8 +315,9 @@ class RingCelebrationPainter extends CustomPainter {
 
       // Enhanced unraveling with variable timing
       final unravelDelay = segmentProgress * 0.3; // Stagger the unraveling
-      final adjustedUnravelProgress =
-          math.max(0, math.min(1, (unravelProgress - unravelDelay) / 0.7));
+      final adjustedUnravelProgress = math
+          .max(0.0, math.min(1.0, (unravelProgress - unravelDelay) / 0.7))
+          .toDouble();
 
       if (adjustedUnravelProgress <= 0) {
         // Still part of the ring - draw as connected segment
@@ -313,32 +338,30 @@ class RingCelebrationPainter extends CustomPainter {
         // Unraveling - break into dots with physics-like movement
         final unravelFactor = adjustedUnravelProgress;
 
-        // Calculate trajectory for more realistic physics
-        final initialVelocity = 100 + (segmentProgress * 50); // Varying speeds
-        final gravity = 50; // Slight downward pull
-        final horizontalDrift = math.sin(startAngle) * 30; // Lateral movement
+        // Simplified curved trajectory using easing
+        final easedProgress =
+            Curves.easeOutCubic.transform(unravelFactor).toDouble();
+        final maxDistance =
+            150.0 + (segmentProgress * 50.0); // Varying distances
+        final currentDistance = radius + (maxDistance * easedProgress);
 
-        // Position calculation with physics
-        final time = unravelFactor;
-        final distanceFromCenter = radius + (initialVelocity * time);
-        final verticalOffset = (gravity * time * time) / 2;
-        final horizontalOffset = horizontalDrift * time;
+        // Gentle arc movement instead of complex physics
+        final arcAmount = math.sin(easedProgress * math.pi) * 20.0;
+        final arcAngle = startAngle + (arcAmount / currentDistance);
 
         final dotCenter = Offset(
-          center.dx +
-              math.cos(startAngle) * distanceFromCenter +
-              horizontalOffset,
-          center.dy +
-              math.sin(startAngle) * distanceFromCenter +
-              verticalOffset,
+          center.dx + math.cos(arcAngle) * currentDistance,
+          center.dy + math.sin(arcAngle) * currentDistance,
         );
 
         // Variable dot sizes based on position and timing
-        final baseDotSize = 6.0 + (segmentProgress * 4.0); // 6-10 range
-        final sizePulse = 1.0 + (math.sin(time * 10) * 0.3); // Pulsing effect
+        final baseDotSize =
+            6.0 + (segmentProgress * 2.0); // 6-8 range (smaller)
+        final sizePulse =
+            1.0 + (math.sin(easedProgress * 8) * 0.2); // Gentler pulse
         final dotSize = baseDotSize *
             sizePulse *
-            (1.0 - unravelFactor * 0.3); // Shrink as they fly away
+            (1.0 - easedProgress * 0.2); // Subtle shrinking
 
         // Color based on position in the gradient
         final colorIndex = (segmentProgress * (baseColors.length - 1)).floor();
@@ -428,9 +451,14 @@ class RingCelebrationPainter extends CustomPainter {
           color: Colors.white,
           shadows: [
             Shadow(
-              color: ringColor.withOpacity(0.8),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+            Shadow(
+              color: ringColor.withOpacity(0.4),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),

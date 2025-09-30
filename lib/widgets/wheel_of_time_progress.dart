@@ -9,6 +9,11 @@ import '../models/user.dart' as app;
 import '../services/smooth_xp_animation_service.dart';
 import '../core/animation/animation_orchestrator.dart';
 import '../screens/stats_screen.dart';
+import 'ring_unraveling_celebration.dart';
+import '../config/feature_flags.dart';
+import 'level_up_panel.dart';
+import '../core/theme/app_design_tokens.dart';
+import '../core/animation/ring_anchor.dart';
 
 class WheelOfTimeProgress extends StatefulWidget {
   const WheelOfTimeProgress({Key? key}) : super(key: key);
@@ -34,6 +39,8 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
   int _previousXP = 0;
   int _previousNextLevelXP = 1;
   bool _isInitialized = false;
+  int? _previousLevel;
+  bool _celebratingLevel = false;
 
   @override
   void initState() {
@@ -50,6 +57,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
               ? userProvider.user!.currentXp / userProvider.nextLevelXp
               : 0.0;
           _currentDisplayedXPProgress = _previousXPProgress;
+          _previousLevel = userProvider.user!.level;
         }
       }
     });
@@ -169,6 +177,56 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
       return const SizedBox.shrink();
     }
 
+    // Detect level up and show celebration (gated by motion mode)
+    if (_previousLevel != null &&
+        user.level > _previousLevel! &&
+        !_celebratingLevel) {
+      _celebratingLevel = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final useAdvanced = FeatureFlags.shouldUseAdvancedMotion();
+        if (useAdvanced) {
+          showGeneralDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierLabel: 'Dismiss',
+            barrierColor: Colors.black54,
+            pageBuilder: (ctx, a1, a2) {
+              return RingUnravelingCelebration(
+                initialProgress: 0.0,
+                oldLevel: _previousLevel!,
+                newLevel: user.level,
+                ringColor: Theme.of(context).colorScheme.primary,
+                unlockedPerks: const [],
+                onComplete: () {
+                  Navigator.of(ctx).maybePop();
+                  _celebratingLevel = false;
+                },
+              );
+            },
+          );
+        } else {
+          showGeneralDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierLabel: 'Dismiss',
+            barrierColor: Colors.black54,
+            pageBuilder: (ctx, a1, a2) {
+              return LevelUpPanel(
+                oldLevel: _previousLevel!,
+                newLevel: user.level,
+                onDismiss: () {
+                  Navigator.of(ctx).maybePop();
+                  _celebratingLevel = false;
+                },
+              );
+            },
+          );
+        }
+      });
+    }
+    _previousLevel = user.level;
+
     // Calculate the current XP progress
     final currentXPProgress = userProvider.nextLevelXp > 0
         ? user.currentXp / userProvider.nextLevelXp
@@ -243,25 +301,49 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
                     return Transform.scale(
                       scale: _pulseAnimation.value,
                       child: Transform.rotate(
-                        angle: _rotationAnimation.value *
-                            0.1, // Very slow rotation
+                        angle: _progressController.isAnimating
+                            ? _rotationAnimation.value *
+                                0.02 // Slow down but don't stop completely
+                            : _rotationAnimation.value *
+                                0.1, // Normal slow rotation
                         child: SizedBox(
                           width: 200,
                           height: 200,
-                          child: CustomPaint(
-                            painter: WheelOfTimeRingsPainter(
-                              xpProgress: displayedXPProgress,
-                              rankProgress: rankProgress,
-                              tasksProgress: tasksProgress,
-                              xpColor: theme.colorScheme.primary,
-                              rankColor: currentRank.color,
-                              tasksColor: theme.colorScheme.secondary,
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              pulseValue: _pulseAnimation.value,
-                              // Add visual feedback for XP animation
-                              isXPAnimating: _progressController.isAnimating,
-                            ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              KeyedSubtree(
+                                key: RingAnchor.instance.ringKey,
+                                child: CustomPaint(
+                                  size: const Size(
+                                      200, 200), // Explicitly set size
+                                  painter: WheelOfTimeRingsPainter(
+                                    xpProgress: displayedXPProgress,
+                                    rankProgress: rankProgress,
+                                    tasksProgress: tasksProgress,
+                                    xpColor: theme.colorScheme.primary,
+                                    rankColor: currentRank.color,
+                                    tasksColor: theme.colorScheme.secondary,
+                                    backgroundColor:
+                                        AppDesignTokens.neutralRingTrack,
+                                    pulseValue: _pulseAnimation.value,
+                                    // Add visual feedback for XP animation
+                                    isXPAnimating:
+                                        _progressController.isAnimating,
+                                  ),
+                                ),
+                              ),
+                              // Removed level number badge from ring center for cleaner look
+                              if (kDebugMode)
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
@@ -415,7 +497,7 @@ class WheelOfTimeRingsPainter extends CustomPainter {
     final maxRadius = size.width / 2;
 
     // Ring dimensions
-    const ringWidth = 12.0;
+    const ringWidth = 14.0;
     const gapBetweenRings = 8.0;
 
     final outerRadius = maxRadius - 10;
@@ -435,15 +517,14 @@ class WheelOfTimeRingsPainter extends CustomPainter {
     _drawProgressRing(canvas, center, innerRadius, ringWidth, tasksProgress,
         tasksColor, 2 * math.pi / 3, false);
 
-    // Central mystical symbol
-    _drawCentralSymbol(
-        canvas, center, innerRadius - ringWidth - gapBetweenRings);
+    // Center content handled by overlay badge widget
   }
 
   void _drawBackgroundRing(
       Canvas canvas, Offset center, double radius, double strokeWidth) {
     final paint = Paint()
-      ..color = backgroundColor.withOpacity(0.3)
+      ..color =
+          backgroundColor.withOpacity(AppDesignTokens.neutralRingTrackOpacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -471,11 +552,11 @@ class WheelOfTimeRingsPainter extends CustomPainter {
       startAngle: startAngle + startAngleOffset,
       endAngle: startAngle + startAngleOffset + sweepAngle,
       colors: [
-        color.withOpacity(0.3),
+        color.withOpacity(0.6),
         color,
-        color.withOpacity(0.8),
+        color.withOpacity(0.9),
       ],
-      stops: const [0.0, 0.5, 1.0],
+      stops: const [0.0, 0.45, 1.0],
     );
 
     final paint = Paint()
@@ -485,13 +566,13 @@ class WheelOfTimeRingsPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     // Enhanced glow effect when animating
-    final glowIntensity = isAnimating ? pulseValue * 0.8 : pulseValue * 0.4;
+    final glowIntensity = isAnimating ? pulseValue * 0.6 : pulseValue * 0.3;
     final glowPaint = Paint()
       ..color = color.withOpacity(glowIntensity)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth + (isAnimating ? 8 : 4)
+      ..strokeWidth = strokeWidth + (isAnimating ? 6 : 3)
       ..strokeCap = StrokeCap.round
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, isAnimating ? 6 : 3);
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, isAnimating ? 4 : 2);
 
     canvas.drawArc(
       rect,
@@ -555,26 +636,6 @@ class WheelOfTimeRingsPainter extends CustomPainter {
     canvas.drawPath(starPath, starPaint);
   }
 
-  void _drawCentralSymbol(Canvas canvas, Offset center, double maxRadius) {
-    final symbolPaint = Paint()
-      ..color = xpColor.withOpacity(0.4)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    // Draw interconnected circles representing the Wheel of Time
-    for (int i = 0; i < 3; i++) {
-      final angle = i * 2 * math.pi / 3;
-      final symbolCenter = Offset(
-        center.dx + math.cos(angle) * maxRadius * 0.3,
-        center.dy + math.sin(angle) * maxRadius * 0.3,
-      );
-      canvas.drawCircle(symbolCenter, maxRadius * 0.2, symbolPaint);
-    }
-
-    // Central binding circle
-    canvas.drawCircle(center, maxRadius * 0.15, symbolPaint);
-  }
-
   @override
   bool shouldRepaint(covariant WheelOfTimeRingsPainter oldDelegate) {
     return oldDelegate.xpProgress != xpProgress ||
@@ -584,3 +645,5 @@ class WheelOfTimeRingsPainter extends CustomPainter {
         oldDelegate.isXPAnimating != isXPAnimating;
   }
 }
+
+// Removed _LevelNumberBadge widget as part of center cleanup
