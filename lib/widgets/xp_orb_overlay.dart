@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'dart:developer' as dev;
 import 'dart:math';
 import '../core/animation/animation_orchestrator.dart';
+import '../core/theme/app_design_tokens.dart';
+import '../config/feature_flags.dart';
 import '../debug/motion_debug.dart';
 
 // Manages the overlay entry for the XP orbs
@@ -16,6 +18,10 @@ class XPOrbOverlay {
     Offset? targetPosition,
     VoidCallback? onOrbsArrive, // Callback when orbs reach the ring
   }) {
+    // Gate advanced motion by feature flag
+    if (!FeatureFlags.shouldUseAdvancedMotion()) {
+      return;
+    }
     // Remove existing overlay if any
     hide();
 
@@ -110,7 +116,7 @@ class _XPOrbAnimationWidgetState extends State<XPOrbAnimationWidget>
     _orbs = _createOrbs();
     _controller = getAnimationController(
       'xpOrbs',
-      duration: const Duration(milliseconds: 1200),
+      duration: AppDesignTokens.orbFlightBase,
     )
       ..addListener(() {
         // Notify when all orbs are >= 85% along their individual paths
@@ -125,7 +131,7 @@ class _XPOrbAnimationWidgetState extends State<XPOrbAnimationWidget>
             widget.onOrbsArrive?.call();
           }
         }
-        setState(() {});
+        // painter will repaint via repaint: _controller
       })
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
@@ -160,9 +166,8 @@ class _XPOrbAnimationWidgetState extends State<XPOrbAnimationWidget>
     // Create deterministic energy streams based on XP amount
     final reduced = AnimationOrchestrator.instance.reducedMotion;
     final baseStreamCount =
-        (widget.xpAmount / 25).clamp(2, 6).round(); // 2-6 based on XP
-    final streamCount =
-        reduced ? (baseStreamCount * 0.6).round().clamp(2, 4) : baseStreamCount;
+        (widget.xpAmount / 40).clamp(2, 4).round(); // 2-4 streams
+    final streamCount = reduced ? baseStreamCount.clamp(2, 3) : baseStreamCount;
 
     return List.generate(streamCount, (index) {
       // Create evenly distributed direct paths to ring
@@ -183,8 +188,7 @@ class _XPOrbAnimationWidgetState extends State<XPOrbAnimationWidget>
         controlY: controlPoint.dy,
         endX: _target.dx,
         endY: _target.dy,
-        startTime:
-            index * (reduced ? 0.05 : 0.08), // More staggered for stream effect
+        startTime: index * (reduced ? 0.04 : 0.06), // Tightened stagger
         streamIndex: index, // Add stream identifier
       );
     });
@@ -203,7 +207,7 @@ class _XPOrbAnimationWidgetState extends State<XPOrbAnimationWidget>
               : null,
           painter: _OrbPainter(
             orbs: _orbs,
-            animationValue: _controller.value,
+            animation: _controller,
             color: Theme.of(context).colorScheme.primary,
           ),
         ),
@@ -250,21 +254,21 @@ class _Orb {
 // The painter that draws energy streams flowing to the ring
 class _OrbPainter extends CustomPainter {
   final List<_Orb> orbs;
-  final double animationValue;
+  final Animation<double> animation;
   final Color color;
 
   _OrbPainter({
     required this.orbs,
-    required this.animationValue,
+    required this.animation,
     required this.color,
-  });
+  }) : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {
+    final t = animation.value;
     for (final orb in orbs) {
       final progress =
-          ((animationValue - orb.startTime) / (1.0 - orb.startTime))
-              .clamp(0.0, 1.0);
+          ((t - orb.startTime) / (1.0 - orb.startTime)).clamp(0.0, 1.0);
       if (progress > 0) {
         _drawEnergyStream(canvas, orb, progress);
       }
@@ -272,42 +276,37 @@ class _OrbPainter extends CustomPainter {
   }
 
   void _drawEnergyStream(Canvas canvas, _Orb orb, double progress) {
-    // Simple energy particle moving along path
     if (progress <= 0) return;
 
     final currentPosition = orb.getPosition(progress + orb.startTime);
 
-    // Better sized particles - ring is 14px thick, so make particles more visible
-    final baseSize = 4.5; // Increased from 3.0 for better visibility
-    final particleSize =
-        baseSize + sin(progress * pi * 2) * 0.8; // More noticeable pulse
+    const baseSize = 4.0;
+    final particleSize = baseSize + sin(progress * pi * 2) * 0.6;
 
-    // Improved visual with more contrast
     final particlePaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
-    final glowPaint = Paint()
-      ..color = color.withOpacity(0.5) // Increased glow for better visibility
-      ..style = PaintingStyle.fill
-      ..maskFilter =
-          const MaskFilter.blur(BlurStyle.normal, 3.5); // Slightly larger glow
+    final reduced = AnimationOrchestrator.instance.reducedMotion;
+    if (!reduced) {
+      final glowPaint = Paint()
+        ..color = color.withOpacity(0.25)
+        ..style = PaintingStyle.fill
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+      canvas.drawCircle(currentPosition, particleSize * 1.4, glowPaint);
+    }
 
-    // Add a bright core for better visibility
     final corePaint = Paint()
       ..color = Colors.white.withOpacity(0.8)
       ..style = PaintingStyle.fill;
 
-    // Draw layers: glow → particle → bright core
-    canvas.drawCircle(currentPosition, particleSize * 1.6, glowPaint);
     canvas.drawCircle(currentPosition, particleSize, particlePaint);
-    canvas.drawCircle(
-        currentPosition, particleSize * 0.4, corePaint); // Bright center
+    canvas.drawCircle(currentPosition, particleSize * 0.4, corePaint);
   }
 
   @override
   bool shouldRepaint(covariant _OrbPainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue;
+    return oldDelegate.orbs != orbs || oldDelegate.color != color;
   }
 }
 

@@ -5,6 +5,7 @@ import '../providers/settings_provider.dart';
 import 'motion_debug.dart';
 import 'frame_timings_logger.dart';
 import 'package:provider/provider.dart';
+import '../config/feature_flags.dart';
 
 /// Wraps the app and conditionally overlays a small dev-only motion debug panel.
 class MotionDebugGate extends StatefulWidget {
@@ -172,6 +173,35 @@ class _DebugHandleState extends State<_DebugHandle> {
                   ),
               ]),
               const Divider(height: 24),
+              const Text('Advanced Motion (dev override)'),
+              const SizedBox(height: 8),
+              Wrap(spacing: 8, children: [
+                ChoiceChip(
+                  label: const Text('Off'),
+                  selected: debug.advancedMotionOverride == -1,
+                  onSelected: (_) => setState(() {
+                    MotionDebug.instance.setAdvancedMotionOverride(-1);
+                    FeatureFlags.setAdvancedMotionOverride(false);
+                  }),
+                ),
+                ChoiceChip(
+                  label: const Text('Default'),
+                  selected: debug.advancedMotionOverride == 0,
+                  onSelected: (_) => setState(() {
+                    MotionDebug.instance.setAdvancedMotionOverride(0);
+                    FeatureFlags.setAdvancedMotionOverride(null);
+                  }),
+                ),
+                ChoiceChip(
+                  label: const Text('On'),
+                  selected: debug.advancedMotionOverride == 1,
+                  onSelected: (_) => setState(() {
+                    MotionDebug.instance.setAdvancedMotionOverride(1);
+                    FeatureFlags.setAdvancedMotionOverride(true);
+                  }),
+                ),
+              ]),
+              const SizedBox(height: 12),
               SwitchListTile.adaptive(
                 value: reduced,
                 onChanged: (v) async {

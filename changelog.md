@@ -8,6 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Motion Debug overlay with slow-mo, markers, and performance overlay controls (dev-only)
+- Frame timing logger for build/raster metrics during animation profiling
+- Advanced Motion feature flag and dev override toggle (gates orbs, ring-unravel, shatter)
+- Minimal LevelUpPanel (scale+fade) for Basic Motion
+- RingAnchor and XPFlowService utilities for accurate overlay targeting
+- XPOrbOverlay.showFromAnchors helper for overlay-space coordinates
+- Link: ADR-0003 AnimationOrchestrator and Reduced Motion Policy
+
+### Changed
+- Default to Basic Motion for all users; Advanced Motion is opt-in via flag
+- Refactored XP orbs painter to use repaint:controller (no per-frame setState)
+- Tokenized durations/curves via AppDesignTokens (e.g., orbFlightBase)
+- Reduced visual cost of orbs (fewer streams, lighter glow; skip glow under Reduced Motion)
+- Gated RingUnravelingCelebration behind Advanced Motion; LevelUpPanel used by default
+- Removed level number badge from ring center for a cleaner, less busy design
+- MaterialApp wired to MotionDebugGate; showPerformanceOverlay controllable in debug
+
+### Fixed
+- Reduced jank in animation flows by eliminating widget rebuilds per frame in orbs path
+- Improved coordinate handling for overlays with showFromAnchors and RingAnchor
+
+### Removed
+- Center level indicator inside the rings (superseded by cleaner ring focus)
+- Heavy celebration visuals disabled by default (now under Advanced Motion flag)
+
+### Notes
+- Accessibility: Reduced Motion honored globally via orchestrator; Basic Motion uses short crossfades
+- No migrations required; Advanced Motion is opt-in for development/testing
+
+### Added
 - Gem shatter overlay effect on task completion with OrchestrationMixin integration
 - XP orbs overlay with deterministic energy streams flowing to ring progress endpoints
 - Level number badge over the ring (temporary visual until final badge art)

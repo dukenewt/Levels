@@ -10,6 +10,8 @@ import '../services/smooth_xp_animation_service.dart';
 import '../core/animation/animation_orchestrator.dart';
 import '../screens/stats_screen.dart';
 import 'ring_unraveling_celebration.dart';
+import '../config/feature_flags.dart';
+import 'level_up_panel.dart';
 import '../core/theme/app_design_tokens.dart';
 import '../core/animation/ring_anchor.dart';
 
@@ -175,32 +177,52 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
       return const SizedBox.shrink();
     }
 
-    // Detect level up and show ring celebration
+    // Detect level up and show celebration (gated by motion mode)
     if (_previousLevel != null &&
         user.level > _previousLevel! &&
         !_celebratingLevel) {
       _celebratingLevel = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        showGeneralDialog(
-          context: context,
-          barrierDismissible: true,
-          barrierLabel: 'Dismiss',
-          barrierColor: Colors.black54,
-          pageBuilder: (ctx, a1, a2) {
-            return RingUnravelingCelebration(
-              initialProgress: 0.0,
-              oldLevel: _previousLevel!,
-              newLevel: user.level,
-              ringColor: Theme.of(context).colorScheme.primary,
-              unlockedPerks: const [],
-              onComplete: () {
-                Navigator.of(ctx).maybePop();
-                _celebratingLevel = false;
-              },
-            );
-          },
-        );
+        final useAdvanced = FeatureFlags.shouldUseAdvancedMotion();
+        if (useAdvanced) {
+          showGeneralDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierLabel: 'Dismiss',
+            barrierColor: Colors.black54,
+            pageBuilder: (ctx, a1, a2) {
+              return RingUnravelingCelebration(
+                initialProgress: 0.0,
+                oldLevel: _previousLevel!,
+                newLevel: user.level,
+                ringColor: Theme.of(context).colorScheme.primary,
+                unlockedPerks: const [],
+                onComplete: () {
+                  Navigator.of(ctx).maybePop();
+                  _celebratingLevel = false;
+                },
+              );
+            },
+          );
+        } else {
+          showGeneralDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierLabel: 'Dismiss',
+            barrierColor: Colors.black54,
+            pageBuilder: (ctx, a1, a2) {
+              return LevelUpPanel(
+                oldLevel: _previousLevel!,
+                newLevel: user.level,
+                onDismiss: () {
+                  Navigator.of(ctx).maybePop();
+                  _celebratingLevel = false;
+                },
+              );
+            },
+          );
+        }
       });
     }
     _previousLevel = user.level;
@@ -311,7 +333,7 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
                                   ),
                                 ),
                               ),
-                              _LevelNumberBadge(level: user.level),
+                              // Removed level number badge from ring center for cleaner look
                               if (kDebugMode)
                                 Container(
                                   width: 6,
@@ -624,38 +646,4 @@ class WheelOfTimeRingsPainter extends CustomPainter {
   }
 }
 
-class _LevelNumberBadge extends StatelessWidget {
-  final int level;
-  const _LevelNumberBadge({required this.level});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final primary = theme.colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: primary.withOpacity(0.28),
-            blurRadius: 12,
-            spreadRadius: 1,
-          ),
-        ],
-        border: Border.all(color: primary.withOpacity(0.25), width: 1),
-      ),
-      child: Text(
-        level.toString(),
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: onSurface,
-          letterSpacing: 0.4,
-        ),
-      ),
-    );
-  }
-}
+// Removed _LevelNumberBadge widget as part of center cleanup

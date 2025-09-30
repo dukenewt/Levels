@@ -11,12 +11,15 @@ class MotionDebug with ChangeNotifier {
   bool _showMarkers = false; // draw start/target markers, paths
   double _timeDilation = 1.0; // 1.0 normal, >1.0 slow
   bool _logFrameTimings = false;
+  // -1 = force off, 0 = default, 1 = force on
+  int _advancedMotionOverride = 0;
 
   bool get enabled => _enabled && kDebugMode;
   bool get showPerformanceOverlay => _showPerformanceOverlay && enabled;
   bool get showMarkers => _showMarkers && enabled;
   double get timeDilation => _timeDilation;
   bool get logFrameTimings => _logFrameTimings && enabled;
+  int get advancedMotionOverride => _advancedMotionOverride;
 
   void toggleEnabled() {
     _enabled = !_enabled;
@@ -45,6 +48,11 @@ class MotionDebug with ChangeNotifier {
 
   void setLogFrameTimings(bool v) {
     _logFrameTimings = v;
+    notifyListeners();
+  }
+
+  void setAdvancedMotionOverride(int v) {
+    _advancedMotionOverride = v.clamp(-1, 1);
     notifyListeners();
   }
 }

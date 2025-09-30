@@ -36,32 +36,30 @@ Goal: prove the core loop is fun and understandable for new users before broader
 
 ## Now / Next / Later
 - Now:
-  - **Animation Professional Polish (Priority)**
-    - Complete XP orb visual refinement for professional appearance
-    - Further refine ring unraveling celebration timing and visual effects
-    - Implement consistent animation timing throughout all celebration sequences
-    - Address remaining choppy transitions in level-up flows
-  - **Ring System Polish**
-    - Center level badge visual refinement to match design language
-    - Carryover XP fill after level-up (resume aggregate fill post-reform)
-    - Fine-tune ring rotation behavior during animations
-  - **User Experience Consistency**
-    - Standardize all animations to use OrchestrationMixin pattern
-    - Ensure all visual effects meet professional standards
-    - Complete Reduced Motion implementation across all components
-  - **Code Quality**
-    - Remove remaining debug artifacts and improve production code clarity
-    - Consolidate animation architecture improvements
-    - Add unit tests for enhanced animation system components
+  - **Motion Baseline + Gating (Priority)**
+    - Default to Basic Motion: progress fill (180–220ms), number count-up (≤300ms), subtle 1.02 tile pop
+    - Gate Advanced Motion (orbs, ring-unravel, shatter) behind feature flag (default off)
+    - Add dev override in Motion Debug panel (Off/Default/On)
+    - Remove center level badge; keep ring center clear for readability
+    - Tokenize durations/curves via AppDesignTokens; no raw constants in widgets
+    - Refactor orbs painter to use repaint:controller; reduce visual cost and jank
+    - Reduced Motion audit: crossfades only, no transforms/path motion
+  - **Instrumentation & Perf**
+    - Enable Performance Overlay and frame timing logs during playtests
+    - Set perf target: p95 frame ≤16.6ms, <1% dropped frames on Pixel 5 / iPhone 11
+    - Add timeline markers around key sequences (XP add, level-up)
 - Next:
-  - **Animation Polish**: Implement Reduced Motion in progression celebrations; centralize timings in `AppDesignTokens`
-  - **Persistence Safety**: Use Firestore transactions for XP/level-up, perk unlocks, and theme unlocks to avoid races
-  - **Material 3 Polish**: Update progression screens (perk display, theme selection) with Material 3 components
-  - **Analytics Foundation**: Track progression metrics (time to first perk, theme unlock engagement, etc.)
+  - **Advanced Motion Polish (behind flag)**
+    - Improve orb aesthetics (simplify glow, precompute paths, 2–4 streams)
+    - Shorten ring-unravel phases; ensure non-overlapping choreography
+    - Shared-element badge pop experiment; crossfade fallback under Reduced Motion
+  - **Persistence Safety**: Firestore transactions for XP/level-up, perk/theme unlocks
+  - **Material 3 Polish**: Progression surfaces and dialogs
+  - **Analytics Foundation**: Progression metrics (time to first perk, etc.)
 - Later:
-  - **Achievement System**: Build on the conditional bonus system for complex achievements
-  - **Intelligent Progression**: Personalized perk recommendations based on user task patterns
-  - **Advanced Mechanics**: Seasonal themes, limited-time perks, progression challenges
+  - **Achievement System**: Build on conditional bonus system
+  - **Intelligent Progression**: Personalized perk recommendations
+  - **Advanced Mechanics**: Seasonal themes, limited-time perks, challenges
 
 ## Consolidation Plan (Now)
 - Providers: unify on `user_provider_refactored.dart` and remove duplication.
@@ -69,11 +67,14 @@ Goal: prove the core loop is fun and understandable for new users before broader
 - ✅ **Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.** (COMPLETED)
 - ✅ **Animations: centralized animation system with enhanced `AnimationOrchestrator`, controller lifecycle management, and built-in Reduced Motion support.** (COMPLETED)
 
-## Recently Completed (v0.8.1 - Animation Polish Phase)
+## Recently Completed (v0.8.1 - Animation Architecture Hardening)
 - **Animation Architecture Overhaul**: Major refactor of animation system for gaming-level polish and maintainability
   - **Enhanced AnimationOrchestrator**: Added controller lifecycle management, choreographed sequences, and automatic disposal
   - **Streamlined Wheel of Time Widget**: Reduced from 7 animation controllers to 2, significantly cleaner codebase
   - **OrchestrationMixin**: Provided clean widget integration pattern for managed animations
+  - **Motion Debug + Gating**: Added Motion Debug overlay, frame timing logger, and Advanced Motion flag (default off)
+  - **Basic Level-Up Panel**: Minimal scale+fade panel replaces heavy celebration by default
+  - **Ring Center Cleanup**: Removed level number badge from ring center
 
 - **Ring Visualization System**: Resolved critical rendering issues and improved visual feedback
   - **Fixed Ring Visibility**: Added explicit size constraints to CustomPaint resolving invisible ring issue

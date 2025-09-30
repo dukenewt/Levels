@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/animation/animation_orchestrator.dart';
+import '../config/feature_flags.dart';
 
 /// Overlay effect that creates a brief gem-like shatter burst at a point.
 class GemShatterOverlay {
@@ -12,6 +13,10 @@ class GemShatterOverlay {
     required Offset position,
     required Color color,
   }) {
+    // Gate advanced motion
+    if (!FeatureFlags.shouldUseAdvancedMotion()) {
+      return;
+    }
     hide();
 
     final reduced = AnimationOrchestrator.instance.reducedMotion;
