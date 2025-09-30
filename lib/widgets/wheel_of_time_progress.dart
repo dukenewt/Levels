@@ -6,7 +6,6 @@ import '../providers/user_provider.dart';
 import '../providers/task_provider.dart';
 import '../models/user_rank.dart';
 import '../models/user.dart' as app;
-import '../services/smooth_xp_animation_service.dart';
 import '../core/animation/animation_orchestrator.dart';
 import '../screens/stats_screen.dart';
 import 'ring_unraveling_celebration.dart';
@@ -279,13 +278,6 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
               children: [
                 const SizedBox(height: 16),
 
-                // Test button for XP animation (debug mode only)
-                if (kDebugMode)
-                  ElevatedButton(
-                    onPressed: () => _testXPAnimation(context),
-                    child: Text('Test XP Animation (+25 XP)'),
-                  ),
-
                 // The main wheel - now with streamlined animations
                 AnimatedBuilder(
                   animation: Listenable.merge([
@@ -362,13 +354,6 @@ class _WheelOfTimeProgressState extends State<WheelOfTimeProgress>
         ),
       ),
     );
-  }
-
-  // Debug method to test XP animation
-  void _testXPAnimation(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    if (userProvider.user == null) return;
-    SmoothXPAnimationService.instance.testXPAnimation(userProvider);
   }
 
   Widget _buildLegend(BuildContext context, app.User user,

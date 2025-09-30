@@ -525,8 +525,8 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
                     });
                   },
                   child: Container(
-                    width: buttonWidth.clamp(32.0, 44.0),
-                    height: buttonWidth.clamp(32.0, 44.0),
+                    width: buttonWidth.clamp(40.0, 56.0),
+                    height: buttonWidth.clamp(44.0, 56.0),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? theme.colorScheme.primary
@@ -537,17 +537,20 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
                             : theme.colorScheme.outline.withOpacity(0.3),
                       ),
                       borderRadius:
-                          BorderRadius.circular(buttonWidth.clamp(16.0, 22.0)),
+                          BorderRadius.circular(buttonWidth.clamp(18.0, 28.0)),
                     ),
                     child: Center(
-                      child: Text(
-                        dayNames[index],
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isSelected
-                              ? Colors.white
-                              : theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                          fontSize: (buttonWidth * 0.25).clamp(10.0, 14.0),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          dayNames[index],
+                          maxLines: 1,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: isSelected
+                                ? Colors.white
+                                : theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -823,50 +826,128 @@ class _RecurrencePatternDialogState extends State<RecurrencePatternDialog> {
   }
 
   Widget _buildNavigationButtons(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          if (_currentPage > 0)
+    return LayoutBuilder(builder: (context, constraints) {
+      final isNarrow = constraints.maxWidth < 360;
+      final primaryHeight = 56.0; // Larger primary target for clarity
+      final secondaryHeight = 48.0;
+
+      final primaryLabel =
+          _currentPage < 2 && _settings.type != RecurrenceType.none
+              ? 'Next'
+              : 'Done';
+
+      if (isNarrow) {
+        // Stack vertically on narrow layouts to give primary action full width
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: primaryHeight,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_currentPage < 2 &&
+                        _settings.type != RecurrenceType.none) {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    } else {
+                      Navigator.of(context).pop(_settings);
+                    }
+                  },
+                  child: Text(primaryLabel),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  if (_currentPage > 0)
+                    Expanded(
+                      child: SizedBox(
+                        height: secondaryHeight,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            _pageController.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          child: const Text('Back'),
+                        ),
+                      ),
+                    ),
+                  if (_currentPage > 0) const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: secondaryHeight,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Wide layout: row with fixed back/cancel and expanded primary
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            if (_currentPage > 0) ...[
+              SizedBox(
+                width: 120,
+                height: secondaryHeight,
+                child: OutlinedButton(
+                  onPressed: () {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  child: const Text('Back'),
+                ),
+              ),
+              const SizedBox(width: 16),
+            ],
             Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                },
-                child: const Text('Back'),
+              child: SizedBox(
+                height: primaryHeight,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_currentPage < 2 &&
+                        _settings.type != RecurrenceType.none) {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    } else {
+                      Navigator.of(context).pop(_settings);
+                    }
+                  },
+                  child: Text(primaryLabel),
+                ),
               ),
             ),
-          if (_currentPage > 0) const SizedBox(width: 16),
-          Expanded(
-            flex: _currentPage == 0 ? 1 : 2,
-            child: ElevatedButton(
-              onPressed: () {
-                if (_currentPage < 2 && _settings.type != RecurrenceType.none) {
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                } else {
-                  Navigator.of(context).pop(_settings);
-                }
-              },
-              child: Text(
-                  _currentPage < 2 && _settings.type != RecurrenceType.none
-                      ? 'Next'
-                      : 'Done'),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: 120,
+              height: secondaryHeight,
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 
   String _getEndConditionType() {

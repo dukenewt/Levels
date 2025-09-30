@@ -29,6 +29,10 @@ class RecurringTaskEditDialog extends StatelessWidget {
       backgroundColor: Colors.transparent,
       child: Container(
         margin: const EdgeInsets.all(16),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+          maxWidth: MediaQuery.of(context).size.width * 0.9,
+        ),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
@@ -44,63 +48,93 @@ class RecurringTaskEditDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(theme),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'This is a recurring task.',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'How would you like to edit it?',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  _buildEditOption(
-                    context,
-                    theme,
-                    icon: Icons.edit_outlined,
-                    title: 'Edit this task only',
-                    subtitle: 'Changes will only apply to this occurrence',
-                    onTap: () {
-                      Navigator.of(context).pop(EditScope.thisTaskOnly);
-                      onEditThisOnly?.call();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildEditOption(
-                    context,
-                    theme,
-                    icon: Icons.edit_calendar,
-                    title: 'Edit all future tasks',
-                    subtitle:
-                        'Changes will apply to this and all future occurrences',
-                    onTap: () {
-                      Navigator.of(context).pop(EditScope.allFutureTasks);
-                      onEditAllFuture?.call();
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      isRecurring
+                          ? 'This is a recurring task.'
+                          : 'This task does not repeat.',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    child: const Text('Cancel'),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      isRecurring
+                          ? 'How would you like to edit it?'
+                          : 'You can edit this task normally.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (isRecurring) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.repeat, size: 18),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              _describeRecurrence(task),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.75),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    const SizedBox(height: 8),
+                    if (isRecurring) ...[
+                      _buildEditOption(
+                        context,
+                        theme,
+                        icon: Icons.edit_outlined,
+                        title: 'Edit this task only',
+                        subtitle: 'Changes will only apply to this occurrence',
+                        onTap: () {
+                          Navigator.of(context).pop(EditScope.thisTaskOnly);
+                          onEditThisOnly?.call();
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _buildEditOption(
+                        context,
+                        theme,
+                        icon: Icons.edit_calendar,
+                        title: 'Edit all future tasks',
+                        subtitle:
+                            'Changes will apply to this and all future occurrences',
+                        onTap: () {
+                          Navigator.of(context).pop(EditScope.allFutureTasks);
+                          onEditAllFuture?.call();
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(120, 48),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -144,6 +178,44 @@ class RecurringTaskEditDialog extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _describeRecurrence(Task t) {
+    final pattern = (t.recurrencePattern ?? '').toLowerCase();
+    switch (pattern) {
+      case 'daily':
+        if ((t.repeatInterval ?? 1) > 1) {
+          return 'Repeats every ${t.repeatInterval} days';
+        }
+        return 'Repeats daily';
+      case 'weekly':
+        final days = t.weeklyDays ?? const [];
+        if (days.isEmpty) return 'Repeats weekly';
+        const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        final labels = days
+            .where((d) => d >= 1 && d <= 7)
+            .map((d) => names[d - 1])
+            .toList();
+        final interval = (t.repeatInterval ?? 1);
+        if (interval > 1) {
+          return 'Every $interval weeks on ${labels.join(', ')}';
+        }
+        return 'Weekly on ${labels.join(', ')}';
+      case 'workdays':
+        return 'Weekdays (Mon–Fri)';
+      case 'monthly':
+        final interval = (t.repeatInterval ?? 1);
+        if (interval > 1) {
+          return 'Every $interval months';
+        }
+        return 'Repeats monthly';
+      case 'yearly':
+        final interval = (t.repeatInterval ?? 1);
+        if (interval > 1) return 'Every $interval years';
+        return 'Repeats annually';
+      default:
+        return 'Repeats';
+    }
   }
 
   Widget _buildEditOption(

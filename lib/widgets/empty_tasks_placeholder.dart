@@ -72,9 +72,11 @@ class EmptyTasksPlaceholder extends StatelessWidget {
               ),
               child: ElevatedButton.icon(
                 onPressed: () {
-                  showDialog(
+                  showModalBottomSheet(
                     context: context,
-                    builder: (context) => TaskCreationDialog(),
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => const TaskCreationDialog(),
                   );
                 },
                 icon: Icon(Icons.add, color: theme.colorScheme.primary),

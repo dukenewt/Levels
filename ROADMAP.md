@@ -48,13 +48,18 @@ Goal: prove the core loop is fun and understandable for new users before broader
     - Enable Performance Overlay and frame timing logs during playtests
     - Set perf target: p95 frame ≤16.6ms, <1% dropped frames on Pixel 5 / iPhone 11
     - Add timeline markers around key sequences (XP add, level-up)
+  - **Mobile UX Polish** *In Progress*
+    - [x] Task creation dialog keyboard handling (modal bottom sheet implementation)
+    - [x] Bottom navigation redesign (Material 3 + Apple HIG compliance, 64dp height)
+    - [ ] Dashboard Material 3 polish (pending)
+    - [ ] Real-time XP preview in task creation (pending)
 - Next:
   - **Advanced Motion Polish (behind flag)**
     - Improve orb aesthetics (simplify glow, precompute paths, 2–4 streams)
     - Shorten ring-unravel phases; ensure non-overlapping choreography
     - Shared-element badge pop experiment; crossfade fallback under Reduced Motion
   - **Persistence Safety**: Firestore transactions for XP/level-up, perk/theme unlocks
-  - **Material 3 Polish**: Progression surfaces and dialogs
+  - **Material 3 Polish**: Continue progression surfaces and dialogs
   - **Analytics Foundation**: Progression metrics (time to first perk, etc.)
 - Later:
   - **Achievement System**: Build on conditional bonus system

@@ -11,6 +11,7 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+.gemini
 
 # IntelliJ related
 *.iml
@@ -159,6 +160,7 @@ android/**/keystore*
 **/user_data/
 **/sensitive_images/
 **/private_media/
+**/screenshots/
 
 # Salesforce development cache
 .sfdx/

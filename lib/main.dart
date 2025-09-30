@@ -28,6 +28,7 @@ import 'config/feature_flags.dart';
 import 'debug/gameplay_debug_panel.dart';
 import 'debug/motion_debug.dart';
 import 'debug/motion_debug_overlay.dart';
+import 'widgets/custom_bottom_nav_bar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -216,38 +217,38 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
     }
   }
 
-  List<BottomNavigationBarItem> _getNavItems(bool hasProjectManagement) {
+  List<CustomNavItem> _getNavItems(bool hasProjectManagement) {
     if (hasProjectManagement) {
       return const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.check_circle),
+        CustomNavItem(
+          icon: Icons.check_circle,
           label: 'Tasks',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.rocket_launch),
+        CustomNavItem(
+          icon: Icons.rocket_launch,
           label: 'Epics',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.bar_chart),
+        CustomNavItem(
+          icon: Icons.bar_chart,
           label: 'Stats',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
+        CustomNavItem(
+          icon: Icons.person,
           label: 'Profile',
         ),
       ];
     } else {
       return const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.check_circle),
+        CustomNavItem(
+          icon: Icons.check_circle,
           label: 'Tasks',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.bar_chart),
+        CustomNavItem(
+          icon: Icons.bar_chart,
           label: 'Stats',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
+        CustomNavItem(
+          icon: Icons.person,
           label: 'Profile',
         ),
       ];
@@ -315,10 +316,9 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
             index: _selectedIndex,
             children: screens,
           ),
-          bottomNavigationBar: BottomNavigationBar(
+          bottomNavigationBar: CustomBottomNavBar(
             currentIndex: _selectedIndex,
             onTap: _onItemTapped,
-            type: BottomNavigationBarType.fixed,
             items: navItems,
           ),
           floatingActionButton: kDebugMode

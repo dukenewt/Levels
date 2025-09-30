@@ -49,12 +49,9 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   bool _showPerkEffects = false;
 
   // Animation controllers
-  late AnimationController _slideController;
   late AnimationController _xpAnimationController;
 
   // Animations
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _fadeAnimation;
   late Animation<double> _xpScaleAnimation;
 
   final FocusNode _titleFocusNode = FocusNode();
@@ -96,31 +93,10 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   }
 
   void _setupAnimations() {
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-
     _xpAnimationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-    ));
 
     _xpScaleAnimation = Tween<double>(
       begin: 0.8,
@@ -129,8 +105,6 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
       parent: _xpAnimationController,
       curve: Curves.elasticOut,
     ));
-
-    _slideController.forward();
   }
 
   void _onTitleChanged(String title) {
@@ -259,80 +233,82 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final topPadding = MediaQuery.of(context).padding.top;
 
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            constraints: const BoxConstraints(maxHeight: 700),
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.colorScheme.surface,
-                  theme.colorScheme.surface.withOpacity(0.95),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 40,
-                  offset: const Offset(0, 16),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildHeader(theme),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildTitleField(theme),
-                            const SizedBox(height: 20),
-                            _buildDescriptionField(theme),
+    return AnimatedPadding(
+      padding: EdgeInsets.only(bottom: keyboardHeight),
+      duration: const Duration(milliseconds: 100),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: screenHeight * 0.9,
+        ),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildBottomSheetHandle(theme),
+              _buildHeader(theme),
+              Flexible(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildTitleField(theme),
+                          const SizedBox(height: 20),
+                          _buildDescriptionField(theme),
+                          const SizedBox(height: 24),
+                          _buildDateTimeSection(theme),
+                          const SizedBox(height: 24),
+                          _buildRecurrenceSection(theme),
+                          const SizedBox(height: 24),
+                          _buildCategorySection(theme),
+                          const SizedBox(height: 24),
+                          _buildDifficultySection(theme),
+                          const SizedBox(height: 24),
+                          if (_showPerkEffects) ...[
+                            _buildPerkEffectsSection(theme),
                             const SizedBox(height: 24),
-                            _buildDateTimeSection(theme),
-                            const SizedBox(height: 24),
-                            _buildRecurrenceSection(theme),
-                            const SizedBox(height: 24),
-                            _buildCategorySection(theme),
-                            const SizedBox(height: 24),
-                            _buildDifficultySection(theme),
-                            const SizedBox(height: 24),
-                            if (_showPerkEffects) ...[
-                              _buildPerkEffectsSection(theme),
-                              const SizedBox(height: 24),
-                            ],
-                            _buildTimeInvestmentSection(theme),
-                            const SizedBox(height: 32),
-                            _buildActionButtons(theme),
                           ],
-                        ),
+                          _buildTimeInvestmentSection(theme),
+                          const SizedBox(height: 32),
+                          _buildActionButtons(theme),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSheetHandle(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      child: Center(
+        child: Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
       ),
@@ -341,7 +317,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
 
   Widget _buildHeader(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -355,13 +331,13 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
           Icon(
             Icons.add_task,
             color: Colors.white,
-            size: 28,
+            size: 24,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Create New Task',
-              style: theme.textTheme.headlineSmall?.copyWith(
+              'Create a new Task',
+              style: theme.textTheme.titleLarge?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
@@ -387,7 +363,7 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
                         '$_estimatedXp',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1103,7 +1079,6 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
     _titleController.dispose();
     _descriptionController.dispose();
     _titleFocusNode.dispose();
-    _slideController.dispose();
     _xpAnimationController.dispose();
     super.dispose();
   }
