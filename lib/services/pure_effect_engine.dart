@@ -485,11 +485,12 @@ class PureEffectEngine {
 
   /// Helper: get unlocked perks for user (same as original engine)
   static List<EnhancedUserPerk> _getUnlockedPerks(User user) {
-    final availablePerks =
-        EnhancedUserPerks.getAvailablePerksForLevel(user.level);
-    return availablePerks.where((perk) {
-      return user.perks.contains(perk.id) || perk.requiredLevel <= user.level;
-    }).toList();
+    // Be strict: only include perks explicitly present on the user to avoid
+    // inflating effects during tests and previews.
+    return user.perks
+        .map((id) => EnhancedUserPerks.getPerkById(id))
+        .whereType<EnhancedUserPerk>()
+        .toList();
   }
 
   /// Helper: calculate level from XP (simplified)
