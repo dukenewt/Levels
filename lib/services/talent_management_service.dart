@@ -213,9 +213,12 @@ class TalentManagementService {
     int nlpTalents = 0;
 
     for (final talentId in user.talents) {
-      if (talentId.startsWith('project_mgmt')) {
+      if (talentId.startsWith('project_management') ||
+          talentId.startsWith('project_mgmt')) {
         projectManagementTalents++;
-      } else if (talentId.startsWith('nlp')) {
+      } else if (talentId.startsWith('nlp_categorization') ||
+          talentId.startsWith('nlp_advanced') ||
+          talentId.startsWith('nlp')) {
         nlpTalents++;
       }
     }
@@ -327,9 +330,7 @@ class TalentManagementService {
       return 'Epic project must have at least one task';
     }
 
-    if (taskIds.length < 3) {
-      return 'Epic projects should have at least 3 tasks for meaningful rewards';
-    }
+    // Recommended to have ≥3 tasks, but allow creation
 
     return null; // No validation errors
   }

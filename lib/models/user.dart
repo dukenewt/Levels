@@ -111,7 +111,19 @@ class User {
   bool hasTalent(String talentId) => talents.contains(talentId);
 
   bool hasTalentType(TalentType talentType) {
-    return talents.any((talentId) => talentId.startsWith(talentType.id));
+    // Primary prefix from TalentType
+    final prefixes = <String>[talentType.id];
+
+    // Backward-compatibility aliases for previously released IDs
+    if (talentType == TalentType.projectManagement) {
+      prefixes.add('project_mgmt');
+    } else if (talentType == TalentType.nlpCategorization) {
+      prefixes.add('nlp_advanced');
+      prefixes.add('nlp');
+    }
+
+    return talents
+        .any((talentId) => prefixes.any((p) => talentId.startsWith(p)));
   }
 
   bool hasProjectManagementTalent() =>

@@ -123,7 +123,7 @@ class TalentChoice {
 class UserTalents {
   // Define all available talent choices
   static const _level5ProjectMgmt = UserTalent(
-    id: 'project_mgmt_5',
+    id: 'project_management_5',
     name: 'Epic Quest Master',
     description: 'Unlock Epic difficulty tasks and create multi-task projects',
     type: TalentType.projectManagement,
@@ -139,7 +139,7 @@ class UserTalents {
   );
 
   static const _level10ProjectMgmt = UserTalent(
-    id: 'project_mgmt_10',
+    id: 'project_management_10',
     name: 'Epic Architect',
     description: 'Advanced project templates and milestone tracking',
     type: TalentType.projectManagement,
@@ -147,7 +147,7 @@ class UserTalents {
   );
 
   static const _level10NLP = UserTalent(
-    id: 'nlp_advanced_10',
+    id: 'nlp_categorization_10',
     name: 'Context Master',
     description: 'Enhanced categorization with context awareness',
     type: TalentType.nlpCategorization,

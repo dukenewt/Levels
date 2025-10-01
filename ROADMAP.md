@@ -22,6 +22,8 @@ Goal: prove the core loop is fun and understandable for new users before broader
   - Gameplay tunables centralized (e.g., `lib/gameplay/game_balance.dart`) + dev‑only debug panel.
   - Deterministic tests for `CompletionPipeline` outputs; stacking/override matrices for `PureEffectEngine`.
   - Firestore transactions for XP/level‑up and talent choice persistence.
+  - Reward celebration integrates theme application and “Manage Themes” navigation after epic completion.
+  - Epic creation UX includes task search and inline task creation.
 
 - Acceptance Criteria
   - 80% of playtesters reach level 3 in a first 30–45 min session.
@@ -29,6 +31,7 @@ Goal: prove the core loop is fun and understandable for new users before broader
   - Celebration overlay passes Reduced Motion audit; durations/curves pulled from `AppDesignTokens`.
   - Pipeline and effect tests green and deterministic.
   - No duplicate level‑ups or lost talent choices in offline/retry scenarios (transactional).
+  - After epic completion, users can apply the unlocked theme or navigate to theme management from the celebration sheet.
 
 - References
   - ADRs: Effect Model (0001), CompletionPipeline (0002), AnimationOrchestrator (0003), Provider Boundaries (0004).
@@ -53,6 +56,13 @@ Goal: prove the core loop is fun and understandable for new users before broader
     - [x] Bottom navigation redesign (Material 3 + Apple HIG compliance, 64dp height)
     - [ ] Dashboard Material 3 polish (pending)
     - [ ] Real-time XP preview in task creation (pending)
+  - **Epic UX Polish**
+    - [x] Task search in Epic creation dialog
+    - [x] Inline “New Task” from Epic creation (bottom sheet)
+    - [x] Complete tasks from Epic details sheet (no re-entrancy errors)
+    - [x] Reward celebration with theme preview, Apply Theme, Manage Themes
+    - [x] Restrict Epic difficulty to epic context (hidden in regular task flows)
+    - [x] Equal-width action buttons in Epic creation (Cancel/Create)
 - Next:
   - **Advanced Motion Polish (behind flag)**
     - Improve orb aesthetics (simplify glow, precompute paths, 2–4 streams)

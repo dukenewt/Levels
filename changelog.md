@@ -5,7 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.2] - 10.01.25
+
+### Added
+- Epic UX: Task search in Epic creation and inline “New Task” CTA to add tasks without leaving the flow.
+- Epic Details: Complete tasks directly from the epic sheet; live list updates.
+- Reward Celebration: Polished bottom sheet with theme preview chip, “Apply Theme”, and “Manage Themes” actions.
+
+### Changed
+- Difficulty Gating: Epic difficulty reserved for Epic context only; regular task creation/edit no longer exposes Epic difficulty.
+- Epic Creation Flow: Allow creating epics with fewer than 3 tasks; starting an epic now requires ≥3 tasks (no need to fake tasks).
+- Celebration Motion: Uses Reduced Motion–aware fade/scale timing via AnimationOrchestrator tokens.
+- UI Polish: Equal-width action buttons in Epic creation (Cancel/Create Epic) for consistent sizing.
+
+### Fixed
+- Prevented Flutter re-entrancy error (“setState/markNeedsBuild during build”) by deferring task-completion notifications from the epic sheet to the next frame.
+
+### Notes
+- Theme Rewards Integrity: Removed default unlock-all premium themes at startup; premium themes now unlock via rewards, and can be immediately applied from the celebration.
 
 ### Added
 - Motion Debug overlay with slow-mo, markers, and performance overlay controls (dev-only)

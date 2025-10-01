@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/epic_provider.dart';
+import '../providers/theme_provider.dart';
+import '../models/theme_model.dart';
+import 'theme_selection_screen.dart';
+import '../core/animation/animation_orchestrator.dart';
 import '../providers/user_provider.dart';
 import '../providers/task_provider.dart';
 import '../models/epic_project.dart';
@@ -194,7 +198,7 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
           return EpicProgressCard(
             epic: epic,
             tasks: tasks,
-            onTap: () => _showEpicDetails(context, epic, tasks),
+            onTap: () => _showEpicDetails(context, epic),
             onStart: epic.canStart ? () => _startEpic(epic) : null,
             onComplete: epic.isActive && epic.progressPercentage >= 1.0
                 ? () => _completeEpic(epic)
@@ -249,17 +253,16 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
     );
   }
 
-  void _showEpicDetails(
-      BuildContext context, EpicProject epic, List<Task> tasks) {
+  void _showEpicDetails(BuildContext context, EpicProject epic) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _buildEpicDetailsSheet(epic, tasks),
+      builder: (context) => _buildEpicDetailsSheet(epic),
     );
   }
 
-  Widget _buildEpicDetailsSheet(EpicProject epic, List<Task> tasks) {
+  Widget _buildEpicDetailsSheet(EpicProject epic) {
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       maxChildSize: 0.9,
@@ -406,54 +409,81 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
 
               const SizedBox(height: 16),
 
-              // Tasks list
+              // Tasks list (live)
               Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: tasks.length + 1, // +1 for header
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'Tasks (${tasks.length})',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
+                child: Consumer<TaskProvider>(
+                  builder: (context, taskProvider, _) {
+                    final freshTasks = epic.taskIds
+                        .map((id) => taskProvider.getTaskById(id))
+                        .where((t) => t != null)
+                        .cast<Task>()
+                        .toList();
+                    return ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: freshTasks.length + 1, // +1 for header
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'Tasks (${freshTasks.length})',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          );
+                        }
+                        final task = freshTasks[index - 1];
+                        final canComplete = !task.isCompleted;
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: Icon(
+                              task.isCompleted
+                                  ? Icons.check_circle
+                                  : Icons.radio_button_unchecked,
+                              color: task.isCompleted
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.5),
+                            ),
+                            title: Text(
+                              task.title,
+                              style: TextStyle(
+                                decoration: task.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                            subtitle: task.description.isNotEmpty
+                                ? Text(task.description)
+                                : null,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildDifficultyBadge(task.difficulty),
+                                if (canComplete) ...[
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    tooltip: 'Mark complete',
+                                    icon:
+                                        const Icon(Icons.check_circle_outline),
+                                    onPressed: () =>
+                                        _completeTaskFromSheet(context, task),
                                   ),
-                        ),
-                      );
-                    }
-
-                    final task = tasks[index - 1];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: Icon(
-                          task.isCompleted
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: task.isCompleted
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.5),
-                        ),
-                        title: Text(
-                          task.title,
-                          style: TextStyle(
-                            decoration: task.isCompleted
-                                ? TextDecoration.lineThrough
+                                ],
+                              ],
+                            ),
+                            onTap: canComplete
+                                ? () => _completeTaskFromSheet(context, task)
                                 : null,
                           ),
-                        ),
-                        subtitle: task.description?.isNotEmpty == true
-                            ? Text(task.description!)
-                            : null,
-                        trailing: _buildDifficultyBadge(task.difficulty),
-                      ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -463,6 +493,15 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
         );
       },
     );
+  }
+
+  void _completeTaskFromSheet(BuildContext context, Task task) {
+    // Defer completion to next frame to avoid notify/build re-entrancy
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await Provider.of<TaskProvider>(context, listen: false)
+          .completeTask(context, task);
+    });
   }
 
   Widget _buildStatusBadge(EpicStatus status) {
@@ -566,70 +605,210 @@ class _EpicProjectScreenState extends State<EpicProjectScreen>
     final success = await epicProvider.completeEpic(epic.id);
 
     if (success && mounted) {
-      _showEpicCompletionCelebration(epic);
+      // Try to unlock theme reward if present
+      ThemeType? unlockedTheme;
+      try {
+        if (epic.reward.type == EpicRewardType.theme) {
+          switch (epic.reward.id) {
+            case 'ocean_theme':
+              unlockedTheme = ThemeType.oceanDepths;
+              break;
+            case 'forest_theme':
+              unlockedTheme = ThemeType.forestCanopy;
+              break;
+            case 'sunset_theme':
+              unlockedTheme = ThemeType.sunsetGlow;
+              break;
+          }
+          if (unlockedTheme != null) {
+            final themeProvider =
+                Provider.of<ThemeProvider>(context, listen: false);
+            await themeProvider.unlockPremiumTheme(unlockedTheme);
+          }
+        }
+      } catch (_) {}
+
+      _showEpicCompletionCelebration(epic, unlockedTheme: unlockedTheme);
     }
   }
 
-  void _showEpicCompletionCelebration(EpicProject epic) {
-    showDialog(
+  void _showEpicCompletionCelebration(EpicProject epic,
+      {ThemeType? unlockedTheme}) {
+    final theme = Theme.of(context);
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.emoji_events,
-              size: 80,
-              color: Colors.amber,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Epic Completed!',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'You have completed "${epic.title}"!',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final surface = theme.colorScheme.surface;
+        final onSurface = theme.colorScheme.onSurface;
+        final rewardTheme = unlockedTheme != null
+            ? AppTheme.getThemeByType(unlockedTheme)
+            : null;
+        final reduced = AnimationOrchestrator.instance.reducedMotion;
+        return SafeArea(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.95, end: 1.0),
+            duration: reduced
+                ? const Duration(milliseconds: 120)
+                : const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            builder: (context, scale, child) {
+              return Opacity(
+                opacity: ((scale - 0.95) / 0.05).clamp(0.0, 1.0),
+                child: Transform.scale(
+                  scale: scale,
+                  child: child,
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                color: surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: onSurface.withOpacity(0.08)),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Reward Unlocked:',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  Row(
+                    children: [
+                      const Icon(Icons.emoji_events,
+                          color: Colors.amber, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Epic Completed',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    epic.reward.name,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                    'You finished "${epic.title}" — nice work!\nReward unlocked:',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: onSurface.withOpacity(0.7),
+                    ),
                   ),
-                  Text(
-                    epic.reward.description,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        if (rewardTheme != null)
+                          _ThemePreviewChip(appTheme: rewardTheme)
+                        else
+                          const Icon(Icons.card_giftcard, size: 32),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                epic.reward.name,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                epic.reward.description,
+                                style: theme.textTheme.bodySmall,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Later'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => const ThemeSelectionScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.palette_outlined),
+                          label: const Text('Manage Themes'),
+                        ),
+                      ),
+                      if (unlockedTheme != null) ...[
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final themeProvider = Provider.of<ThemeProvider>(
+                                  context,
+                                  listen: false);
+                              try {
+                                await themeProvider.setTheme(unlockedTheme!);
+                                if (context.mounted)
+                                  Navigator.of(context).pop();
+                              } catch (_) {
+                                if (context.mounted)
+                                  Navigator.of(context).pop();
+                              }
+                            },
+                            icon: const Icon(Icons.color_lens),
+                            label: const Text('Apply Theme'),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Awesome!'),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ThemePreviewChip extends StatelessWidget {
+  final AppTheme appTheme;
+  const _ThemePreviewChip({required this.appTheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(colors: appTheme.gradientColors),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),

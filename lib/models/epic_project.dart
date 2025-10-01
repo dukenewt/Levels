@@ -118,7 +118,8 @@ class EpicProject {
 
   bool get isCompleted => status == EpicStatus.completed;
   bool get isActive => status == EpicStatus.active;
-  bool get canStart => status == EpicStatus.planning && taskIds.isNotEmpty;
+  bool get canStart =>
+      status == EpicStatus.planning && requiredTasks >= 3 && taskIds.isNotEmpty;
 
   EpicProject copyWith({
     String? title,

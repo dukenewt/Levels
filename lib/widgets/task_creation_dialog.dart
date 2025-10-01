@@ -137,6 +137,8 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
           _difficulty = suggestedDifficulty;
         }
       });
+      // Ensure suggested difficulty respects allowed set (no Epic here)
+      _validateAndUpdateDifficulty();
     }
 
     _updateEstimatedXp();
@@ -157,11 +159,17 @@ class _EnhancedTaskCreationDialogState extends State<EnhancedTaskCreationDialog>
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final user = userProvider.user;
 
-    if (user == null) return TaskDifficulty.values;
+    if (user == null)
+      return const [
+        TaskDifficulty.easy,
+        TaskDifficulty.medium,
+        TaskDifficulty.hard,
+      ];
 
     // Use enhanced XP calculation service to get available difficulties
     final enhancedService = EnhancedXPCalculationService();
-    return enhancedService.getAvailableDifficulties(user);
+    // Regular task creation: do not include Epic difficulty
+    return enhancedService.getAvailableDifficulties(user, includeEpic: false);
   }
 
   void _updateEstimatedXp() {
