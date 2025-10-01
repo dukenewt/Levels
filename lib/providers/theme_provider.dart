@@ -19,7 +19,6 @@ class ThemeProvider with ChangeNotifier {
     _prefs = await SharedPreferences.getInstance();
     _loadTheme();
     _loadUnlockedPremiumThemes();
-    await unlockAllPremiumThemes(); // Unlock all premium themes by default
   }
 
   // Load saved theme

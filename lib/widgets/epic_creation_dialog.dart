@@ -4,6 +4,7 @@ import '../providers/epic_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/task_provider.dart';
 import '../models/task.dart';
+import 'task_creation_dialog.dart';
 // import '../models/epic_project.dart'; // Unused import
 
 class EpicCreationDialog extends StatefulWidget {
@@ -20,6 +21,8 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
   final _descriptionController = TextEditingController();
 
   List<Task> _availableTasks = [];
+  TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   List<String> _selectedTaskIds = [];
   DateTime? _dueDate;
   bool _isCreating = false;
@@ -33,6 +36,11 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
     _setupAnimations();
     _loadAvailableTasks();
     _fadeController.forward();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim();
+      });
+    });
   }
 
   void _setupAnimations() {
@@ -65,6 +73,7 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
     _fadeController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -230,7 +239,7 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
 
                         // Task selection section
                         Text(
-                          'Select Tasks *',
+                          'Select Tasks',
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.bold,
@@ -240,7 +249,7 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                         const SizedBox(height: 8),
 
                         Text(
-                          'Choose at least 3 tasks to create a meaningful epic project.',
+                          'Recommended: choose at least 3 tasks for a meaningful epic. You can add more later.',
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: Theme.of(context)
@@ -251,6 +260,61 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                         ),
 
                         const SizedBox(height: 16),
+
+                        // Add task CTA
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.add_task),
+                            label: const Text('New Task'),
+                            onPressed: () async {
+                              await showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) =>
+                                    const EnhancedTaskCreationDialog(),
+                              );
+                              // Refresh available tasks and keep any newly created selected
+                              final before =
+                                  _availableTasks.map((t) => t.id).toSet();
+                              _loadAvailableTasks();
+                              // Post-frame diff to avoid rebuild timing
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                final after =
+                                    _availableTasks.map((t) => t.id).toSet();
+                                final created = after.difference(before);
+                                if (created.isNotEmpty) {
+                                  setState(() {
+                                    _selectedTaskIds.addAll(created);
+                                  });
+                                }
+                              });
+                            },
+                          ),
+                        ),
+
+                        // Search and filter
+                        TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.search),
+                            hintText: 'Search tasks by title or description',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                    },
+                                  )
+                                : null,
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
 
                         // Available tasks list
                         if (_availableTasks.isEmpty)
@@ -290,9 +354,9 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: ListView.builder(
-                              itemCount: _availableTasks.length,
+                              itemCount: _filteredTasks.length,
                               itemBuilder: (context, index) {
-                                final task = _availableTasks[index];
+                                final task = _filteredTasks[index];
                                 final isSelected =
                                     _selectedTaskIds.contains(task.id);
 
@@ -431,11 +495,8 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      flex: 2,
                       child: ElevatedButton(
-                        onPressed: _isCreating || _selectedTaskIds.length < 3
-                            ? null
-                            : _createEpic,
+                        onPressed: _isCreating ? null : _createEpic,
                         child: _isCreating
                             ? const SizedBox(
                                 width: 20,
@@ -454,6 +515,18 @@ class _EpicCreationDialogState extends State<EpicCreationDialog>
         ),
       ),
     );
+  }
+
+  List<Task> get _filteredTasks {
+    if (_searchQuery.isEmpty) {
+      return _availableTasks;
+    }
+    final q = _searchQuery.toLowerCase();
+    return _availableTasks.where((t) {
+      final title = t.title.toLowerCase();
+      final desc = (t.description).toLowerCase();
+      return title.contains(q) || desc.contains(q);
+    }).toList();
   }
 
   Widget _buildDifficultyBadge(TaskDifficulty difficulty) {

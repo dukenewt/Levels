@@ -214,20 +214,25 @@ class EnhancedXPCalculationService {
   }
 
   /// Check if user can create Epic difficulty tasks (requires Project Management talent)
+  /// Note: Regular task creation should not surface Epic; reserve for epic context only.
   bool canCreateEpicTasks(User user) {
     return user.hasProjectManagementTalent();
   }
 
-  /// Get available difficulties for user based on talents
-  List<TaskDifficulty> getAvailableDifficulties(User user) {
+  /// Get available difficulties for user.
+  ///
+  /// By default, Epic difficulty is excluded to keep regular task creation simple
+  /// and reserve Epic for epic project context only.
+  List<TaskDifficulty> getAvailableDifficulties(User user,
+      {bool includeEpic = false}) {
     final difficulties = [
       TaskDifficulty.easy,
       TaskDifficulty.medium,
       TaskDifficulty.hard,
     ];
 
-    // Add Epic if user has Project Management talent
-    if (canCreateEpicTasks(user)) {
+    // Add Epic only when explicitly requested and user has PM talent
+    if (includeEpic && canCreateEpicTasks(user)) {
       difficulties.add(TaskDifficulty.epic);
     }
 

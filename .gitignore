@@ -12,6 +12,8 @@
 .swiftpm/
 migrate_working_dir/
 .gemini
+agents.md
+.claude/
 
 # IntelliJ related
 *.iml

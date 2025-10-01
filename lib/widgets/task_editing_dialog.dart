@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
 import '../features/character_progression/application/intelligent_xp_engine.dart';
+import '../services/enhanced_xp_calculation_service.dart';
+import '../providers/user_provider.dart';
 import '../core/theme/app_design_tokens.dart';
 import 'package:intl/intl.dart';
 import 'recurrence_pattern_dialog.dart';
@@ -774,7 +776,7 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
               filled: true,
               fillColor: theme.colorScheme.surface,
             ),
-            items: TaskDifficulty.values
+            items: _getAvailableDifficulties()
                 .map((difficulty) => DropdownMenuItem(
                     value: difficulty, child: Text(difficulty.displayName)))
                 .toList(),
@@ -787,6 +789,19 @@ class _TaskEditingDialogState extends State<TaskEditingDialog>
         ),
       ],
     );
+  }
+
+  List<TaskDifficulty> _getAvailableDifficulties() {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    if (user == null) {
+      return const [
+        TaskDifficulty.easy,
+        TaskDifficulty.medium,
+        TaskDifficulty.hard
+      ];
+    }
+    final svc = EnhancedXPCalculationService();
+    return svc.getAvailableDifficulties(user, includeEpic: false);
   }
 
   Widget _buildTimeInvestmentSection(ThemeData theme) {
