@@ -1,6 +1,7 @@
 enum TalentType {
   projectManagement,
-  nlpCategorization;
+  nlpCategorization,
+  lockedIn;
 
   String get id {
     switch (this) {
@@ -8,6 +9,8 @@ enum TalentType {
         return 'project_management';
       case TalentType.nlpCategorization:
         return 'nlp_categorization';
+      case TalentType.lockedIn:
+        return 'locked_in';
     }
   }
 
@@ -17,6 +20,8 @@ enum TalentType {
         return 'Project Management';
       case TalentType.nlpCategorization:
         return 'Smart Categorization';
+      case TalentType.lockedIn:
+        return 'Locked In';
     }
   }
 
@@ -26,6 +31,8 @@ enum TalentType {
         return 'Unlock Epic difficulty tasks and create project-based task groups with unique rewards';
       case TalentType.nlpCategorization:
         return 'Automatically categorize your tasks using intelligent keyword analysis';
+      case TalentType.lockedIn:
+        return 'Master deep focus and productivity with advanced time management tools';
     }
   }
 }
@@ -138,6 +145,15 @@ class UserTalents {
     requiredLevel: 5,
   );
 
+  static const _level5LockedIn = UserTalent(
+    id: 'locked_in_5',
+    name: 'Focus Master',
+    description:
+        'Unlock Pomodoro timer with animations and Quiet Mode for distraction-free work',
+    type: TalentType.lockedIn,
+    requiredLevel: 5,
+  );
+
   static const _level10ProjectMgmt = UserTalent(
     id: 'project_management_10',
     name: 'Epic Architect',
@@ -154,18 +170,27 @@ class UserTalents {
     requiredLevel: 10,
   );
 
+  static const _level10LockedIn = UserTalent(
+    id: 'locked_in_10',
+    name: 'Workflow Optimizer',
+    description:
+        'Smart task prioritization, due date highlighting, and break reminders',
+    type: TalentType.lockedIn,
+    requiredLevel: 10,
+  );
+
   // Define talent choices for each level
   static TalentChoice getTalentChoice(int level) {
     switch (level) {
       case 5:
         return TalentChoice(
           level: 5,
-          options: [_level5ProjectMgmt, _level5NLP],
+          options: [_level5ProjectMgmt, _level5NLP, _level5LockedIn],
         );
       case 10:
         return TalentChoice(
           level: 10,
-          options: [_level10ProjectMgmt, _level10NLP],
+          options: [_level10ProjectMgmt, _level10NLP, _level10LockedIn],
         );
       case 15:
         // Future talent choices

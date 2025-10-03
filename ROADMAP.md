@@ -1,88 +1,207 @@
 # TaskBound Development Roadmap
 
-This document outlines the strategic development priorities for TaskBound, focusing on building upon the completed Epic Project Management system and enhancing the RPG experience.
+This document outlines the strategic development priorities for TaskBound, with a focus on the **Fun-First MVP** before broader beta.
 
-## Fun‑First MVP (Pre‑Beta)
-Goal: prove the core loop is fun and understandable for new users before broader beta. Focus on “complete task → get XP → level → choose talent → feel a power‑up” with minimal, polished UI.
+## 🎯 Mission: Prove the Core Loop is Fun
+**Goal**: Complete task → get XP → level → choose talent → feel a power-up
 
-- Objectives
-  - Make early levels fast and rewarding (reach L5 in ~2–3 sessions).
-  - Talent choices are few, clear, and measurably impactful.
-  - Reduced Motion respected across celebrations and key flows.
+### Success Metrics (Pre-Beta)
+- 80% of playtesters reach level 3 in their first 30–45 min session
+- >60% can describe their last talent's effect unaided
+- Early levels feel fast and rewarding (L5 in ~2–3 sessions)
+- All talent choices feel measurably impactful
 
-- Scope (4‑Week Track)
-  1. Celebration overlay v1 (Reduced Motion variant) with XP breakdown and “next level” clarity.
-  2. Talent choice overhaul: impact preview (before/after XP), simplified options per gate.
-  3. Material 3 pass on dashboard + task creation; real‑time XP preview during creation.
-  4. Tuning/playtests: add debug panel for balance; iterate on XP curve and perks.
-
-- Deliverables
-  - `AnimationOrchestrator`-driven celebration overlay with tokenized motion; low‑motion path.
-  - Talent dialog (full‑screen) with numeric effect + preview; non‑dismissable until choice.
-  - Gameplay tunables centralized (e.g., `lib/gameplay/game_balance.dart`) + dev‑only debug panel.
-  - Deterministic tests for `CompletionPipeline` outputs; stacking/override matrices for `PureEffectEngine`.
-  - Firestore transactions for XP/level‑up and talent choice persistence.
-  - Reward celebration integrates theme application and “Manage Themes” navigation after epic completion.
-  - Epic creation UX includes task search and inline task creation.
-
-- Acceptance Criteria
-  - 80% of playtesters reach level 3 in a first 30–45 min session.
-  - >60% can describe their last talent’s effect unaided.
-  - Celebration overlay passes Reduced Motion audit; durations/curves pulled from `AppDesignTokens`.
-  - Pipeline and effect tests green and deterministic.
-  - No duplicate level‑ups or lost talent choices in offline/retry scenarios (transactional).
-  - After epic completion, users can apply the unlocked theme or navigate to theme management from the celebration sheet.
-
-- References
-  - ADRs: Effect Model (0001), CompletionPipeline (0002), AnimationOrchestrator (0003), Provider Boundaries (0004).
-  - UX: follow Material 3/HIG, Reduced Motion, dynamic text, and contrast guidance in agents.md.
+---
 
 ## Now / Next / Later
-- Now:
-  - **Motion Baseline + Gating (Priority)**
-    - Default to Basic Motion: progress fill (180–220ms), number count-up (≤300ms), subtle 1.02 tile pop
-    - Gate Advanced Motion (orbs, ring-unravel, shatter) behind feature flag (default off)
-    - Add dev override in Motion Debug panel (Off/Default/On)
-    - Remove center level badge; keep ring center clear for readability
-    - Tokenize durations/curves via AppDesignTokens; no raw constants in widgets
-    - Refactor orbs painter to use repaint:controller; reduce visual cost and jank
-    - Reduced Motion audit: crossfades only, no transforms/path motion
-  - **Instrumentation & Perf**
-    - Enable Performance Overlay and frame timing logs during playtests
-    - Set perf target: p95 frame ≤16.6ms, <1% dropped frames on Pixel 5 / iPhone 11
-    - Add timeline markers around key sequences (XP add, level-up)
-  - **Mobile UX Polish** *In Progress*
-    - [x] Task creation dialog keyboard handling (modal bottom sheet implementation)
-    - [x] Bottom navigation redesign (Material 3 + Apple HIG compliance, 64dp height)
-    - [ ] Dashboard Material 3 polish (pending)
-    - [ ] Real-time XP preview in task creation (pending)
-  - **Epic UX Polish**
-    - [x] Task search in Epic creation dialog
-    - [x] Inline “New Task” from Epic creation (bottom sheet)
-    - [x] Complete tasks from Epic details sheet (no re-entrancy errors)
-    - [x] Reward celebration with theme preview, Apply Theme, Manage Themes
-    - [x] Restrict Epic difficulty to epic context (hidden in regular task flows)
-    - [x] Equal-width action buttons in Epic creation (Cancel/Create)
-- Next:
-  - **Advanced Motion Polish (behind flag)**
-    - Improve orb aesthetics (simplify glow, precompute paths, 2–4 streams)
-    - Shorten ring-unravel phases; ensure non-overlapping choreography
-    - Shared-element badge pop experiment; crossfade fallback under Reduced Motion
-  - **Persistence Safety**: Firestore transactions for XP/level-up, perk/theme unlocks
-  - **Material 3 Polish**: Continue progression surfaces and dialogs
-  - **Analytics Foundation**: Progression metrics (time to first perk, etc.)
-- Later:
-  - **Achievement System**: Build on conditional bonus system
-  - **Intelligent Progression**: Personalized perk recommendations
-  - **Advanced Mechanics**: Seasonal themes, limited-time perks, challenges
 
-## Consolidation Plan (Now)
-- Providers: unify on `user_provider_refactored.dart` and remove duplication.
-- Pipeline: expose a single `CompletionPipeline` that sequences analyze → compute → persist → emit; keep the feature-layer helper only as a UI façade if needed.
-- ✅ **Effects: route perk/talent logic through `PureEffectEngine` only; keep the "enhanced" layer as formatting for breakdowns.** (COMPLETED)
-- ✅ **Animations: centralized animation system with enhanced `AnimationOrchestrator`, controller lifecycle management, and built-in Reduced Motion support.** (COMPLETED)
+### 🔥 NOW (Fun-First MVP - 4 Week Track)
+*Priority: Make the core loop undeniably fun before beta*
 
-## Recently Completed (v0.8.1 - Animation Architecture Hardening)
+#### 1. Celebration & Feedback (Week 1-2)
+- [ ] **Task Completion Celebration Overlay**
+  - AnimationOrchestrator-driven overlay with XP breakdown
+  - "Next level in X XP" clarity
+  - Reduced Motion variant (fade/scale only, no transforms)
+  - Show perk bonuses breakdown
+  - Link: ADR-0003 AnimationOrchestrator
+
+- [ ] **Real-time XP Preview**
+  - Show expected XP in task creation dialog
+  - Update live as user changes difficulty/category/time
+  - Include active perk bonuses in preview
+  - Visual indicator when perks apply
+
+#### 2. Talent Impact & Clarity (Week 2-3)
+- [ ] **Talent Choice Dialog Overhaul**
+  - Full-screen dialog with before/after XP preview
+  - Show numeric impact: "Routine Master: +20% XP on easy recurring tasks"
+  - Example: "Complete 'Morning Exercise' → 50 XP becomes 60 XP"
+  - Non-dismissable until choice made
+  - Locked In talent features prominently displayed
+
+- [ ] **Talent Feature Visibility**
+  - [x] Locked In: Focus Mode tab appears after selection
+  - [ ] Project Management: Epic Projects tutorial on unlock
+  - [ ] NLP: "Auto-categorize" badge on task creation
+
+#### 3. Material 3 Polish (Week 3)
+- [ ] **Dashboard Modernization**
+  - Material 3 cards and spacing
+  - Prominent "Create Task" FAB
+  - Today's goal widget at top
+  - Quick access to active talents' features
+
+- [ ] **Task Creation Flow**
+  - [x] Modal bottom sheet (completed)
+  - [ ] XP preview prominent at top
+  - [ ] Difficulty selector with visual XP impact
+  - [ ] Perk bonus indicators
+
+- [ ] **Pomodoro Timer UI Polish** (Locked In Feature)
+  - [ ] Enhanced clock animation with smooth hand sweep
+  - [ ] Session completion celebration (confetti/badge animation)
+  - [ ] Quick duration presets (15/25/45 min work sessions)
+  - [ ] Visual state indicators (working/break/paused)
+  - [ ] Sound/haptic feedback on session start/end (respects Reduced Motion)
+  - [ ] History widget showing today's completed sessions
+  - [ ] Integration with task completion flow (auto-start next session)
+
+#### 4. Tuning & Balance (Week 4)
+- [ ] **Gameplay Debug Panel** (dev-only)
+  - Centralized tunables in `lib/gameplay/game_balance.dart`
+  - Quick XP curve adjustments
+  - Level skip for testing
+  - Perk toggle for A/B testing
+
+- [ ] **XP Curve Tuning**
+  - Target: L3 in 30-45 min, L5 in 2-3 sessions
+  - Adjust base XP, difficulty multipliers
+  - Test with 5+ playtesters
+  - Document findings
+
+#### 5. Quality & Reliability (Ongoing)
+- [ ] **Testing**
+  - Deterministic tests for CompletionPipeline
+  - Stacking/override matrices for PureEffectEngine
+  - Talent unlock integration tests
+
+- [ ] **Persistence Safety**
+  - Firestore transactions for XP/level-up
+  - Talent choice persistence with conflict resolution
+  - No duplicate level-ups or lost choices
+
+---
+
+### 🚀 NEXT (Post-MVP)
+*After Fun-First MVP is validated*
+
+#### Motion & Performance
+- **Motion Baseline + Gating**
+  - Default to Basic Motion: progress fill (180–220ms), number count-up (≤300ms)
+  - Gate Advanced Motion (orbs, ring-unravel, shatter) behind feature flag (default off)
+  - Motion Debug panel with dev override (Off/Default/On)
+  - Tokenize all durations/curves via AppDesignTokens
+  - Reduced Motion audit: crossfades only, no transforms/path motion
+
+- **Performance Targets**
+  - p95 frame ≤16.6ms, <1% dropped frames on Pixel 5 / iPhone 11
+  - Timeline markers around key sequences
+  - Performance Overlay during playtests
+
+#### Polish & Features
+- **Advanced Motion Polish** (behind flag)
+  - Improve orb aesthetics (simplify glow, 2–4 streams)
+  - Shorten ring-unravel phases
+  - Shared-element badge pop with Reduced Motion fallback
+
+- **Material 3 Completion**
+  - Profile screen modernization
+  - Settings screen redesign
+  - Stats screen charts and visuals
+
+- **Analytics Foundation**
+  - Progression metrics (time to first perk, etc.)
+  - Talent selection patterns
+  - Feature usage by talent type
+
+---
+
+### 🔮 LATER (Future Expansion)
+*After product-market fit is proven*
+
+- **Achievement System**: Build on conditional bonus system
+- **Intelligent Progression**: Personalized perk recommendations
+- **Advanced Mechanics**: Seasonal themes, limited-time perks, challenges
+- **Social Features**: Share achievements, compare talent builds
+- **Advanced Analytics**: User cohorts, retention analysis
+
+---
+
+## 📦 Recently Completed
+
+### v0.8.3 - Locked In Talent Path (Focus & Productivity) - Oct 2025
+- **Third Talent Tree Added**: "Locked In" focuses on deep work and productivity
+  - **Level 5 "Focus Master"**: Unlocks Pomodoro timer with animations + Quiet Mode
+  - **Level 10 "Workflow Optimizer"**: Task prioritization, due date prominence, break suggestions
+  - Talent selection dialog now offers 3 choices at levels 5 and 10
+  - Dynamic navigation: Focus Mode tab appears for Locked In users
+
+- **Core Services** (4 new)
+  - **PomodoroTimerService**: 25/5 min work/break cycles, session tracking, persistent state
+  - **QuietModeService**: Notification blocking with timed/indefinite modes, auto-expiration
+  - **BreakSuggestionService**: Smart break reminders after 50 min work, rotating break types
+  - **TaskPrioritizationService**: 5 sorting strategies, urgency detection, completion goals
+
+- **UI Components**
+  - **PomodoroTimerWidget**: Circular clock with gradient progress ring, pulse animation (Reduced Motion aware)
+  - **FocusModeScreen**: Complete productivity dashboard with timer, break tracking, and task prioritization
+  - **Due Date Prominence** (Level 10): Color-coded chips using difficulty colors (green/orange/red/purple)
+
+- **Integration**
+  - Services integrated into app provider tree
+  - Quiet Mode hooks into notification system
+  - Talent-based feature gating throughout app
+  - All features respect Reduced Motion settings
+
+### v0.8.2 - Epic UX & Theme Rewards - Oct 2025
+- Epic UX: Task search in Epic creation, inline task creation, bottom sheet completion
+- Reward celebration with theme preview chip, "Apply Theme", and "Manage Themes" actions
+- Difficulty Gating: Epic difficulty reserved for Epic context only
+- Celebration Motion: Reduced Motion–aware fade/scale timing via AnimationOrchestrator
+
+### v0.8.1 - Animation Architecture Hardening - Sep 2025
+- Animation Architecture Overhaul: Enhanced AnimationOrchestrator with lifecycle management
+- Streamlined Wheel of Time Widget: Reduced from 7 controllers to 2
+- Motion Debug + Gating: Motion Debug overlay, Advanced Motion flag (default off)
+- Ring Center Cleanup: Removed level number badge for cleaner design
+
+---
+
+## 🔧 Technical Debt & Consolidation
+
+### Architecture
+- [ ] Providers: unify on `user_provider_refactored.dart` and remove duplication
+- [ ] Pipeline: expose a single `CompletionPipeline` that sequences analyze → compute → persist → emit
+- ✅ Effects: route perk/talent logic through `PureEffectEngine` only (COMPLETED)
+- ✅ Animations: centralized with `AnimationOrchestrator` (COMPLETED)
+
+### Security & Infrastructure
+- [ ] CI: Security Check workflow (Gitleaks + TruffleHog) on pushes/PRs
+- [ ] Firestore: baseline rules, App Check enablement then enforcement
+- [ ] Branch protection: require Security Check CI to pass on `main`
+
+### Testing
+- [ ] Deterministic tests for CompletionPipeline outputs
+- [ ] Stacking/override matrices for PureEffectEngine
+- [ ] Talent unlock integration tests
+- [ ] Golden/widget tests for key flows
+
+---
+
+## 📚 Version History (Detailed)
+
+### v0.8.1 - Animation Architecture Hardening (Sep 2025)
 - **Animation Architecture Overhaul**: Major refactor of animation system for gaming-level polish and maintainability
   - **Enhanced AnimationOrchestrator**: Added controller lifecycle management, choreographed sequences, and automatic disposal
   - **Streamlined Wheel of Time Widget**: Reduced from 7 animation controllers to 2, significantly cleaner codebase
@@ -114,7 +233,7 @@ Goal: prove the core loop is fun and understandable for new users before broader
   - **Improved Documentation**: Updated animation system with clear architectural patterns
   - **Performance Optimization**: Reduced computational overhead in custom painters
 
-## Recently Completed (v0.8.0)
+### v0.8.0 - Enhanced Progression System (Sep 2025)
 - **Enhanced Progression System**: Complete redesign of level progression with alternating perk/theme rewards
   - **Conditional Bonus System**: Added `conditionalBonus` perk effect type with advanced condition parsing (`>=`, `<=`, time-based, recurring tasks)
   - **7 New Gameplay Perks**: Level 1, 3, 7, 9, 11, 13 now unlock meaningful XP bonuses (Routine Master, Morning Motivation, Difficulty Dabbler, Category Explorer, etc.)
@@ -123,261 +242,39 @@ Goal: prove the core loop is fun and understandable for new users before broader
   - **Theme Integration**: Automatic theme unlocking via callback system; premium theme gating for progression rewards
   - **UI Compatibility**: Enhanced `PerkSummaryCard` with user-friendly conditional bonus descriptions
 
-## Recently Completed (v0.7.3)
-- **Architecture Cleanup & Consolidation**: completed major codebase cleanup to eliminate bloat and architectural duplication
-  - **PerkEffect → PureEffect Migration**: fully removed legacy `PerkEffectEngine` system; migrated `PerkEffectResult` to simplified `PerkEffectSummary` model; all effect computation now uses `PureEffectEngine` as single source of truth
-  - **Smart/Bound Suggestions Removal**: completely eliminated deprecated Smart Suggestions feature (services, widgets, UI, perks) per roadmap; removed misleading AI-like capabilities that weren't actually implemented
-  - **Import Cleanup**: swept and cleaned all imports related to removed systems; updated `task_creation_dialog.dart` to use `PureEffectEngine.getEffectPreview()`
-  - **Tests**: all existing functionality preserved; 9/9 tests passing after cleanup
+### v0.7.3 - Architecture Cleanup (Aug 2025)
+- **PerkEffect → PureEffect Migration**: Removed legacy `PerkEffectEngine` system
+- **Smart/Bound Suggestions Removal**: Eliminated deprecated feature completely
+- **Import Cleanup**: Swept all imports related to removed systems
+- All tests passing (9/9) after cleanup
 
-## Recently Completed (v0.7.2)
-- Notifications: implemented user preference gating for task reminders and completion celebrations via `SettingsProvider` in `TaskNotificationService`; added smoke test for notification gating functionality.
+### v0.7.2 - Notification Preferences (Aug 2025)
+- User preference gating for task reminders and completion celebrations
+- Smoke tests for notification gating functionality
 
-## Recently Completed (v0.7.1)
-- Providers: canonicalized `UserProvider` and updated DI (ProxyProvider3) to include `TalentPerkController`.
-- Pipeline UI: replaced legacy feature-layer pipeline with `presentation/flows/completion_ui_sequence.dart`; removed old file and fixed imports.
-- Effects: migrated `EnhancedXPCalculationService` to use `PureEffectEngine` for compute; eliminated duplicate compute path; added import aliases to avoid collisions.
-- Tests: added unit tests for PureEffectEngine and EnhancedXPCalculationService; smoke tests for provider alias and UI sequence.
-
-## **📋 REFINED DEVELOPMENT PRIORITY LIST**
-*Updated based on recent Epic Project Management implementation and existing roadmap analysis*
-
-### Security Hardening (ongoing)
-- Goal: Prevent secret/config leakage and enforce safe defaults as MAUs grow.
-- Deliverables:
-  - CI: Security Check workflow (Gitleaks + TruffleHog + forbidden-path guard) on pushes/PRs
-  - Repo hygiene: `.gitignore` protections for Firebase configs, envs, keystores, and generated files
-  - Local bootstrap: `scripts/bootstrap.sh` for FlutterFire config generation (no secrets in git)
-  - Firestore: baseline rules in `firestore.rules`, App Check enablement then enforcement
-  - History cleanup: `scripts/bfg_cleanup.md` and `scripts/bfg_cleanup.sh` playbooks
-  - Release hygiene: publish checklist covering App Check enforcement, rules deploy, and platform signing
-  - Environments: document dev/staging/prod Firebase projects and switching via bootstrap vars
-
-### Talent & Perk System Stabilization (v1.4.x)
-- Goal: Robust, testable, conflict-free talent/perk gameplay that scales.
-- Deliverables:
-  - Domain: normalized `Effect` model, pure `PerkEffectEngine`, deterministic `StateDelta`/`UiEvent` outputs
-  - Pipeline: `CompletionPipeline` to orchestrate compute → persist → emit
-    - UI: unified animations via a screen-level `AnimationOrchestrator` and Reduced Motion support
-    - Tests: unit tests for engine and pipeline, talent trigger coverage, golden/widget tests, event timeline logger for debugging
-
-### UI/UX Overhaul (v1.5)
-- Modernize core screens (dashboard, creation flows, profile) with Material 3 components and consistent motion
-- Reduced Motion: ensure all major animations have accessible fallbacks
-- Replace epic completion snackbar with orchestrated overlay (celebration component)
-- Remove legacy “Smart/Bound Suggestions” surfaces and copy
-
-### Data & Security (v1.5)
-- Notifications: honor `SettingsProvider` toggles for completion celebrations
-- Firebase: add query pagination for task lists; design Firestore structure for scalable reads
-- Secure storage hygiene: audit sensitive fields, minimize over-fetching, and document environment setup
- - App Check: enable, monitor, then enforce for Firestore/Storage
- - Branch protection: require Security Check CI to pass on `main`
-
-### Integration Track --DONE
-- Merge plan for architecture refactor:
-  - Create `integrate/arch-refactor` from refactor branch
-  - Merge rewritten `main` with `--allow-unrelated-histories`, keep security scaffolding
-  - Sanity scan for forbidden files; regenerate configs; ensure CI green
-  - PR into `main`
-
-
-### **🏆 TIER 1: POLISH & STABILIZATION** 
-*Focus: Refine the newly implemented features and ensure production readiness*
-
-**Priority 1.1: Epic Project System Refinement**
-- [ ] **User Experience Testing**
-  - Test epic creation flow with various task combinations
-  - Validate epic completion celebration sequence
-  - Verify theme unlock persistence across app restarts
-  - Test epic progress updates during task completion
-
-- [ ] **Performance Optimization**
-  - Optimize epic loading for users with many projects
-  - Improve theme switching performance  
-  - Memory management for large epic task lists
-  - Epic creation dialog responsiveness with 50+ tasks
-
-**Priority 1.2: Talent & Perk System Polish**
-- [ ] **Enhanced Visual Feedback**
-  - Talent choice celebration animations
-  - Perk unlock notification improvements
-  - Talent tree visualization enhancements
-  - Progress indicators for next talent unlock
-
-- [ ] **Smart Categorization Refinement**
-  - Expand NLP keyword database (currently 80+ keywords)
-  - Improve confidence scoring accuracy
-  - Add user feedback mechanism for AI suggestions
-  - Category learning from user corrections
-
-### **🎮 TIER 2: ADVANCED RPG MECHANICS**
-*Focus: Expand the gamification elements that make the app unique*
-
-**Priority 2.1: Achievement System** 
-- [ ] **Epic-Based Achievements**
-  - "Epic Master": Complete 5 epic projects
-  - "Theme Collector": Unlock all epic themes
-  - "Project Pioneer": Create first epic project
-  - "Streak Warrior": Complete epic within deadline
-
-- [ ] **Talent-Specific Achievements** 
-  - "Smart Assistant": 100 AI-categorized tasks
-  - "Organization Guru": Maintain 30-day epic streak
-  - "Category Expert": Master all task categories
-
-**Priority 2.2: Advanced Epic Features**
-- [ ] **Epic Templates** 
-  - Pre-built epic projects (Home Renovation, Career Development, etc.)
-  - Community-shared epic templates
-  - Template rating and discovery system
-
-- [ ] **Epic Collaboration** (Future)
-  - Shared epic projects with family/team
-  - Epic progress sharing and encouragement
-  - Multi-user epic completion celebrations
-
-### **🔧 TIER 3: TECHNICAL EXCELLENCE**
-*Focus: Complete the architectural improvements identified in existing roadmap*
-
-**Priority 3.1: Code Architecture Cleanup** *(From existing roadmap)*
-- [ ] **Complete Storage Service Unification**
-  - Migrate any remaining old storage service usage
-  - Ensure all epic data uses SecureStorageService
-  - Add comprehensive error handling for epic operations
-
-- [ ] **Provider Responsibility Audit**
-  - Verify EpicProvider doesn't overlap with TaskProvider
-  - Ensure clean separation between talent and task management
-  - Document provider interaction patterns
-
-- [ ] **Architecture Docs (ADR/Overview)**
-  - One-page Architecture overview or ADR covering Effect model, `CompletionPipeline`, `TalentPerkController`, and `UiEvent/StateDelta`
-  - Update README links to ADR; keep diagrams minimal but current
-
-- [ ] **Dead Code & TODO Hygiene**
-  - Remove deprecated surfaces (e.g., legacy Smart/Bound Suggestions remnants)
-  - Convert lingering TODOs into issues or roadmap items; prune stale notes
-
-**Priority 3.2: Enhanced Error Handling & Resilience**
-- [ ] **Epic System Error Recovery**
-  - Handle corrupted epic project data gracefully
-  - Epic progress recovery after app crashes
-  - Theme unlock failure recovery mechanisms
-
-**Priority 3.3: CI & Quality Gates**
-- [ ] **Baseline CI Pipeline**
-  - Run `flutter pub get`, `flutter analyze`, and unit tests on PRs/pushes
-  - Add formatter check (`dart format --set-exit-if-changed`)
-  - Add test coverage report with an initial floor (e.g., 30–40%)
-- [ ] **Branch Protection**
-  - Require Security Check and CI Build to pass on `main`
-
-### **🚀 TIER 4: NEXT-GENERATION FEATURES**
-*Focus: Innovative features that push the app beyond traditional task management*
-
-**Priority 4.1: Dynamic Intelligence**
-- [ ] **Adaptive Epic Suggestions**
-  - AI-powered epic project recommendations
-  - Smart task grouping for epic creation
-  - Difficulty-based epic classification
-
-- [ ] **Personalized Talent Recommendations**
-  - Analyze user behavior to suggest optimal talent paths
-  - Provide talent choice impact previews
-  - Historical talent choice analytics
-
-**Priority 4.2: Social & Community Features**
-- [ ] **Epic Showcasing**
-  - Share completed epic projects with community
-  - Epic progress screenshots and celebrations
-  - Inspiration gallery of community epics
-
-### **📊 TIER 5: DATA & ANALYTICS**
-*Focus: Understanding user behavior and optimizing engagement*
-
-**Priority 5.1: Epic Analytics**
-- [ ] **Epic Engagement Metrics**
-  - Epic completion rates by talent type
-  - Most popular epic project patterns
-  - Theme preference analysis
-  - Talent path effectiveness tracking
-
-**Priority 5.2: Intelligent Insights**
-- [ ] **Personal Progress Analytics**
-  - Epic completion time predictions
-  - Optimal epic size recommendations
-  - Talent-based productivity insights
+### v0.7.1 - Provider Consolidation (Aug 2025)
+- Canonicalized `UserProvider` with `TalentPerkController` DI
+- Pipeline UI: unified completion sequence
+- Effects: migrated to `PureEffectEngine` as single source of truth
+- Added unit tests for PureEffectEngine and EnhancedXPCalculationService
 
 ---
 
-## **🎯 IMMEDIATE NEXT STEPS** 
-*Recommended focus for next development session*
+## 📚 References & ADRs
 
-1. **Epic System User Testing** - Validate the core epic workflow with real usage
-2. **Theme Unlock Bug Testing** - Ensure theme rewards work reliably across scenarios  
-3. **Performance Optimization** - Test epic creation with large task lists
-4. **Visual Polish** - Enhance epic completion animations and celebrations
-5. **Achievement System Foundation** - Begin implementing epic-based achievements
+### Architecture Decision Records
+- **ADR-0001**: Effect Model - Pure functional approach to perk/talent effects
+- **ADR-0002**: CompletionPipeline - Unified task completion flow
+- **ADR-0003**: AnimationOrchestrator - Centralized animation management
+- **ADR-0004**: Provider Boundaries - Clear separation of concerns
 
----
-
-## **📚 COMPLETED FEATURES** *(As of v1.4.0)*
-- ✅ **Complete Epic Project Management System** with multi-task collections
-- ✅ **Comprehensive Perk & Talent System** with forced choice dialogs
-- ✅ **Theme Reward System** with epic completion unlocks
-- ✅ **Enhanced Profile Display** with talent tree and perk visualization
-- ✅ **Smart Categorization** with NLP keyword analysis
-- ✅ **Dynamic Navigation** based on user talents
-- ✅ **Enhanced XP Calculations** with perk bonuses
+### Design Guidelines
+- **UX**: Material 3/Apple HIG compliance
+- **Accessibility**: Reduced Motion support, dynamic text, contrast
+- **Performance**: p95 frame ≤16.6ms, <1% dropped frames target
 
 ---
 
-<!--
-## ARCHIVED: Previous Roadmap (Commented Out for Reference)
-
-# TaskBound Development Roadmap
-
-This document outlines the strategic development priorities for TaskBound, focusing on perfecting the single-player RPG experience first.
-
-## Tier 1: The Unbreakable Core Loop
-*Focus: Make the app fundamentally useful and ensure the basic "game" is in place.*
-
-- [x] **1. Flawless Task Management & Notifications:** Clean up and perfect all core task interactions (Create, Read, Update, Delete, Recurrence). Integrate a reliable notification system for task reminders.
-- [x] **2. Compelling Progress Tracking:** Enhance the UI for tracking user progress (XP, level, stats). Ensure the feedback for completing tasks is clear, satisfying, and motivating.
-
-## Tier 2: The "Secret Sauce" - Making it Fun
-*Focus: Build out the unique RPG differentiation that makes the app engaging and delightful.*
-
-- [x] **3. Skill/Improvement Tree:** Implement the skill tree, allowing users to make meaningful choices when they level up. This is the core reward system.
-- [x] **4. UI & Animation Polish:** Refine the user interface and add animations to make the core loop (completing tasks, leveling up, choosing skills) feel tactile and exciting.
-
-## Tier 3: Advanced Features
-*Focus: Add major new features and intelligence that build upon the polished, stable core.*
-
-- [x] **5. IntelligentXP Engine:** Evolve the static XP system into a dynamic engine that can assign rewards based on task difficulty, user history, or other factors.
-- [ ] **6. Calendar Functionality:** Implement a full calendar view as a powerful, alternative way for users to manage and visualize their tasks.
-
----
-
-## Future Ideas & Feature Backlog
-*A collection of ideas extracted from changelog.md for future consideration after the core roadmap is complete.*
-
-### Core App Enhancements
-- [ ] **Advanced Onboarding:** A more detailed tutorial explaining the XP and leveling systems.
-- [ ] **Performance Optimization:** Implement lazy loading and caching for users with many tasks.
-- [ ] **In-App Feedback System:** Add a simple way for users to report bugs or suggest features directly within the app.
-- [ ] **Analytics:** Integrate basic analytics (like Firebase) to understand feature usage and user retention.
-- [ ] **Data Backup/Restore:** Add manual export/import functionality for user data peace of mind.
-
-### Advanced RPG Mechanics
-- [x] **Skill-Specific Unlocks:** Have different skills (e.g., Organization, Focus) unlock unique tools like project templates or a deep work timer.
-- [x] **Adaptive Interface:** The UI could evolve and show more advanced features as a user completes more tasks and levels up.
-- [ ] **Achievements:** A dedicated system for rewarding milestones and special accomplishments.
-
-### Social & Community Features
-- [ ] **Shared Templates:** Allow high-level users to share their custom task/project templates with the community.
-- [ ] **Mentorship:** Potentially allow expert users to provide guidance or tips to new users.
-
-[Previous detailed implementation roadmap archived...]
--->
+**Last Updated**: October 2025
+**Current Version**: v0.8.3
+**Status**: Fun-First MVP in progress

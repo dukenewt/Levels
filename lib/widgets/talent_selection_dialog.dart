@@ -423,6 +423,21 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
           'Intelligent keyword analysis',
         ];
         break;
+      case TalentType.lockedIn:
+        if (talent.requiredLevel == 5) {
+          features = [
+            'Pomodoro timer with animations',
+            'Quiet Mode for focus sessions',
+            'Distraction-free work environment',
+          ];
+        } else {
+          features = [
+            'Smart task prioritization',
+            'Due date color highlighting',
+            'Break reminder system',
+          ];
+        }
+        break;
     }
 
     return Column(
@@ -469,6 +484,8 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
         return Colors.purple;
       case TalentType.nlpCategorization:
         return Colors.blue;
+      case TalentType.lockedIn:
+        return Colors.orange;
     }
   }
 
@@ -478,6 +495,8 @@ class _TalentSelectionDialogState extends State<TalentSelectionDialog>
         return Icons.account_tree;
       case TalentType.nlpCategorization:
         return Icons.psychology;
+      case TalentType.lockedIn:
+        return Icons.timer;
     }
   }
 
