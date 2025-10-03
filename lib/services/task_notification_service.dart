@@ -7,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../models/task.dart';
 import '../providers/settings_provider.dart';
+import 'quiet_mode_service.dart';
 
 /// Service for handling all task-related notifications
 class TaskNotificationService {
@@ -81,10 +82,17 @@ class TaskNotificationService {
     required String body,
     String? payload,
     SettingsProvider? settings,
+    QuietModeService? quietMode,
   }) async {
     if (settings != null && !settings.enableCompletionCelebrations) {
       debugPrint(
           '📢 Completion celebrations disabled, skipping immediate notification');
+      return;
+    }
+
+    // Check quiet mode
+    if (quietMode != null && quietMode.shouldBlockNotification()) {
+      debugPrint('📢 Quiet mode active, skipping immediate notification');
       return;
     }
 

@@ -20,8 +20,12 @@ import 'screens/profile_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/task_dashboard_screen.dart';
 import 'screens/epic_project_screen.dart';
+import 'screens/focus_mode_screen.dart';
 import 'services/secure_storage_service.dart';
 import 'services/app_talent_manager.dart';
+import 'services/pomodoro_timer_service.dart';
+import 'services/quiet_mode_service.dart';
+import 'services/break_suggestion_service.dart';
 import 'controllers/talent_perk_controller.dart';
 import 'services/talent_trigger_service.dart';
 import 'config/feature_flags.dart';
@@ -90,6 +94,10 @@ void main() async {
           ChangeNotifierProvider(
             create: (_) => EpicProvider(storage: secureStorageService),
           ),
+          // Locked In talent services
+          ChangeNotifierProvider(create: (_) => PomodoroTimerService()),
+          ChangeNotifierProvider(create: (_) => QuietModeService()),
+          ChangeNotifierProvider(create: (_) => BreakSuggestionService()),
           // (moved TalentPerkController above)
         ],
         child: const MyApp(),
@@ -200,59 +208,60 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
   int _selectedIndex = 0;
   bool _talentManagerInitialized = false;
 
-  List<Widget> _getScreens(bool hasProjectManagement) {
+  List<Widget> _getScreens(bool hasProjectManagement, bool hasLockedIn) {
+    final screens = <Widget>[TaskDashboardScreen()];
+
     if (hasProjectManagement) {
-      return [
-        TaskDashboardScreen(),
-        EpicProjectScreen(),
-        StatsScreen(),
-        ProfileScreen(),
-      ];
-    } else {
-      return [
-        TaskDashboardScreen(),
-        StatsScreen(),
-        ProfileScreen(),
-      ];
+      screens.add(EpicProjectScreen());
     }
+
+    if (hasLockedIn) {
+      screens.add(const FocusModeScreen());
+    }
+
+    screens.addAll([
+      StatsScreen(),
+      ProfileScreen(),
+    ]);
+
+    return screens;
   }
 
-  List<CustomNavItem> _getNavItems(bool hasProjectManagement) {
+  List<CustomNavItem> _getNavItems(
+      bool hasProjectManagement, bool hasLockedIn) {
+    final items = <CustomNavItem>[
+      const CustomNavItem(
+        icon: Icons.check_circle,
+        label: 'Tasks',
+      ),
+    ];
+
     if (hasProjectManagement) {
-      return const [
-        CustomNavItem(
-          icon: Icons.check_circle,
-          label: 'Tasks',
-        ),
-        CustomNavItem(
-          icon: Icons.rocket_launch,
-          label: 'Epics',
-        ),
-        CustomNavItem(
-          icon: Icons.bar_chart,
-          label: 'Stats',
-        ),
-        CustomNavItem(
-          icon: Icons.person,
-          label: 'Profile',
-        ),
-      ];
-    } else {
-      return const [
-        CustomNavItem(
-          icon: Icons.check_circle,
-          label: 'Tasks',
-        ),
-        CustomNavItem(
-          icon: Icons.bar_chart,
-          label: 'Stats',
-        ),
-        CustomNavItem(
-          icon: Icons.person,
-          label: 'Profile',
-        ),
-      ];
+      items.add(const CustomNavItem(
+        icon: Icons.rocket_launch,
+        label: 'Epics',
+      ));
     }
+
+    if (hasLockedIn) {
+      items.add(const CustomNavItem(
+        icon: Icons.timer,
+        label: 'Focus',
+      ));
+    }
+
+    items.addAll(const [
+      CustomNavItem(
+        icon: Icons.bar_chart,
+        label: 'Stats',
+      ),
+      CustomNavItem(
+        icon: Icons.person,
+        label: 'Profile',
+      ),
+    ]);
+
+    return items;
   }
 
   void _onItemTapped(int index) {
@@ -303,8 +312,12 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
         final user = userProvider.user;
         final hasProjectManagement =
             user?.hasProjectManagementTalent() ?? false;
-        final screens = _getScreens(hasProjectManagement);
-        final navItems = _getNavItems(hasProjectManagement);
+        final hasLockedIn = user?.talentChoices.values.any(
+              (id) => id.startsWith('locked_in'),
+            ) ??
+            false;
+        final screens = _getScreens(hasProjectManagement, hasLockedIn);
+        final navItems = _getNavItems(hasProjectManagement, hasLockedIn);
 
         // Adjust selected index if navigation structure changed
         if (_selectedIndex >= screens.length) {

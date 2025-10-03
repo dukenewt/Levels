@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 10.03.25
+
+### Added
+- **Locked In Talent Path**: Third talent tree focused on deep work and productivity
+  - Level 5 "Focus Master": Unlocks Pomodoro timer with satisfying animations and Quiet Mode for distraction-free work
+  - Level 10 "Workflow Optimizer": Adds smart task prioritization, due date prominence, and break suggestions
+  - Talent selection dialog now offers 3 talent choices at levels 5 and 10
+  - Dynamic navigation: Focus Mode tab appears in bottom nav when Locked In talent is selected
+
+- **Core Services** (4 new services for productivity features)
+  - `PomodoroTimerService`: 25/5 minute work/break cycles with session tracking and persistent state
+  - `QuietModeService`: Notification blocking with timed/indefinite modes and auto-expiration
+  - `BreakSuggestionService`: Smart break reminders after 50 minutes of work, rotating break types (walk, stretch, rest, long break)
+  - `TaskPrioritizationService`: 5 sorting strategies (Easy First, Hard First, Urgent First, Category Grouped, Time Efficient) with urgency detection and completion goals
+
+- **UI Components**
+  - `PomodoroTimerWidget`: Circular clock with gradient progress ring, pulse animation, and Quiet Mode toggle (Reduced Motion aware)
+  - `FocusModeScreen`: Complete productivity dashboard with Pomodoro timer, break tracking, and task prioritization widgets
+  - Due Date Prominence (Level 10 feature): Color-coded due date chips using difficulty colors (green/orange/red/purple) with visual indicators
+
+### Changed
+- Task tile due date chips now show difficulty-based colors for users with Locked In Level 10 talent
+- Main navigation now dynamically adjusts based on selected talents (Tasks → Epics/Focus → Stats → Profile)
+- Notification system respects Quiet Mode status and blocks notifications during focus sessions
+
+### Fixed
+- Null safety issues in talent checks for Focus Mode screen and task tile due date display
+- Exhaustive switch coverage for `TalentType.lockedIn` in talent tree widget
+
+### Integration
+- All Locked In services integrated into app provider tree with proper lifecycle management
+- Quiet Mode hooks into `TaskNotificationService` for seamless notification blocking
+- Talent-based feature gating throughout app ensures features only appear when relevant talent is selected
+- All Focus Mode features respect Reduced Motion settings
+
+### Notes
+- Pomodoro timer uses tokenized durations from `AppDesignTokens` for consistent timing
+- Break suggestions use rotating break types based on session count for variety
+- Task prioritization includes 5 different strategies to match different work styles
+- Due date prominence provides visual hierarchy for time-sensitive tasks
+
 ## [0.8.2] - 10.01.25
 
 ### Added

@@ -270,6 +270,8 @@ class TalentTreeWidget extends StatelessWidget {
         return Icons.rocket_launch;
       case TalentType.nlpCategorization:
         return Icons.psychology;
+      case TalentType.lockedIn:
+        return Icons.timer;
     }
   }
 

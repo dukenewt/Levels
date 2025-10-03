@@ -11,6 +11,7 @@ import '../core/theme/app_design_tokens.dart';
 import '../core/utils/date_helpers.dart';
 import '../features/task_management/application/task_completion_service.dart';
 import '../services/xp_flow_service.dart';
+import '../services/task_prioritization_service.dart';
 import './gem_shatter_overlay.dart';
 import '../features/character_progression/application/intelligent_xp_engine.dart';
 import '../providers/user_provider.dart';
@@ -557,22 +558,65 @@ class _TaskTileState extends State<TaskTile> with TickerProviderStateMixin {
     final isOverdue = DateHelpers.isOverdue(widget.task.dueDate!);
     final timeText = DateHelpers.formatDueDate(context, widget.task.dueDate!);
 
+    // Check if user has Locked In level 10 talent for difficulty color theming
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final hasLockedInLevel10 = userProvider.user?.talentChoices.values.any(
+          (id) => id.startsWith('locked_in_10'),
+        ) ??
+        false;
+
+    // Get difficulty color if user has the talent
+    Color chipColor;
+    Color borderColor;
+
+    if (isOverdue) {
+      chipColor = theme.colorScheme.error;
+      borderColor = theme.colorScheme.error;
+    } else if (hasLockedInLevel10) {
+      // Use difficulty color theming for Locked In users
+      final difficultyColor = TaskPrioritizationService.getDifficultyColor(
+        widget.task.difficulty,
+        theme.colorScheme,
+      );
+      chipColor = difficultyColor;
+      borderColor = difficultyColor;
+    } else {
+      chipColor = theme.colorScheme.primary;
+      borderColor = theme.colorScheme.primary;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isOverdue
-            ? theme.colorScheme.error.withOpacity(0.1)
-            : theme.colorScheme.primary.withOpacity(0.1),
+        color: chipColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
+        border: hasLockedInLevel10
+            ? Border.all(color: borderColor.withOpacity(0.4), width: 1.5)
+            : null,
       ),
-      child: Text(
-        timeText,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color:
-              isOverdue ? theme.colorScheme.error : theme.colorScheme.primary,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hasLockedInLevel10 && !isOverdue) ...[
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: chipColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            timeText,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: chipColor,
+            ),
+          ),
+        ],
       ),
     );
   }
